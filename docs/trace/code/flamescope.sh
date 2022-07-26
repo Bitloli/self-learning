@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DIR=/home/maritns3/arch/
 cd $DIR || exit 1

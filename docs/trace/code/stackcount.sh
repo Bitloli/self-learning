@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 WORKDIR=/home/maritns3/core/vn/tmp/flame
 flamegraph_pl=${WORKDIR}/flamegraph.pl

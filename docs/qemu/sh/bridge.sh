@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # 参考 https://github.com/qemu/qemu/blob/master/docs/pcie.txt
 abs_loc=$(dirname "$(realpath "$0")")

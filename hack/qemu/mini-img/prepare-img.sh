@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 size=$(stat -c%s "$1")
 if [ "$size" -lt 50000000 ]; then

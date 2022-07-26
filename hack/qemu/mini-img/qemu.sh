@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This script runs qemu and creates a symbolic link named serial.pts
 # to the qemu serial console (pts based). Because the qemu pts

@@ -74,7 +74,7 @@ But last day I found the luajit has been ported by loonson engineers, it's time 
 ### rsync
 使用下面的脚本可以过滤掉被 git 忽略的文件
 ```sh
-#!/bin/bash
+#!/usr/bin/env bash
 if [ $# -eq 0 ];then
   echo "need parameter"
   exit 0

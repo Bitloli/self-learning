@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function exits() {
   if ! [ -x "$(command -v $1)" ]; then

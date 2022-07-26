@@ -1,5 +1,5 @@
 {
-  "qemu": "/home/maritns3/core/kvmqemu/build/x86_64-softmmu/qemu-system-x86_64",
-  "kernel": "/home/maritns3/core/ubuntu-linux/arch/x86/boot/bzImage",
-  "workstation": "/home/maritns3/hack/vm"
+  "qemu": "/home/martins3/core/qemu/build/x86_64-softmmu/qemu-system-x86_64",
+  "kernel_dir": "/home/martins3/core/linux/",
+  "workstation": "/home/martins3/hack/vm"
 }

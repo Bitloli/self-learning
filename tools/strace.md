@@ -7,7 +7,7 @@ strace 可以监控的内容:
 
 过滤掉特定的 syscall
 ```sh
-#!/bin/bash
+#!/usr/bin/env bash
 strace -e 'trace=!read,writev' tcpdump -A -s0 port 80
 ```
 

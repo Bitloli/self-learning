@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION=1.33.0
 wget https://busybox.net/downloads/busybox-$VERSION.tar.bz2

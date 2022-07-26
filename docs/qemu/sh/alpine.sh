@@ -1,30 +1,28 @@
-#!/bin/bash
-set -eu
+#!/usr/bin/env bash
+set -e
 
-use_32bit=false
 use_nvme_as_root=false
 
-# ----------------------- 配置区 -----------------------------------------------
-kernel_dir=/home/maritns3/core/ubuntu-linux
-if [[ $use_32bit == true ]]; then
-  kernel_dir=/home/maritns3/core/bmbt_linux
-fi
+abs_loc=$(dirname "$(realpath "$0")")
+configuration=${abs_loc}/config.json
 
-qemu=/home/maritns3/core/kvmqemu/build/qemu-system-x86_64
+# ----------------------- 配置区 -----------------------------------------------
+kernel_dir=$(jq -r ".kernel_dir" <"$configuration")
+qemu=$(jq -r ".qemu" <"$configuration")
+workstation="$(jq -r ".workstation" <"$configuration")"
 # bios 镜像的地址，可以不配置，将下面的 arg_seabios 定位为 "" 就是使用默认的
-seabios=/home/maritns3/core/seabios/out/bios.bin
-alpine_img_url=https://alpinelinux.org/downloads/
+# seabios=/home/maritns3/core/seabios/out/bios.bin
 # ------------------------------------------------------------------------------
 
 abs_loc=$(dirname "$(realpath "$0")")
 
 kernel=${kernel_dir}/arch/x86/boot/bzImage
 
-iso=${abs_loc}/alpine.iso
-disk_img=${abs_loc}/alpine.qcow2
-ext4_img1=${abs_loc}/img1.ext4
-ext4_img2=${abs_loc}/img2.ext4
-share_dir=${abs_loc}/share
+iso=${workstation}/alpine.iso
+disk_img=${workstation}/alpine.qcow2
+ext4_img1=${workstation}/img1.ext4
+ext4_img2=${workstation}/img2.ext4
+share_dir=${workstation}/share
 
 debug_qemu=
 debug_kernel=
@@ -50,7 +48,11 @@ arg_share_dir="-virtfs local,path=${share_dir},mount_tag=host0,security_model=ma
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on" # q35
 arg_cpu="-cpu host"
-arg_seabios="-chardev file,path=/tmp/seabios.log,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios -bios ${seabios}"
+if [[ -n ${seabios+x} ]]; then
+  arg_seabios="-chardev file,path=/tmp/seabios.log,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios -bios ${seabios}"
+else
+  arg_seabios=""
+fi
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"
 arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_img2},format=raw,if=none,id=nvme2"
 arg_network="-netdev user,id=n1,ipv6=off -device e1000e,netdev=n1"
@@ -62,20 +64,11 @@ arg_tmp=""
 arg_trace="--trace 'memory_region_ops_\*'"
 # -soundhw pcspk
 
-if [[ $use_32bit == true ]]; then
-  qemu=/home/maritns3/core/tcgqemu/32bit/i386-softmmu/qemu-system-i386
-  initrd=/home/maritns3/core/5000/core/bmbt/image/initrd.bin
-  arg_initrd="-initrd ${initrd}"
-  arg_monitor="-nographic"
-  arg_kernel_args="nokaslr console=ttyS0"
-fi
-
 show_help() {
   echo "------ 配置参数 ---------"
   echo "kernel=${kernel}"
   echo "qemu=${qemu}"
   echo "seabios=${seabios}"
-  echo "alpine image url=${alpine_img_url}"
   echo "-------------------------"
   echo ""
   echo "-h 展示本消息"
@@ -108,8 +101,8 @@ sure() {
 }
 
 if [ ! -f "$iso" ]; then
-  echo "${iso} not found! Download it from ${alpine_img_url}"
-  wget https://dl-cdn.alpinelinux.org/alpine/v3.15/releases/x86_64/alpine-standard-3.15.0-x86_64.iso -O "${iso}"
+  wget https://releases.ubuntu.com/22.04/ubuntu-22.04-live-server-amd64.iso -O "$iso"
+  # wget https://dl-cdn.alpinelinux.org/alpine/v3.15/releases/x86_64/alpine-standard-3.15.0-x86_64.iso -O "$iso"
   exit 0
 fi
 
@@ -133,12 +126,15 @@ if [ ! -f "${disk_img}" ]; then
   sure "install alpine image"
   qemu-img create -f qcow2 "${disk_img}" 10G
   qemu-system-x86_64 \
+    -boot d \
     -cdrom "$iso" \
     -cpu host \
     -hda "${disk_img}" \
     -enable-kvm \
     -m 2G \
-    -smp 2
+    --kernel "${kernel}" -append "root=/dev/sda console=ttyS0 earlyprink=serial" \
+    -smp 2 -nographic
+  rm "${disk_img}"
   exit 0
 fi
 
@@ -146,7 +142,7 @@ mkdir -p "${share_dir}"
 
 if [ $LAUNCH_GDB = true ]; then
   echo "debug kernel"
-  cd ${kernel_dir}
+  cd "${kernel_dir}" || exit 1
   gdb vmlinux -ex "target remote :1234" -ex "hbreak start_kernel" -ex "continue"
   exit 0
 fi

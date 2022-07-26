@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eu
 abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json

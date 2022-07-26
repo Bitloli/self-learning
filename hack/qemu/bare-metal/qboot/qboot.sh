@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 QBOOT=/home/maritns3/core/qboot/build/bios.bin
 KERNEL=/home/maritns3/core/linux/arch/x86/boot/bzImage
 QEMU=/home/maritns3/core/qemu/build/x86_64-softmmu/qemu-system-x86_64

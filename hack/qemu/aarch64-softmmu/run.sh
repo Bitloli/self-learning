@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -x
 PROJECT_DIR=/home/maritns3/core/vn/hack/kvm/qemu/aarch64-softmmu

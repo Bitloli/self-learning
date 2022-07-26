@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eux
 kvmtool_dir=~/core/kvmtool
