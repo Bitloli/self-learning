@@ -8,3 +8,5 @@
 
 ## 这个 kernel locking 的内容非常老了，应该整理一个类似的内容出来
 https://www.kernel.org/doc/htmldocs/kernel-locking/index.html
+
+## 深入分析 tls 和 percpu 机制

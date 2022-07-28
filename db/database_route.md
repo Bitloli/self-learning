@@ -13,6 +13,9 @@
 
 - https://github.com/pingcap/awesome-database-learning
 
+- https://news.ycombinator.com/item?id=32250426
+  - sqlite 的源码分析
+
 ## 两本教科书
 - database system concepts
 - [数据密集型应用](https://vonng.github.io/ddia/#/part-i) 的中文翻译，可以快速阅读

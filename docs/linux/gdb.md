@@ -148,6 +148,19 @@
 - [100 个 gdb 技巧](https://github.com/hellogcc/100-gdb-tips)
 - [gdb checksheet](https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf)
 
+## 调试 coroutine
+原理参考：https://mp.weixin.qq.com/s/R0Ja-0HXdZyNSkpM2Y6Gsg
+
+在 QEMU 中存在对应的脚本，在 gdb 的 cmdline 中使用 help qemu 可以有:
+```txt
+qemu bt -- Display backtrace including coroutine switches
+qemu coroutine -- Display coroutine backtrace
+qemu handlers -- Display aio handlers
+qemu mtree -- Display the memory tree hierarchy
+qemu tcg-lock-status -- Display TCG Execution Status
+qemu timers -- Display the current QEMU timers
+```
+
 ## TODO
 - [ ] https://stackoverflow.com/questions/43701428/gdb-proc-info-mapping-vs-proc-pid-mapping
 - [ ] 调查一下 https://github.com/smcdef/kprobe-template 难道 ebpf 不能实现这个功能 ?

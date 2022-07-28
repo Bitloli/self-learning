@@ -17,7 +17,7 @@ from LoyenWang
 
 https://github.com/torvalds/linux/blob/70664fc10c0d722ec79d746d8ac1db8546c94114/include/linux/preempt.h#L14-L30
 
-- preemption 和 softirq 都是可以嵌套的，但是 hwirq 不可以。
+## [ ] preemption 和 softirq 都是可以嵌套的，但是 hwirq 不可以
 
 从这个回答，中断是可以的嵌套的，但是我认为这个操作是错误的:
 - https://stackoverflow.com/questions/34527763/linux-nested-interrupts
@@ -182,18 +182,18 @@ softirq or tasklet).
 3. The kernel preemption has been explicitly disabled by setting the preemption
 counter to a positive value.
 ```c
-#define preemptible()	(preempt_count() == 0 && !irqs_disabled())
+#define preemptible()   (preempt_count() == 0 && !irqs_disabled())
 
 void raw_irqentry_exit_cond_resched(void)
 {
-	if (!preempt_count()) {
-		/* Sanity check RCU and thread stack */
-		rcu_irq_exit_check_preempt();
-		if (IS_ENABLED(CONFIG_DEBUG_ENTRY))
-			WARN_ON_ONCE(!on_thread_stack());
-		if (need_resched())
-			preempt_schedule_irq();
-	}
+    if (!preempt_count()) {
+        /* Sanity check RCU and thread stack */
+        rcu_irq_exit_check_preempt();
+        if (IS_ENABLED(CONFIG_DEBUG_ENTRY))
+            WARN_ON_ONCE(!on_thread_stack());
+        if (need_resched())
+            preempt_schedule_irq();
+    }
 }
 ```
 

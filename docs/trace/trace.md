@@ -26,6 +26,16 @@ perf record -e probe:tcp_sendmsg -a -g sleep 10
 ```
 得到的数据可以使用 flamegraph 处理一下，可以得到非常形象的图形。
 
+而使用 bpftrace 可以获取到更加精细的数值统计。
+
+### 处理 perf 中 unknow 的数值情况
+
+例如下面，几乎显示所有的函数都是被一个 unknow 的函数调用的，是不是
+哪里有点问题吧!
+![](../img/qemu-guest-fio.svg)
+
+
+
 ## ftrace-cmd
 https://lwn.net/Articles/410200/ 的记录
 
@@ -208,6 +218,9 @@ dpdk 测试工具
 
 - https://github.com/baidu/dperf
 
+## sar
+- https://medium.com/@malith.jayasinghe/network-monitoring-using-sar-37bab6ce9f68
+- sar -n DEV 1
 
 ## 参考
 - https://github.com/adriannovegil/awesome-observability

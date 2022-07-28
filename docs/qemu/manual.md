@@ -141,6 +141,8 @@ ssh martins3@10.0.2.2
 git clone  martins3@10.0.2.2:path_to_repo
 ```
 
+当然也可以 rsync 或者 sshfs 也是不错的方法。
+
 ### [ ] ftp
 有待开发
 
@@ -181,9 +183,37 @@ lrwxrwxrwx    1 root     root             0 May 16 08:50 0000:00:06.0 -> ../../.
 lrwxrwxrwx    1 root     root             0 May 16 08:50 0000:01:01.0 -> ../../../devices/pci0000:00/0000:00:03.0/0000:01:01.0
 ```
 
+## vnc
+有的系统是必须使用图形界面才可以安装的，例如 Ubuntu[^1]，此时只能使用 vnc 在远程打开:
+
+参考 man qemu(1)
+```txt
+              host:d TCP connections will only be allowed from host on display d. By convention the TCP port is 5900+d. Optionally, host can be  omitted
+                     in which case the server will accept connections from any host.
+
+```
+
+给启动参数添加上
+```sh
+vnc :0,password=on
+```
+
+在 mac 上可以使用连接:
+```sh
+open vnc://192.168.23.126:5900
+```
+
+注意：这里又一个小坑，那就是密码是必须的，然后在 QEMU 的 monitor 中设置密码:
+```txt
+(qemu) set_password vnc 123456
+```
+
+
 ## TODO
 - [ ] 利用 QEMU 给一个分区安装操作系统
 - [ ] 內核启动参数中需要指定 root=/dev/sda3 如何确定
+
+[^1]: https://askubuntu.com/questions/1108334/how-to-boot-and-install-the-ubuntu-server-image-on-qemu-nographic-without-the-g
 
 
 <script src="https://giscus.app/client.js"

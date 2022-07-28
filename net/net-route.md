@@ -29,6 +29,9 @@
 - [ ] 在内核源码中找到 loopback 的实现位置
 - [ ] 验证一下，
 
+## [ ] 必看文件
+- [ ] net/core/dev.c
+
 ## Unix domain socket
 [Introduction](https://stackoverflow.com/questions/21032562/example-to-explain-unix-domain-socket-af-inet-vs-af-unix)
 
@@ -411,12 +414,16 @@ enum sock_flags {
 ## [ ] 分析一下 /proc/net
 ## [ ] 分析目录 /proc/sys/net
 
+
 ## firewall
 
 nixos 默认是打开防火墙的：
 - https://nixos.org/manual/nixos/unstable/options.html#opt-networking.firewall.enable
 
 这导致了机器可以 ping，但是 iperf 或者 python -m http.server 无法链接。
+
+## [ ] bonding
+- https://docs.rackspace.com/blog/lacp-bonding-and-linux-configuration/
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

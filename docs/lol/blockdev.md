@@ -447,6 +447,15 @@ const struct file_operations def_blk_fops = {
 #29 0x0000000000000000 in ?? ()
 ```
 
+## lvm
+- https://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)
+
+最近安装 Ubunut server 作为 root，其启动参数如下，
+```sh
+root=/dev/mapper/ubuntu--vg-ubuntu--lv
+```
+这种模式，常规的切换内核是没有办法的。
+
 ## 结束语
 好的，你现在对于 Linux 如何处理 Block 设备有了一个大概的认识，记得奖励自己一把英雄联盟哦。
 

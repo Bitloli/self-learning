@@ -51,3 +51,6 @@ https://github.com/s0md3v/Smap
 
 ## tuned-adm
 - https://linux.die.net/man/1/tuned-adm
+
+## ICMP IP 和 Traceroute
+https://news.ycombinator.com/item?id=32257852

@@ -140,9 +140,6 @@ void __local_bh_enable_ip(unsigned long ip, unsigned int cnt)
   - 深入分析了 RPS
 - https://0xax.gitbooks.io/linux-insides/content/Interrupts/linux-interrupts-9.html
 
-
-## [ ] 使用 bpftrace 打印一个 backtrace 是在 interrupt stack 中的
-
 ## RPS : 将 softirq 迁移到其他的 CPU 中
 
 ## softirq 将 lock 迁移的位置有什么关系哇

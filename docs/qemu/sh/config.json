@@ -1,5 +1,5 @@
 {
-  "qemu": "/home/martins3/core/qemu/build/x86_64-softmmu/qemu-system-x86_64",
+  "qemu_dir": "/home/martins3/core/qemu/",
   "kernel_dir": "/home/martins3/core/linux/",
   "workstation": "/home/martins3/hack/vm"
 }

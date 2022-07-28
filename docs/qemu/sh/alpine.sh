@@ -2,17 +2,19 @@
 set -e
 
 use_nvme_as_root=false
+use_default_kernel=false
 
 abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json
 
 # ----------------------- 配置区 -----------------------------------------------
 kernel_dir=$(jq -r ".kernel_dir" <"$configuration")
-qemu=$(jq -r ".qemu" <"$configuration")
+qemu_dir=$(jq -r ".qemu_dir" <"$configuration")
 workstation="$(jq -r ".workstation" <"$configuration")"
 # bios 镜像的地址，可以不配置，将下面的 arg_seabios 定位为 "" 就是使用默认的
 # seabios=/home/maritns3/core/seabios/out/bios.bin
 # ------------------------------------------------------------------------------
+qemu=${qemu_dir}/build/x86_64-softmmu/qemu-system-x86_64
 
 abs_loc=$(dirname "$(realpath "$0")")
 
@@ -22,15 +24,14 @@ iso=${workstation}/alpine.iso
 disk_img=${workstation}/alpine.qcow2
 ext4_img1=${workstation}/img1.ext4
 ext4_img2=${workstation}/img2.ext4
-share_dir=${workstation}/share
 
 debug_qemu=
 debug_kernel=
 LAUNCH_GDB=false
 
 # 必选参数
-arg_img="-drive file=${disk_img},format=qcow2"
-root=/dev/sda3
+arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
+root=/dev/vdb2
 
 if [[ $use_nvme_as_root = true ]]; then
   arg_img="-device nvme,drive=nvme3,serial=foo -drive file=${disk_img},format=qcow2,if=none,id=nvme3"
@@ -39,12 +40,9 @@ fi
 
 arg_kernel_args="root=$root nokaslr console=ttyS0 earlyprink=serial"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
-arg_monitor="-serial mon:stdio"
-# arg_monitor="-nographic"
 
 # 可选参数
-arg_mem="-m 128m -smp 1"
-arg_share_dir="-virtfs local,path=${share_dir},mount_tag=host0,security_model=mapped,id=host0"
+arg_mem="-m 1G -smp 8"
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on" # q35
 arg_cpu="-cpu host"
@@ -58,6 +56,7 @@ arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_im
 arg_network="-netdev user,id=n1,ipv6=off -device e1000e,netdev=n1"
 arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
+arg_monitor="-serial mon:stdio -display none"
 arg_initrd=""
 arg_qmp=""
 arg_tmp=""
@@ -78,15 +77,25 @@ show_help() {
   echo "-d 调试 QEMU"
   exit 0
 }
+mon_socket_path=/tmp/qemu-monitor-socket
+serial_socket_path=/tmp/qemu-serial-socket
 
-while getopts "dskthp" opt; do
+while getopts "dskthpcm" opt; do
   case $opt in
-  d) debug_qemu="gdb --args" ;;
+  d)
+    debug_qemu="gdb -ex \"handle SIGUSR1 nostop noprint\" --args"
+    # gdb 的时候，让 serial 输出从 unix domain socket 输出
+    # https://unix.stackexchange.com/questions/426652/connect-to-running-qemu-instance-with-qemu-monitor
+    arg_monitor="-serial unix:$serial_socket_path,server,nowait -monitor unix:$mon_socket_path,server,nowait -display none"
+    cd "${qemu_dir}" || exit 1
+    ;;
   p) debug_qemu="perf record -F 1000" ;;
   s) debug_kernel="-S -s" ;;
   k) LAUNCH_GDB=true ;;
   t) arg_machine="--accel tcg,thread=single" arg_cpu="" ;;
   h) show_help ;;
+  c) socat -,echo=0,icanon=0 unix-connect:$serial_socket_path ;;
+  m) socat -,echo=0,icanon=0 unix-connect:$mon_socket_path ;;
   *) exit 0 ;;
   esac
 done
@@ -101,7 +110,8 @@ sure() {
 }
 
 if [ ! -f "$iso" ]; then
-  wget https://releases.ubuntu.com/22.04/ubuntu-22.04-live-server-amd64.iso -O "$iso"
+  # wget https://mirrors.tuna.tsinghua.edu.cn/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-DVD-2009.iso -O "$iso"
+  # wget https://releases.ubuntu.com/22.04/ubuntu-22.04-live-server-amd64.iso -O "$iso"
   # wget https://dl-cdn.alpinelinux.org/alpine/v3.15/releases/x86_64/alpine-standard-3.15.0-x86_64.iso -O "$iso"
   exit 0
 fi
@@ -124,7 +134,9 @@ fi
 
 if [ ! -f "${disk_img}" ]; then
   sure "install alpine image"
-  qemu-img create -f qcow2 "${disk_img}" 10G
+  qemu-img create -f qcow2 "${disk_img}" 100G
+  # 很多发行版的安装必须使用图形界面，如果在远程，那么需要 vnc
+  arg_monitor="-vnc :0,password=on"
   qemu-system-x86_64 \
     -boot d \
     -cdrom "$iso" \
@@ -132,13 +144,18 @@ if [ ! -f "${disk_img}" ]; then
     -hda "${disk_img}" \
     -enable-kvm \
     -m 2G \
-    --kernel "${kernel}" -append "root=/dev/sda console=ttyS0 earlyprink=serial" \
-    -smp 2 -nographic
-  rm "${disk_img}"
+    -smp 2 $arg_monitor -monitor stdio
   exit 0
 fi
 
-mkdir -p "${share_dir}"
+if [[ $use_default_kernel = true ]]; then
+  arg_monitor="-vnc :0,password=on"
+  qemu-system-x86_64 \
+    -cpu host $arg_img \
+    -enable-kvm \
+    -m 2G \
+    -smp 2 $arg_monitor -monitor stdio
+fi
 
 if [ $LAUNCH_GDB = true ]; then
   echo "debug kernel"
@@ -149,7 +166,7 @@ fi
 
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem} ${arg_cpu} \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
-  ${arg_share_dir} ${arg_machine} ${arg_monitor} ${arg_qmp} ${arg_initrd} \
+  ${arg_machine} ${arg_monitor} ${arg_qmp} ${arg_initrd} \
   ${arg_tmp}"
 echo "$cmd"
 eval "$cmd"
