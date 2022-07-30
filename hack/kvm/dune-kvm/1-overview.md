@@ -10,11 +10,11 @@
 ## Dune
 http://dune.scs.stanford.edu/
 
-Dune is designed to only expose privileged CPU features in a safe **fashion**. 
+Dune is designed to only expose privileged CPU features in a safe **fashion**.
 
 questions:
 1. Dune => glibc VMCALL global directly
-2. dune_init
+2. `dune_init`
 3. chmod /dev/dune
 4. signals and more robust
 
@@ -51,7 +51,7 @@ Dune completely changes how signal handlers are invoked
 
 One limitation inour implementation is that we cannot
 efficiently detect when EPT pages have been modified or
-accessed, which is needed for swapping. 
+accessed, which is needed for swapping.
 > 处理 ad bit ?
 
 - [ ] libDune 处理的内容太多了
@@ -128,7 +128,7 @@ dune.init :
 https://stackoverflow.com/questions/27786602/does-vmcall-instruction-in-x86-save-the-guest-cpu-state
 
 page.c : dune 截获了 page 管理，那么如何才可以实现 用户态分配的内存 作为 GPA ?
-  
+
 - [ ] 如果用户的地址空间是自己管理的，那么 fork 的时候，内核还是会复制地址空间啊 ?
 
 ## trap
@@ -144,7 +144,7 @@ syscall 也是被 dune 设置为可以注册，
 
 - [ ] 曾经，syscall 作为一种 int, 也是被放在 idt 上的 (ucore 就是证明操作的)
 
-setup_idt : 将所有的 int 的处理全部转换到 dune 设置的模式 
+setup_idt : 将所有的 int 的处理全部转换到 dune 设置的模式
 
 
 ## dune boot
@@ -187,7 +187,7 @@ thread 模型:
   - [ ] 强行使用不对外提供的函数 `_do_fork`，真的好吗 ?
 
 - [ ] 从 wedge 来看，是存在 -lpthread 的，是表示可以支持 pthread, 还是普通模式需要使用
-  
+
 - [ ] 线程之间如何通信啊 ? 地址之间是相互隔离的，但是似乎是可以通过内核地址之间通信
 
 ## wedge
@@ -224,17 +224,17 @@ dune_init_and_enter :
 
 dune_init:
   - dune_page_init : mmap 出来 GPA，malloc : struct page
-  - setup_mappings : 
+  - setup_mappings :
       - `__setup_mappings_full` : 用户地址空间 和 内核地址空间都是可以被搞定
         - setup_syscall : TODO vsyscall 的作用是什么 ?
-        - `dune_vm_map_phys` : 32bit 的空间，然后利用 `__dune_vm_page_walk` 实现 
+        - `dune_vm_map_phys` : 32bit 的空间，然后利用 `__dune_vm_page_walk` 实现
       - `__setup_mappings_precise` : 和
   - setup_syscall : 将原先的 syscall table 替换掉
 
 dune_enter:
-  - do_dune_enter : 
+  - do_dune_enter :
     - map_stack() : TODO
-    - `__dune_enter` :调用 ioctl 为什么使用汇编 ? => vmx_launch 
+    - `__dune_enter` :调用 ioctl 为什么使用汇编 ? => vmx_launch
       - [ ] 似乎没有建立好的东西 : syscall 和 idt 只是将入口占用，但是都是没有注册的，至少让进程可以使用默认数值吧 !
       - [ ] idt 和 ipi, apic 之类的注册都是没有处理
   - create_percpu : 当其中的
@@ -242,7 +242,7 @@ dune_enter:
 对于原来的 table 的映射关系，其采用的方法是:
 
 
-原来的 page table 的映射关系，让 ept violation 维护, 
+原来的 page table 的映射关系，让 ept violation 维护,
 在 函数 ept_set_epte 中间，ept violation 会通知 hva， 通过 gup 获取实际上物理地址，
 那么，就建立映射了。
 
@@ -262,9 +262,9 @@ dune_enter:
 
 
 - [ ] dune_page_init and setup_mappings
-   - dune_page_init :  
+   - dune_page_init :
    - setup_mappings : setup mapping from GVA to GPA
-    - set up a bigger mapping than need is possible, or just map 
+    - set up a bigger mapping than need is possible, or just map
 
 
 
@@ -310,7 +310,7 @@ pgroot 是 mmap 简单的创建一个 page, 是 GVA
 
 - [ ] ept.c 中间处理过 A/D bit
 
-- [ ] 
+- [ ]
 
 ## TODO
 1. 修复的方法:

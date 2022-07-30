@@ -17,6 +17,7 @@
   * [常用工具](#常用工具)
     * [xargs](#xargs)
     * [awk](#awk)
+    * [[ ] printf](#-printf)
     * [[ ] sed](#-sed)
     * [[ ] cut](#-cut)
     * [[ ] bash 中容易犯的错误](#-bash-中容易犯的错误)
@@ -282,6 +283,8 @@ awk 的 BEGIN 和 END 分别表示在开始之前执行的内容。
 awk 还存在
 - Associative Arrays
 - for / if
+
+### [ ] printf
 
 ### [ ] sed
 删除掉文件夹中所有含有 TODO 的行

@@ -1,4 +1,4 @@
-## 关键参考
+## 关键参考 trace
 - https://leezhenghui.github.io/linux/2019/03/05/exploring-usdt-on-linux.html
   - [ ] USDT 到底是如何工作的
 - [ ] uprobe 是如何工作的
@@ -71,9 +71,10 @@ static struct tracer branch_trace __read_mostly =
 };
 ```
 
-## 垃圾堆
+## 问题
 1. kernel/trace 中间的内容到底是干啥的 ?
 1. 所以，kernel/events 和 kernel/trace 的关系是什么 ?
+
 ## perf
 
 ## kprobe

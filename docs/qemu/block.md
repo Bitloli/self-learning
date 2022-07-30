@@ -152,6 +152,14 @@ Coroutine at 0x7ffff7212320:
 - [ ] 跟踪一下，这是两层的 block driver 的，首先是 qcow2，然后是 file 的
 
 ## block job
-- `block_job_add_bdrv`
+- `block_job_add_bdrv` 的调用者
+  - block/commit.c
+  - block/mirror.c
+  - block/stream.c
 
 ## block dirty bitmap
+
+## qmp ：没办法，不搞的话，dirty bitmap 是没有办法维持生活的
+- [ ] grep 一下目前对于 qmp 的所有问题，尝试将 qmp 和 qemu option 融合一下
+- [ ] https://gist.github.com/rgl/dc38c6875a53469fdebb2e9c0a220c6c
+- [ ] https://wiki.qemu.org/Documentation/QMP

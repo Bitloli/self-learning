@@ -83,6 +83,7 @@
 
 ## Tools
 - [My Linux Config](https://martins3.github.io/My-Linux-Config/)
+- [Mac，将就这用吧](./mac.md)
 
 ## Linux Environment Programming
 - 🚧 [musl 阅读笔记](./linux/musl.md)
