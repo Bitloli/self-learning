@@ -35,11 +35,15 @@
 - 安装 [Amethyst](https://github.com/ianyh/Amethyst)，然后使用 Shift Alt J 可以替换实现 Ubuntu 中 Alt Tab 的功能
 - 使用 Ctrl Shift Left 和 Ctrl Shift Right
 
+### neovim 插件 markdown-preview 不能正常工作
+进入到插件的目录中，手动 npm -i[^3]
+
 ### 目前为未解决的问题
 - [ ] 应该是环境变量的问题 ，kitty 必须从 iterm 中启动， 可以使用 open $(which kitty) 来测试
 
 [^1]: 2019 年版本的小米 pro
 [^2]: 不过对于 Apple 的鼠标应该是没有问题的。
+[^3]: https://stackoverflow.com/questions/52801814/this-syntax-requires-an-imported-helper-but-module-tslib-cannot-be-found-wit
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

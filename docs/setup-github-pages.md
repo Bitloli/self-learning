@@ -51,7 +51,7 @@
 ## 想法
 看了一些 blog, 谈谈自己的想法:
 - blog 是一个人构建知识体系的过程。
-- 写 blog 应该是系统的，深入的，而不是零散的，blog 不是笔记，而是思考过程的体现。在 blog 中应该存在互联网中之前没有的东西。
+- 写 blog 应该是系统的，深入的，而不是零散的，blog 不是笔记，而是思考过程的体现。在 blog 中应该存在互联网中之前没有的东西，不是告诉这个东西是什么，而是反映了你对于这件事情的思考和创新。
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

@@ -98,8 +98,8 @@
 - [mknod](./kernel/mknod.md)
 -  🚧 [Linux 设备模型](./kernel/device.md)
 <!-- - [irq domain](./kernel/irq-domain.md) -->
-- [LWN 阅读笔记](./lwn.md)
-- [softirq](./kernel/softirq.md)
+-  🚧 [LWN 阅读笔记](./lwn.md)
+-  🚧 [softirq](./kernel/softirq.md)
 <!-- - [iommu 基本原理介绍](.) -->
 <!-- - [vfio : Linux 内核实现](.) -->
 <!-- - [vfio : QEMU 实现](.) -->

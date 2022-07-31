@@ -22,3 +22,11 @@
 }'
 ```
 - [ ] `OBJECT_DECLARE_SIMPLE_TYPE` 是什么意思，和类似的 macro 有什么区别
+
+## 图形显示
+之前在使用 QEMU 安装 nixos 的时候，发现有时候 alacirtty 不能全屏，似乎如果将 -vga virtio 修改为 -vga std 就可以解决
+
+
+## 为什么总是需要创建一个 bridge 让 Linux 访问网络啊
+- https://myme.no/posts/2021-11-25-nixos-home-assistant.html
+- https://gist.github.com/extremecoders-re/e8fd8a67a515fee0c873dcafc81d811c

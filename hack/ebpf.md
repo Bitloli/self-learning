@@ -189,6 +189,7 @@ python : 各种 attach 函数， 分析 map 以及输出
   - 从安全工程师的角度分析 eBPF
 - https://blog.px.dev/ebpf-openssl-tracing/ : 讲解使用  eBPF 调试的案例
 - [ ] cilium 有开源的一个工具: https://icloudnative.io/posts/tetragon/
+- [ ] 使用 go 实现一个基于 bpf 的 tracer
 
 [^1]: [Outlook : future of eBPF](https://docs.google.com/presentation/d/1AcB4x7JCWET0ysDr0gsX-EIdQSTyBtmi6OAW7bE0jm0/preview?slide=id.g704abb5039_2_106)
 [^2]: [A thorough introduction to eBPF](https://lwn.net/Articles/740157/)

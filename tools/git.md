@@ -1,15 +1,11 @@
 ## bisect
 
-https://stackoverflow.com/questions/4713088/how-to-use-git-bisect
+- https://stackoverflow.com/questions/4713088/how-to-use-git-bisect
 
 ## TODO
-http://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html
-
-https://github.blog/2020-04-09-github-protips-tips-tricks-hacks-and-secrets-from-lee-reilly/ : github 使用技巧
-
-https://koukia.ca/how-to-remove-local-untracked-files-from-the-current-git-branch-571c6ce9b6b1 : 到底应该如何清理一个git仓库
-
-
+- http://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html
+- https://github.blog/2020-04-09-github-protips-tips-tricks-hacks-and-secrets-from-lee-reilly/ : github 使用技巧
+- https://koukia.ca/how-to-remove-local-untracked-files-from-the-current-git-branch-571c6ce9b6b1 : 到底应该如何清理一个git仓库
 
 ## 好用的工具
 https://github.com/commitizen/cz-cli : 学会正确的 commit
@@ -56,18 +52,14 @@ git diff
 7. branch
 
 ```
-    Create a new branch
-    $ git branch <BRANCHNAME>
+Create a new branch
+$ git branch <BRANCHNAME>
 
-    Rename a branch you are currently on
-    $ git branch -m <NEWBRANCHNAME>
+Rename a branch you are currently on
+$ git branch -m <NEWBRANCHNAME>
 
-    Delete a local branch
-    $ git branch -d <BRANCHNAME>
-
-    Delete a remote branch
-    $ git push <REMOTENAME> --delete <BRANCHNAME>
-
+Delete a remote branch
+$ git push <REMOTENAME> --delete <BRANCHNAME>
 ```
 
 8. merge
@@ -189,7 +181,6 @@ git ls-files -t
 git ls-files --others
 
 ## 历史
-git show
 git log -n1 -p
 > n表示参数个数 p表示生成patch
 
@@ -340,14 +331,9 @@ fetch 的内容在哪里 : fetch 会刷新remote/xxxx/branchname 中间的内容
 
 
 # 问题
-1. 为什么git 需要用户名和邮箱地址，如果用户名和github上面邮箱不相同，会有什么问题吗?
 2. 为什么删除文件, merge 之后还是存在，其中的原因是不是由于　git add \*(See Mips run 的某些chapter 修改名字的问题)
 3. 如何实现本地和远程完全相同(本地添加的文件会删除，删除的文件会消失)
 5. git rm 之类操作还有什么
-6. 如何拒绝跟踪一个文件
-7. gitignore 的正则语法是什么
-8. bare 仓库的内容是什么
-
 
 ## ref
 https://datree.io/blog/top-10-github-best-practices/
@@ -356,6 +342,6 @@ https://ohshitgit.com/ : 常见的 git 出现问题的修复的, 学到的两点
 1. git clean 清理掉delete untracked files and directories
 2. git checkout 进入到某一个 commit，对于没有 tracked 的文件不处理
 
-## Repo
-https://source.android.com/setup/develop/repo
-https://gerrit.googlesource.com/git-repo/+/refs/heads/master/README.md
+## git 常用操作
+- 将一个远程仓库清空为一个 commit
+  - https://gist.github.com/stephenhardy/5470814

@@ -22,7 +22,7 @@ consistency and the Java programming language in detail in Section 3.8.
 
 ```txt
 // A:
-P1 -- q.enq(x) ----------------------------- 
+P1 -- q.enq(x) -----------------------------
 P2 ---------------------------- q.deq():x --
 
 // B:
@@ -82,3 +82,22 @@ visible to other method calls.
 
 2. 对于可线性化的形式化证明体系，其基本的策略是什么 ?
 > TODO
+
+## 参考
+- [周刊（第 22 期）：图解一致性模型](https://www.codedump.info/post/20220710-weekly-22/)
+
+<script src="https://giscus.app/client.js"
+        data-repo="martins3/martins3.github.io"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MjA0MDg="
+        data-category="Show and tell"
+        data-category-id="MDE4OkRpc2N1c3Npb25DYXRlZ29yeTMyMDMzNjY4"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-theme="light"
+        data-lang="zh-CN"
+        crossorigin="anonymous"
+        async>
+</script>
+
+本站所有文章转发 **CSDN** 将按侵权追究法律责任，其它情况随意。

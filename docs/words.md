@@ -41,6 +41,9 @@ Working hard is not just a dial you turn up to 11. It's a complicated, dynamic s
 
 如果所有做题家的人生目标只是考个编制，带着安全感俯瞰其他人的艰难生活，就算编制到手也不会有真安全。[^13]
 
+- Investing in feedback loops is never wasted effort
+- The most important trait in developers: rolling up their sleeves because it has to get done[^14]
+
 [^1]: https://www.zhihu.com/question/443850977/answer/1754327421
 [^2]: https://mp.weixin.qq.com/s/4kN65Eu_mYKmC-GLig082g
 [^3]: https://github.com/cdk8s/cdk8s-team-style/blob/master/other/read-write.md
@@ -54,3 +57,4 @@ Working hard is not just a dial you turn up to 11. It's a complicated, dynamic s
 [^11]: https://github.com/ruanyf/weekly/blob/master/docs/issue-208.md
 [^12]:《肖申克的救赎》
 [^13]: https://www.bilibili.com/video/BV1cG411W7dx
+[^14]: https://thorstenball.com/blog/2022/05/17/professional-programming-the-first-10-years/

@@ -34,6 +34,7 @@
 
 ## 资源
 - [Langdev libraries for Rust](https://github.com/Kixiron/rust-langdev) : 使用 Rust 写编译器的一些开发工具
+- [awesome-rust-cloud-native](https://github.com/awesome-rust-cloud-native/awesome-rust-cloud-native) : 收集 cloud native 中的 Rust 项目。
 
 ## 工具
 - [cxx](https://github.com/dtolnay/cxx) : safe FFI between Rust and C++
