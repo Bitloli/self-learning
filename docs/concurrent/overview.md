@@ -10,3 +10,7 @@
 https://www.kernel.org/doc/htmldocs/kernel-locking/index.html
 
 ## 深入分析 tls 和 percpu 机制
+
+## 收集的资源
+- https://www.1024cores.net/
+  - 其中有分析过 wait free 和 lock free 的内容

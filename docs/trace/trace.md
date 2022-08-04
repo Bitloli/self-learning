@@ -13,9 +13,9 @@
 - [ ] 所以 lttng 相对于 bpf 有什么优势吗?
 - [ ] perf 工具比我想想的要强大，应该好好的重新分析一下
   - https://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
-
 - [ ] 感觉 perf 能做的事情，bpftrace 和 ebpf 都可以做，而且更加好
   - 例如 hardware monitor 在 bpftrace 中和 bcc 中 llcstat-bpfcc 都是可以做的
+- [ ] bpf 相对于 perf 有什么优势吗?
 
 ## perf
 
@@ -28,14 +28,20 @@ perf record -e probe:tcp_sendmsg -a -g sleep 10
 
 而使用 bpftrace 可以获取到更加精细的数值统计。
 
-### 处理一下 perf 中 unknow 的数值情况
+### [ ] 处理一下 perf 中 unknow 的数值情况
 
 例如下面，几乎显示所有的函数都是被一个 unknow 的函数调用的，是不是
 哪里有点问题吧!
 ![](../img/qemu-guest-fio.svg)
 
+### [ ] 为什么 perf 无法正确 perf 到用户态的程序
+perf report 的比例明显不对啊
+
 ### 常用的操作方法
 - perf list kvm
+- perf diff perf-1.data perf-2.data ： 按照 diff 差距来分析
+
+更多的参考: https://www.brendangregg.com/perf.html
 
 ### Questions
 - [ ] 为什么有时候需要 mount debugfs
@@ -214,8 +220,14 @@ https://load-balancer.inlab.net/manual/performance/measuring-internal-bandwidth-
 > - It turns out that id gets this information from the `/etc/passwd` and `/etc/group` files. `strace id  2>&1 | grep open`
 > - TODO
 
+https://serverfault.com/questions/180711/what-exactly-do-the-colors-in-htop-status-bars-mean
+
+- [ ] htop 中，如何控制 CPU 条的大小，在核心很多的位置上，这个 CPU 条被严重压缩了。
+- [ ] htop 中，CPU 条的颜色是什么意思。
+
 ## top
 - [ ] 打开 top, 按数值 1 的时候，可以观测那个 CPU 上的 softirq 发生的频率
+- [ ] top 是如何统计 usr 和 sys 的
 
 ## dperf
 dpdk 测试工具
@@ -228,6 +240,15 @@ dpdk 测试工具
 
 ## 参考
 - https://github.com/adriannovegil/awesome-observability
+
+## rusage
+- time 的源码: https://savannah.gnu.org/git/?group=time
+- 原来是有个系统调用的: https://man7.org/linux/man-pages/man2/getrusage.2.html
+- fs/proc/stat.c 中的信息才是 top 如何统计的
+- 通过 `vtime_guest_enter` 去理解为什么 qemu 在运行起来的时候，发现 user 是占据大多数的，因为统计将 non-root 中的运行统计到 user 中了。
+
+## blktrace
+- https://developer.aliyun.com/article/698568
 
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)

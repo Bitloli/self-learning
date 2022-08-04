@@ -1,5 +1,38 @@
 # KVM
 
+## 使用 `kvm_stat` 可以观测最核心的函数
+
+```txt
+Event                                         Total %Total CurAvg/s
+kvm_entry                                    337793   15.4    26107
+kvm_exit                                     337787   15.4    26107
+kvm_ack_irq                                  457205   20.9    25548
+kvm_emulate_insn                             192824    8.8    16726
+kvm_fast_mmio                                192514    8.8    16709
+kvm_apic_accept_irq                          168566    7.7    15209
+kvm_apicv_accept_irq                         168559    7.7    15209
+kvm_msi_set_irq                              151693    6.9    13865
+kvm_eoi                                       91441    4.2     5110
+kvm_hv_timer_state                            22948    1.0     1818
+kvm_msr                                       18642    0.9     1495
+kvm_wait_lapic_expire                         14466    0.7     1166
+kvm_pv_tlb_flush                               5097    0.2      384
+kvm_pic_set_irq                                4832    0.2      369
+kvm_set_irq                                    4788    0.2      369
+kvm_ioapic_set_irq                             4788    0.2      369
+kvm_fpu                                        3718    0.2      268
+kvm_vcpu_wakeup                                3178    0.1      243
+kvm_userspace_exit                             1860    0.1      134
+kvm_pio                                        1600    0.1      119
+kvm_hypercall                                  1188    0.1       83
+kvm_mmio                                        484    0.0       27
+vcpu_match_mmio                                 274    0.0       15
+kvm_apic                                       1524    0.1        8
+kvm_pvclock_update                               13    0.0        4
+kvm_halt_poll_ns                                 42    0.0        3
+Total                                       2187824          167463
+```
+
 ## TODO
 1. 看看 kvm 的 ioctl 的实现
 2. 求求了，什么时候学一下 x86 汇编吧，然后出一个利用 kvm 给别人写一个教程
@@ -236,26 +269,22 @@ struct kvm_mmu {
 
 ## 函数调用路径
 
+- kvm_arch_vcpu_ioctl_run
+  - vcpu_run
+    - vcpu_enter_guest
+        - static_call(kvm_x86_vcpu_run)(vcpu)
+          - svm_vcpu_run
+            - svm_exit_handlers_fastpath
+              - handle_fastpath_set_msr_irqoff
+        - vmx_handle_exit
+          - kvm_vmx_exit_handlers
+            - `__kvm_get_msr`
+              - `vmx_get_msr`
+
 ```c
-int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu) // x86.c
-  static int vcpu_run(struct kvm_vcpu *vcpu) // x86.c
-    static int vcpu_enter_guest(struct kvm_vcpu *vcpu) // x86.c
-      static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath) // vmx.c
-        static int (*kvm_vmx_exit_handlers[])(struct kvm_vcpu *vcpu) = { // vmx.c
-          int __kvm_get_msr(struct kvm_vcpu *vcpu, u32 index, u64 *data, bool host_initiated)
-            -> static int vmx_get_msr(struct kvm_vcpu *vcpu, struct msr_data *msr_info)
-```
-当 vmx 返回值大于 0 的时候，会将结果返回给用户空间，用户空间处理。
-
-
-
-```c
-gpa_t kvm_mmu_gva_to_gpa_read(struct kvm_vcpu *vcpu, gva_t gva,
-                  struct x86_exception *exception)
-
+gpa_t kvm_mmu_gva_to_gpa_read(struct kvm_vcpu *vcpu, gva_t gva, struct x86_exception *exception)
 // 最终在 handle_exception_nmi
 ```
-
 
 ## x86.c overview
 - VMCS 的 IO

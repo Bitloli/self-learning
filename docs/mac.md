@@ -20,7 +20,13 @@
 不习惯的地方:
 - Ctrl Win Alt 键的重新定义，目前只会在外接键盘上使用电脑。
 
-为什么我不喜欢 Mac，因为其产品往往传递出来一种感觉，用户不知道如何使用电脑，按照它的方式去使用就好了。
+## 为什么我不喜欢 Mac
+似乎 Apple 从 iPhone 的成功中得到一个经验，那就是用户不知道自己想要什么。
+现在其将这种想法放到其他的产品，认为用户不知道如何使用电脑，按照它的方式去使用就好了。
+
+## 反思
+虽然 Linux 是社区推动，但是这个社区中大多数人都是云计算公司，芯片公司或者 SRE 等，这些人只是在乎 server 的性能，一直以来 Linux 桌面版的进步缓慢，社区也是见死不救。
+
 ## 折腾过的地方
 
 ###  bash 版本过低
@@ -32,14 +38,14 @@
 - https://www.hellotech.com/guide/for/how-to-find-ip-address-on-mac
 
 ### Window Management
-- 安装 [Amethyst](https://github.com/ianyh/Amethyst)，然后使用 Shift Alt J 可以替换实现 Ubuntu 中 Alt Tab 的功能
-- 使用 Ctrl Shift Left 和 Ctrl Shift Right
+- 安装 [Amethyst](https://github.com/ianyh/Amethyst)，然后使用 Shift Alt J 可以替换实现 Ubuntu 中 Alt Tab 的功能；
+- 使用 Ctrl Shift Left 和 Ctrl Shift Right 切换桌面。
 
 ### neovim 插件 markdown-preview 不能正常工作
 进入到插件的目录中，手动 npm -i[^3]
 
 ### 目前为未解决的问题
-- [ ] 应该是环境变量的问题 ，kitty 必须从 iterm 中启动， 可以使用 open $(which kitty) 来测试
+- [ ] 应该是环境变量的问题，kitty 必须从 iterm 中启动， 可以使用 open $(which kitty) 来测试
 
 [^1]: 2019 年版本的小米 pro
 [^2]: 不过对于 Apple 的鼠标应该是没有问题的。

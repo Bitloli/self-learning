@@ -114,4 +114,15 @@ https://www.linuxjournal.com/article/8212
 
 - 浅谈多核系统的缓存一致性协议与非均一缓存访问 : https://zhuanlan.zhihu.com/p/162099300
 
+## `__setup_APIC_LVTT`
+```c
+		/*
+		 * See Intel SDM: TSC-Deadline Mode chapter. In xAPIC mode,
+		 * writing to the APIC LVTT and TSC_DEADLINE MSR isn't serialized.
+		 * According to Intel, MFENCE can do the serialization here.
+		 */
+		asm volatile("mfence" : : : "memory");
+		return;
+```
+
 [^1]: https://zhuanlan.zhihu.com/p/191660613

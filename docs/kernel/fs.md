@@ -15,5 +15,12 @@
 ## 这里空说，实际上难以感受在说啥
 将 hack/qemu/bare-metal/ 下的内容整理一下吧！
 
+## 问题
+- 如何制作 initramfs ?
+  - 制作 initramfs 的原理是什么?
+- 为什么使用 -kernel bzImage 的时候，可以随意切换内核，而在 Guest 机器中修改 grub 指定内核，则会出现 initramfs 不配套的问题。
+
+- https://wiki.ubuntu.com/Initramfs
+
 [^1]: http://junyelee.blogspot.com/2020/03/ramfs-rootfs-and-initramfs.html
 [^2]: https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html

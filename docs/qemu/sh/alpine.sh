@@ -149,12 +149,14 @@ if [ ! -f "${disk_img}" ]; then
 fi
 
 if [[ $use_default_kernel = true ]]; then
-  arg_monitor="-vnc :0,password=on"
+  arg_monitor="-vnc :0,password=on -monitor stdio"
+  # arg_monitor="-nographic"
   qemu-system-x86_64 \
     -cpu host $arg_img \
     -enable-kvm \
     -m 2G \
-    -smp 2 $arg_monitor -monitor stdio
+    -smp 2 $arg_monitor
+  exit 0
 fi
 
 if [ $LAUNCH_GDB = true ]; then

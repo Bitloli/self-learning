@@ -11,5 +11,3 @@ https://medium.com/@daeseok.youn/prepare-the-environment-for-developing-linux-ke
 https://gist.github.com/chrisdone/02e165a0004be33734ac2334f215380e
 1. 其中，并不知道如何加入 init.sh
 2. buildroot 的部分以后用到的时候，然后慢慢分析吧
-
-
