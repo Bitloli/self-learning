@@ -6,7 +6,7 @@
 
 在 https://github.com/brendangregg/perf-tools 可以看到 bash 脚本 execsnoop，其中就是使用 ftrace 在 /sys 下提供的接口来使用的。
 而 https://github.com/iovisor/bcc/ 中，有如下的两个文件:
-- libbpf-tools/execsnoop.c : 基于 libbpf [^3]，overhead 更加小
+- libbpf-tools/execsnoop.c : 基于 libbpf [^13]，overhead 更加小
 - tools/execsnoop.py : 编译 BCC 程序来实现的
 
 ## 问题
@@ -249,6 +249,12 @@ dpdk 测试工具
 
 ## blktrace
 - https://developer.aliyun.com/article/698568
+
+
+## [ ] cflow
+- https://graphviz.org/
+- https://graphviz.org/pdf/gvpr.1.pdf
+- https://www.gnu.org/software/cflow/manual/cflow.html : 可以绘制整个图形的
 
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)

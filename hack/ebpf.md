@@ -1,6 +1,21 @@
 # eBPF
 
+- [ ] profiling 和 tracing 有什么区别，bpf 是如何分别实现两者的功能的
+- [ ] networking 相关的工作
+- [ ] bpf 如何实现安全?
+
 似乎 eBPF 可以让 package 的 filter 提前。
+
+两个很新的 talk:
+- https://www.youtube.com/watch?v=_5Z2AU7QTH4
+- https://www.youtube.com/watch?v=AV8xY318rtc
+
+- https://www.circonus.com/2018/05/linux-system-monitoring-with-ebpf/ ：里面的图是如何被绘制出来的
+
+## xdp
+- https://www.spinics.net/lists/xdp-newbies/msg00185.html
+- https://www.tigera.io/learn/guides/ebpf/ebpf-xdp/
+- https://docs.cilium.io/en/latest/bpf/
 
 ## links
 
@@ -233,10 +248,6 @@ python : 各种 attach 函数， 分析 map 以及输出
 ## paper
 - https://www.usenix.org/conference/nsdi21/presentation/ghigoff : 使用 eBPF 加速 memcahced ，无需修改内核。
 
-## xdp
-- https://www.tigera.io/learn/guides/ebpf/ebpf-xdp/
-- https://docs.cilium.io/en/latest/bpf/
-
 ## todo
 - [ ] https://github.com/dippynark/bpf-sockmap
 - [ ]  bpftrace -e 'BEGIN { printf("Hello, World!\n"); }' BEGIN 是什么意思，是否存在类似的工具
@@ -250,6 +261,22 @@ python : 各种 attach 函数， 分析 map 以及输出
 - https://blog.px.dev/ebpf-openssl-tracing/ : 讲解使用  eBPF 调试的案例
 - [ ] cilium 有开源的一个工具: https://icloudnative.io/posts/tetragon/
 - [ ] 使用 go 实现一个基于 bpf 的 tracer
+
+## verifier
+https://twitter.com/shunghsiyu/status/1553592644219318272?s=20&t=Tn6g5qhu7pNHCr0-DnKVng
+
+## security
+- https://www.zerodayinitiative.com/blog/2020/4/8/cve-2020-8835-linux-kernel-privilege-escalation-via-improper-ebpf-program-verification
+- https://www.graplsecurity.com/post/kernel-pwning-with-ebpf-a-love-story
+- https://blog.hexrabbit.io/2021/11/03/CVE-2021-34866-writeup/
+
+## libbpf
+这里提供了一些有用的链接的:
+https://github.com/iovisor/bcc/tree/master/libbpf-tools
+
+应该是从这里开始:
+https://github.com/libbpf/libbpf
+
 
 [^1]: [Outlook : future of eBPF](https://docs.google.com/presentation/d/1AcB4x7JCWET0ysDr0gsX-EIdQSTyBtmi6OAW7bE0jm0/preview?slide=id.g704abb5039_2_106)
 [^2]: [A thorough introduction to eBPF](https://lwn.net/Articles/740157/)

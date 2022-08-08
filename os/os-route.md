@@ -31,6 +31,7 @@ g. [Essential Linux Device Drivers](https://book.douban.com/subject/3088263/)
 http://www.linuxfromscratch.org/lfs/view/10.0-rc1/prologue/foreword.html
 
 ## 文章合集
+- [「Linux 核心設計」系列講座](https://hackmd.io/@sysprog/linux-kernel-internal) :star: :star: :star: :star: :star:
 - [LoyenWang](https://www.cnblogs.com/LoyenWang/) :star: :star: :star: :star: :star:
 - [wowotech](http://www.wowotech.net/) :star: :star: :star: :star: :star:
 - [linux inside](https://0xax.gitbooks.io/linux-insides/content/) :star: :star: :star: :star: :star:

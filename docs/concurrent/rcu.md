@@ -4,6 +4,7 @@
 - [ ] 将 QEMU 中对于 RCU 的使用移动到这里
 - [ ] https://liburcu.org/ : 提供了三个很好的资源
 - https://mp.weixin.qq.com/s/SZqmxMGMyruYUH5n_kobYQ
+- https://hackmd.io/@sysprog/linux-rcu?type=view
 
 
 ## What is Rcu

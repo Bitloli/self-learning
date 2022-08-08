@@ -44,11 +44,14 @@
 - posix-timer.c
 - posix-cpu-timer.c
 
+- [ ] 什么叫做 alarmtimer 啊
+
 
 - [ ] 总结一下几个主要注册的 hook ，其实也就子系统:
   - posix clock
   - tick
   - clocksource
+  - clock_event_device
 
 - [ ] 始终没有搞清楚的一个问题，no hz 之后，当新的任务了，如何苏醒
   - 无需处理啊，外设的中断，或者 ipi
@@ -69,9 +72,57 @@ struct tick_device { // 这个应该是每一个 CPU 一个
 
 ## 分析一下 tick_nohz_idle_exit
 
-- [ ] do_idle 总是会调用这两个，但是如果不支持 no hz，如何?
+- [ ] do_idle 总是会调用这两个，但是如果不支持 no hz，其中的内容的意义是什么？
   - tick_nohz_idle_enter
   - tick_nohz_idle_exit
+
+- 为什么这几个函数总是没有人调用的:
+```txt
+tick_freeze -- 这个是系统 suspend 的时候处理的
+tick_suspend -- 最终被 tick_freeze 调用
+tick_handle_periodic / tick_nohz_handler -- 模式不对
+```
+
+## timekeeping
+ gettimeofday 会经过 timekeeping.c
+
+使用 clock_gettime 作为例子吧!
+
+- posix_get_monotonic_raw : 调用这个 hook
+  - ktime_get_raw_ts64
+    - timekeeping_get_ns : 然后再去选择正确的 resource
+
+> [4 timekeeping](http://www.wowotech.net/timer_subsystem/timekeeping.html)
+>
+> timekeeping 模块维护 timeline 的基础是基于 clocksource 模块和 tick 模块。通过 tick 模块的 tick 事件，可以周期性的更新 time line，通过 clocksource 模块、可以获取 tick 之间更精准的时间信息
+
+```plain
+update_wall_time+1
+tick_irq_enter+110
+irq_enter_rcu+60
+common_interrupt+168
+asm_common_interrupt+30
+native_safe_halt+11
+default_idle+10
+default_idle_call+50
+do_idle+478
+cpu_startup_entry+25
+start_secondary+278
+secondary_startup_64_no_verify+213
+```
+
+使用 QEMU
+
+```txt
+#0  update_wall_time () at kernel/time/timekeeping.c:2228
+#1  0xffffffff8119d1b1 in tick_nohz_update_jiffies (now=4333740467005) at kernel/time/tick-sched.c:634
+#2  tick_nohz_irq_enter () at kernel/time/tick-sched.c:1438
+#3  tick_irq_enter () at kernel/time/tick-sched.c:1455
+#4  0xffffffff8110533b in irq_enter_rcu () at kernel/softirq.c:613
+#5  0xffffffff81e14335 in sysvec_apic_timer_interrupt (regs=0xffffc9000008be38) at arch/x86/kernel/apic/apic.c:1106
+```
+
+实现 `tick_nohz_update_jiffies` 暂时没有搞清楚如何保证一个 tick 的就增加一个的，以及 nohz 可以正确处理的:
 
 ## hrtimer
 
@@ -161,65 +212,6 @@ CONFIG_CLOCKSOURCE_WATCHDOG_MAX_SKEW_US=100
     __irq_exit_rcu+181
     sysvec_apic_timer_interrupt+162
     asm_sysvec_apic_timer_interrupt+18
-    finish_task_switch.isra.0+148
-    __schedule+714
-    schedule_idle+38
-    do_idle+350
-    cpu_startup_entry+25
-    start_secondary+278
-    secondary_startup_64_no_verify+213
-]: 1
-@[
-    run_timer_softirq+1
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    do_epoll_wait+1589
-    __x64_sys_epoll_wait+96
-    do_syscall_64+59
-    entry_SYSCALL_64_after_hwframe+68
-]: 1
-@[
-    run_timer_softirq+1
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    ktime_get+51
-    __x64_sys_futex+356
-    do_syscall_64+59
-    entry_SYSCALL_64_after_hwframe+68
-]: 1
-@[
-    run_timer_softirq+1
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+84
-    asm_sysvec_apic_timer_interrupt+18
-]: 13
-@[
-    run_timer_softirq+1
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    native_safe_halt+11
-    default_idle+10
-    default_idle_call+50
-    do_idle+478
-    cpu_startup_entry+25
-    rest_init+204
-    arch_call_rest_init+10
-    start_kernel+1692
-    secondary_startup_64_no_verify+213
-]: 18
-@[
-    run_timer_softirq+1
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
     native_safe_halt+11
     default_idle+10
     default_idle_call+50
@@ -232,103 +224,6 @@ CONFIG_CLOCKSOURCE_WATCHDOG_MAX_SKEW_US=100
 
 ### writeout_period
 ```txt
-@[
-    writeout_period+1
-    call_timer_fn+39
-    __run_timers.part.0+462
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    _nohz_idle_balance.constprop.0.isra.0+389
-    do_idle+56
-    cpu_startup_entry+25
-    start_secondary+278
-    secondary_startup_64_no_verify+213
-]: 1
-@[
-    writeout_period+1
-    call_timer_fn+39
-    __run_timers.part.0+462
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    task_rq_lock+5
-    cpu_cgroup_fork+38
-    cgroup_post_fork+240
-    copy_process+5642
-    kernel_clone+151
-    user_mode_thread+85
-    call_usermodehelper_exec_work+119
-    process_one_work+485
-    worker_thread+80
-    kthread+232
-    ret_from_fork+34
-]: 1
-@[
-    writeout_period+1
-    call_timer_fn+39
-    __run_timers.part.0+462
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    _raw_spin_unlock_irqrestore+25
-    __folio_end_writeback+299
-    folio_end_writeback+31
-    ext4_finish_bio+400
-    ext4_release_io_end+75
-    ext4_end_io_rsv_work+160
-    process_one_work+485
-    worker_thread+80
-    kthread+232
-    ret_from_fork+34
-]: 1
-@[
-    writeout_period+1
-    call_timer_fn+39
-    __run_timers.part.0+462
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    finish_task_switch.isra.0+148
-    __schedule+714
-    schedule_idle+38
-    do_idle+350
-    cpu_startup_entry+25
-    start_secondary+278
-    secondary_startup_64_no_verify+213
-]: 1
-@[
-    writeout_period+1
-    call_timer_fn+39
-    __run_timers.part.0+462
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+162
-    asm_sysvec_apic_timer_interrupt+18
-    __d_lookup_rcu+133
-    lookup_fast+69
-    walk_component+65
-    path_lookupat+110
-    filename_lookup+207
-    vfs_statx+130
-    vfs_fstatat+84
-    __do_sys_newfstatat+38
-    do_syscall_64+59
-    entry_SYSCALL_64_after_hwframe+68
-]: 3
-@[
-    writeout_period+1
-    call_timer_fn+39
-    __run_timers.part.0+462
-    __softirqentry_text_start+238
-    __irq_exit_rcu+181
-    sysvec_apic_timer_interrupt+84
-    asm_sysvec_apic_timer_interrupt+18
-]: 3
 @[
     writeout_period+1
     call_timer_fn+39
@@ -392,6 +287,7 @@ nel/time/clockevents.c:511
 在 `tick_setup_device` 中首先调用 `clock_event_device` 来设置 clock_event_device 的函数。
 
 ## 分析切换过程
+- 默认状态
   - tick_handle_periodic
 - tick_nohz_switch_to_nohz
   - tick_nohz_handler
@@ -676,25 +572,17 @@ DEFINE_PER_CPU(struct tick_device, tick_cpu_device);
 
 - [ ]  感觉，当使用低精度 timer 的时候，利用的是周期 tick ,  当使用高精度的时候，用于实现 dynamic tick
 
-#### [3](http://www.wowotech.net/timer_subsystem/timer_subsystem_userspace.html)
-@todo
-
-#### [4 timekeeping](http://www.wowotech.net/timer_subsystem/timekeeping.html)
-> timekeeping 模块维护 timeline 的基础是基于 clocksource 模块和 tick 模块。通过 tick 模块的 tick 事件，可以周期性的更新 time line，通过 clocksource 模块、可以获取 tick 之间更精准的时间信息
-
-tk_clock_read
-  - `struct clocksource->read(clock)`
-    - read_tsc
-      - rdtsc_ordered : assembly code using instruction `rdtsc`
-
-#### [5](http://www.wowotech.net/timer_subsystem/posix-clock.html)
-
-> posix timer 的内容
-
-#### [6](http://www.wowotech.net/timer_subsystem/posix-timer.html)
-
-http://www.wowotech.net/timer_subsystem/time_subsystem_index.html
-
+## clock event 和 clock source
+- clockevent 应该就是用于产生 tick
+```c
+struct clock_event_device
+```
+主要是 apic 了
+- clocksource  获取当前的时间的
+```c
+struct clocksource
+```
+hpet 等
 
 #### [Timekeeping intheLinux Kernel](http://events17.linuxfoundation.org/sites/events/files/slides/Timekeeping%20in%20the%20Linux%20Kernel_0.pdf)
 ```c
@@ -719,6 +607,13 @@ void ktime_get_real_ts64(struct timespec64 *ts)
 ```
 
 - [ ] There something interesting about how to calculate time from hardware clock clcle efficiently and accurately, but we have to handle something for kvm.
+
+## [ ] 到底什么是 broadcast
+
+让其他 CPU 唤醒已经关闭本地 timer 的 CPU:
+具体进一步的参考
+http://www.wowotech.net/timer_subsystem/tick-broadcast-framework.html
+
 
 [^1]: https://www.kernel.org/doc/html/latest/virt/kvm/timekeeping.html
 [^2]: https://github.com/dterei/tsc
