@@ -3,9 +3,19 @@
 
 - [ ] 天高气爽阅码疾：一日看尽虚拟化（上）: https://mp.weixin.qq.com/s/CWqUagksabj4kDFQhTlgUA
   - 应该将这个作者的其他内容也好好找一找。
+  - 有点没有看懂，很烦啊！
+
+<p align="center">
+  <img src="./img/arm-kvm.png" alt="drawing" align="center"/>
+</p>
+<p align="center">
+from https://lia.disi.unibo.it/Courses/som1516/materiale/VOSYS_BolognaKVMARM_2_12_2015.pdf
+</p>
+
+## 很难的哇
+- https://systems.cs.columbia.edu/projects/kvm-arm/
 
 ## 资源
-
 - [ ] https://www.usenix.org/system/files/conference/atc17/atc17-dall.pdf
 - [ ] https://calinyara.github.io/technology/2019/11/03/armv8-virtualization.html
 - [ ] https://openeuler.org/zh/blog/yorifang/2020-10-24-arm-virtualization-overview.html
@@ -28,3 +38,11 @@
 整个 kvm 只有 17000 行，其中 kvm/vgic 下有 7000 行
 
 - [ ] 分析的相当不错，但是只能理解其中部分内容
+
+## 简单跟踪一下其中的源码
+
+- guest.c regmap.c sys_regs.c 中都是在处理 system reg 的获取
+
+- `kvm_arch_vcpu_ioctl`
+  - `kvm_arm_num_regs`
+- 检查一下 `sys_reg_descs` 的内容:

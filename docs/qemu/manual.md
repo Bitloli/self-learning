@@ -15,6 +15,11 @@ cd 32bit || exit 1
 make -j
 ```
 
+编译运行在 ARM 上的 QEMU:
+```sh
+../configure --target-list=aarch64-softmmu --disable-werror
+```
+
 ## 基本使用方法
 **各种脚本都是在这里: https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/**
 - config.json 中保存配置，设置内核和 QEMU 路径，以及各种镜像保存的位置

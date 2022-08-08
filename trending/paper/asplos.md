@@ -28,3 +28,8 @@ TMP : 只是看到了 sessions 1B 的位置
 
 # 2020
 - [Occlum: Secure and Efficient Multitasking Inside a Single Enclave of Intel SGX](https://github.com/occlum/occlum) : 基于 SGX 开发操作系统运行在 untrusted 的 os 上.
+
+# 2014
+
+## KVM/ARM: The Design and Implementation of the Linux ARM Hypervisor
+- pdf: http://www.cs.columbia.edu/~nieh/pubs/asplos2014_kvmarm.pdf

@@ -429,6 +429,9 @@ nixos 默认是打开防火墙的：
 - SLB : Server Load Balancing ： https://answers.uillinois.edu/illinois/page.php?id=49949
     - 可以基于OpenResty构建
 
+## [ ] tunneling 是个什么东西，如何实现的
+https://github.com/anderspitman/awesome-tunneling
+
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/
 [^6]: [An Introduction to Computer Networks](http://intronetworks.cs.luc.edu/current2/html/)

@@ -7,8 +7,6 @@ Guest virtual machines without accurate time keeping may experience issues with 
 KVM avoids these issues by providing guest virtual machines with a paravirtualized clock (kvm-clock).
 However, it is still important to test timing before attempting activities that may be affected by time keeping inaccuracies, such as guest *migration*.
 
-- [ ] how migration affect kvm-clock ?
-
 By default, the guest synchronizes its time with the hypervisor as follows:
 - When the guest system boots, the guest reads the time from the emulated Real Time Clock (RTC).
 - When the NTP protocol is initiated, it automatically synchronizes the guest clock. Afterwards, during normal guest operation, NTP performs clock adjustments in the guest.
@@ -19,7 +17,7 @@ By default, the guest synchronizes its time with the hypervisor as follows:
   - [ ] NTP synchronize guest clock
   - [ ] resumed / pause : qemu synchronize guest clock
 
-Modern Intel and AMD CPUs provide a constant Time Stamp Counter (TSC). The count frequency of the constant TSC does **not vary** when the CPU core itself changes frequency, for example to comply with a power-saving policy. 
+Modern Intel and AMD CPUs provide a constant Time Stamp Counter (TSC). The count frequency of the constant TSC does **not vary** when the CPU core itself changes frequency, for example to comply with a power-saving policy.
 A CPU with a **constant TSC frequency** is necessary in order to use the TSC as a clock source for KVM guests.
 
 - [ ] What we get in the kvmtool, kind of dispointed.
@@ -38,3 +36,17 @@ refined-jiffies jiffies
 
 ## x86/kvm/i8254.c
 hrtimer --expired--> pit_timer_fn ----queue kthread---> pit_do_work ---call--> kvm_set_irq
+
+## 难道使用 vdso 的时候，那些内容是重复的？
+
+感觉 vdso 使用的 rdtsc 的，而 non vdso 使用的 kvmclock 的。
+
+## https://github.com/WCharacter/RDTSC-KVM-Handler
+
+See “Changes to Instruction Behavior in VMX Non-Root Operation” in Chapter 25 of the Intel® 64 and IA-32 Architectures Software Developer’s Manual, Volume 3C, for more information about the behavior of this instruction in VMX non-root operation.
+
+## https://www.redhat.com/en/blog/avoiding-clock-drift-vms
+
+## https://www.kernel.org/doc/Documentation/virtual/kvm/timekeeping.txt
+
+## https://www.google.com.hk/search?q=kvm+clock+vs+tsc&newwindow=1&sxsrf=ALiCzsZSUeVrlv1hASUowmU4_9Mw0b6Ztw%3A1659617897923&ei=acLrYrKKOP7RkPIPxaaz2A8&oq=kvmclock+vs&gs_lcp=Cgdnd3Mtd2l6EAMYADIECAAQDTIFCAAQhgMyBQgAEIYDOgcIABBHELADOgYIABAeEA06CAgAEB4QDRAKOggIABAeEAgQDToKCAAQHhAPEBYQCkoECEEYAEoECEYYAFDhBFiaB2CGFGgBcAF4AIABsQKIAfwGkgEFMi0xLjKYAQCgAQHIAQjAAQE&sclient=gws-wiz

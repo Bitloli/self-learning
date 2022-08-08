@@ -6,8 +6,8 @@ https://support.getjoan.com/hc/en-us/articles/360008889859-How-to-change-the-Doc
 
 [lazydocker](https://github.com/jesseduffield/lazydocker)
 - https://nystudio107.com/blog/dock-life-using-docker-for-all-the-things
-  - finally, we found the command to run my commands in docker
-  - ![](https://nystudio107-ems2qegf7x6qiqq.netdna-ssl.com/img/blog/_1200x409_crop_center-center_100_line/anatomy-of-a-docker-alias.png.webp)
+
+![](https://nystudio107-ems2qegf7x6qiqq.netdna-ssl.com/img/blog/_1200x409_crop_center-center_100_line/anatomy-of-a-docker-alias.png.webp)
 
 ## TODO
 https://fuckcloudnative.io/posts/docker-images-part1-reducing-image-size/
@@ -34,18 +34,11 @@ docker 代理
 https://github.com/jesseduffield/lazydocker : 非常有意思，可以对于所有 docker 的监控
 
 
-
-## Get Off Stupid apt
-
-docker pull archlinux
-
-docker run -it archlinux
-
-docker start container_id -i
-
-docker exec -it container_id zsh
-
-docker attach : same input and out
+- docker pull archlinux
+- docker run -it archlinux
+- docker start container_id -i
+- docker exec -it container_id zsh
+- docker attach : same input and out
 
 https://stackoverflow.com/questions/19585028/i-lose-my-data-when-the-container-exits
 

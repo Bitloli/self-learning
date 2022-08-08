@@ -1,23 +1,5 @@
 # Intel
 
-<!-- vim-markdown-toc GitLab -->
-
-* [Volume 1 : Basic Architecture](#volume-1-basic-architecture)
-* [Volume 2 : Instruction Set Reference](#volume-2-instruction-set-reference)
-* [Volume 3 : System Programming Guide](#volume-3-system-programming-guide)
-  * [10 ADVANCED PROGRAMMABLE INTERRUPT CONTROLLER (APIC)](#10-advanced-programmable-interrupt-controller-apic)
-    * [10.12 EXTENDED XAPIC (X2APIC)](#1012-extended-xapic-x2apic)
-      * [25.1.2 Instructions That Cause VM Exits Unconditionally](#2512-instructions-that-cause-vm-exits-unconditionally)
-  * [29 APIC VIRTUALIZATION AND VIRTUAL INTERRUPTS](#29-apic-virtualization-and-virtual-interrupts)
-    * [29.1 VIRTUAL APIC STATE](#291-virtual-apic-state)
-      * [29.1.1 Virtualized APIC Registers](#2911-virtualized-apic-registers)
-    * [29.2 EVALUATION AND DELIVERY OF VIRTUAL INTERRUPTS](#292-evaluation-and-delivery-of-virtual-interrupts)
-    * [29.2.2 Virtual-Interrupt Delivery](#2922-virtual-interrupt-delivery)
-    * [29.6 POSTED-INTERRUPT PROCESSING](#296-posted-interrupt-processing)
-  * [CHAPTER 34 SYSTEM MANAGEMENT MODE](#chapter-34-system-management-mode)
-* [questions](#questions)
-
-<!-- vim-markdown-toc -->
 # Volume 1 : Basic Architecture
 
 # Volume 2 : Instruction Set Reference
@@ -43,12 +25,19 @@ Local APICs can receive interrupts from the following sources: 1. ...
 
 ### 10.12 EXTENDED XAPIC (X2APIC)
 
+## VMX NON-ROOT OPERATION
+分析了导致 vmexit 的指令和其他的原因，有些执行的行为在 non-root 中是存在变化的，最后，25.5 不知道在干什么?
+
 #### 25.1.2 Instructions That Cause VM Exits Unconditionally
 - The following instructions cause VM exits when they are executed in VMX non-root operation: CPUID, GETSEC, INVD, and XSETBV.
 - This is also true of instructions introduced with VMX, which include: INVEPT, INVVPID, VMCALL, VMCLEAR, VMLAUNCH, VMPTRLD, VMPTRST, VMRESUME, VMXOFF, and VMXON.
 
 - [ ] invd : invalid cache, but why invalid tlb isn't unconditionally
 
+#### 25.1.3 Instructions That Cause VM Exits Conditionally
+- RDTSC. The RDTSC instruction causes a VM exit if the “RDTSC exiting” VM-execution control is 1.
+
+非常神奇，RDTSC 是否导致 vmexit 是可选的。
 
 ## 29 APIC VIRTUALIZATION AND VIRTUAL INTERRUPTS
 When these controls are used, the processor will emulate many accesses to the APIC, track the state of the virtual
@@ -146,8 +135,3 @@ The main benefit of SMM is that it offers a distinct and easily isolated process
 
 The execution environment after entering SMM is in real address mode with paging disabled (CR0.PE = CR0.PG = 0). In this initial execution environment, the SMI handler
 can address up to 4 GBytes of memory and can execute all I/O and system instructions.
-
-
-# questions
-flat and cluster
-> huxueshi : my comments for the question, please provide enough background about the question, make it clear for latter reference.

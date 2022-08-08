@@ -12,4 +12,11 @@ RUN yum install -y bc
 RUN yum makecache
 RUN sed -i 's/enabled=0/enabled=1/' /etc/yum.repos.d/CentOS-Linux-PowerTools.repo
 RUN yum install -y dwarves
-WORKDIR /data
+# RUN yum install -y kconfig-conf
+RUN yum -y install sudo
+RUN yum -y install rsync
+RUN useradd -m docker
+RUN echo "docker:docker" | chpasswd
+RUN usermod -aG wheel docker
+USER docker
+WORKDIR /home/docker

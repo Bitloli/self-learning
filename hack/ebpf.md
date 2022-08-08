@@ -1,5 +1,7 @@
 # eBPF
 
+似乎 eBPF 可以让 package 的 filter 提前。
+
 ## links
 
 - [ ] [Dive into BPF: a list of reading material](https://qmonnet.github.io/whirl-offload/2016/09/01/dive-into-bpf/) : may be read all articles of the author
@@ -230,6 +232,10 @@ python : 各种 attach 函数， 分析 map 以及输出
 
 ## paper
 - https://www.usenix.org/conference/nsdi21/presentation/ghigoff : 使用 eBPF 加速 memcahced ，无需修改内核。
+
+## xdp
+- https://www.tigera.io/learn/guides/ebpf/ebpf-xdp/
+- https://docs.cilium.io/en/latest/bpf/
 
 ## todo
 - [ ] https://github.com/dippynark/bpf-sockmap

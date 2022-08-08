@@ -345,3 +345,18 @@ https://ohshitgit.com/ : 常见的 git 出现问题的修复的, 学到的两点
 ## git 常用操作
 - 将一个远程仓库清空为一个 commit
   - https://gist.github.com/stephenhardy/5470814
+
+- git log --first-parent 可以实现类似 sublime merge 的操作，可以用于处理
+  - [ ] 如何让 tig 的 log 实现类似的操作？
+
+- git .. 和 ... 不同
+  - https://stackoverflow.com/questions/462974/what-are-the-differences-between-double-dot-and-triple-dot-in-git-com
+
+- 如何查看到
+  - https://stackoverflow.com/questions/6191138/how-to-see-commits-that-were-merged-in-to-a-merge-commit
+
+- 如何将远程的 tag 同步到本地
+  - https://stackoverflow.com/questions/1841341/remove-local-git-tags-that-are-no-longer-on-the-remote-repository
+
+- 如何删除远程的 tag
+  - git push --delete origin tagname
