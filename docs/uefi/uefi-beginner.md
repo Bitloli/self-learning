@@ -52,8 +52,7 @@ Assuming you are new to UEFI, the following introduction explains a few of the k
 **没有虚拟进程地址空间**
 
 在用户态的程序在 gdb 中 backtrace[^1] 的时候，backtrace 最远的位置就是程序开始的位置 `_start`
-```c
-/*
+```txt
 #1  0x000000000040113b in main (argc=1, argv=0x7fffffffd638) at a.c:4
 #2  0x00007ffff7db40b3 in __libc_start_main (main=0x401120 <main>, argc=1, argv=0x7fffffffd638, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>,
 stack_end=0x7fffffffd628) at ../csu/libc-start.c:308
@@ -62,9 +61,8 @@ stack_end=0x7fffffffd628) at ../csu/libc-start.c:308
 
 但是在 edk2 中 backtrace 可以看到 Dxe 的整个执行流程，从下面的 backtrace 中可以清晰的看到从 Boot Manager 加载 Shell，然后 Shell 去加载 Main.efi 的过程，
 他们使用的 stack 在同一个地址空间中。
-```c
-/*
--  #0  malloc (Size=Size@entry=7900) at /home/maritns3/core/ld/edk2-workstation/edk2/StdLib/LibC/StdLib/Malloc.c:85
+```txt
+-   #0  malloc (Size=Size@entry=7900) at /home/maritns3/core/ld/edk2-workstation/edk2/StdLib/LibC/StdLib/Malloc.c:85
 -   #1  0x000000007e5cc40c in tzsetwall () at /home/maritns3/core/ld/edk2-workstation/edk2/StdLib/LibC/Time/ZoneProc.c:778
 -   #2  tzset () at /home/maritns3/core/ld/edk2-workstation/edk2/StdLib/LibC/Time/ZoneProc.c:796
 -   #3  0x000000007e5cccc1 in mktime (timeptr=0x7e63bba4) at /home/maritns3/core/ld/edk2-workstation/edk2/StdLib/LibC/Time/Time.c:520
@@ -390,8 +388,7 @@ Timer event 的触发方式就是时钟中断。
 
 ### Wait Event
 在 UEFI 持续运行，然后在 gdb 中 Ctrl+C 然后 backtrace 可以得到下面的记录:
-```c
-/*
+```txt
 #0  0x000000007f16f841 in CpuSleep ()
 #1  0x000000007feac77d in CoreDispatchEventNotifies (Priority=16) at /home/maritns3/core/ld/edk2-workstation/edk2/MdeModulePkg/Core/Dxe/Event/Event.c:194
 #2  CoreRestoreTpl (NewTpl=4) at /home/maritns3/core/ld/edk2-workstation/edk2/MdeModulePkg/Core/Dxe/Event/Tpl.c:131
@@ -536,8 +533,7 @@ Os loader 和普通的 Application 没有什么区别，只是调用了一下 Ex
 - ZeroMem (gBS, sizeof (EFI_BOOT_SERVICES)); : EFI_BOOT_SERVICES 被清空之后，各种服务都将无法使用
 
 对于 gEfiEventExitBootServicesGuid 搜索，发现 edk2 使用 Signal 机制主要都是用于实现设备的 reset 的。
-```c
-/*
+```txt
 ArmPkg/Drivers/MmCommunicationDxe/MmCommunication.c:259:  &gEfiEventExitBootServicesGuid,
 OvmfPkg/Csm/BiosThunk/VideoDxe/BiosVideo.c:601:                    &gEfiEventExitBootServicesGuid,
 NetworkPkg/SnpDxe/Snp.c:660:                    &gEfiEventExitBootServicesGuid,
@@ -571,8 +567,7 @@ SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.c:2765:                    &gEfiEventExitBootSer
 处理时钟中断的代码主要分布在 ./UefiCpuPkg/Library/CpuExceptionHandlerLib/X64/ExceptionHandlerAsm.nasm 中
 
 在 CoreCheckTimers 中间打一个断点，得到下面的 backtrace，这就是时钟中断的基本处理过程。
-```c
-/*
+```txt
 #0  CoreCheckTimers (CheckEvent=0x7f8edc18, Context=0x0) at /home/maritns3/core/ld/edk2-workstation/edk2/MdeModulePkg/Core/Dxe/Event/Timer.c:98
 #1  0x000000007feac77d in CoreDispatchEventNotifies (Priority=30) at /home/maritns3/core/ld/edk2-workstation/edk2/MdeModulePkg/Core/Dxe/Event/Event.c:194
 #2  CoreRestoreTpl (NewTpl=16) at /home/maritns3/core/ld/edk2-workstation/edk2/MdeModulePkg/Core/Dxe/Event/Tpl.c:131

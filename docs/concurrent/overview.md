@@ -14,3 +14,7 @@ https://www.kernel.org/doc/htmldocs/kernel-locking/index.html
 ## 收集的资源
 - https://www.1024cores.net/
   - 其中有分析过 wait free 和 lock free 的内容
+
+## 硬件支持上也可以分析一下
+- [CPU 多核指令 —— WFE 原理](http://www.wowotech.net/armv8a_arch/499.html)
+  - http://www.wowotech.net/sort/armv8a_arch : 其实 wowotech 关于 ARM 的 atomic 分析了不少内容

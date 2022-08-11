@@ -17,6 +17,10 @@ from LoyenWang
 
 https://github.com/torvalds/linux/blob/70664fc10c0d722ec79d746d8ac1db8546c94114/include/linux/preempt.h#L14-L30
 
+## Questions
+- arch/arm64/arm.c:kvm_arch_vcpu_ioctl_run 中，有一个 handle_exit_early 必须在打开 preemption 之前执行的代码
+  - 我是一直没有理解什么样的代码不能被 preemption 的。
+
 ## [ ] preemption 和 softirq 都是可以嵌套的，但是 hwirq 不可以
 
 从这个回答，中断是可以的嵌套的，但是我认为这个操作是错误的:

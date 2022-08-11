@@ -1,5 +1,10 @@
 # Compiler for linux kernel
 
+
+## gcc plugins
+- https://lwn.net/Articles/691102/
+- https://www.kernel.org/doc/html/v5.10/kbuild/gcc-plugins.html
+
 ## latent_entropy
 - [ ] although I know how it works, but I can't run a demo
    - https://lwn.net/Articles/688492/

@@ -1,6 +1,9 @@
 ## bisect
 
+- https://gitee.com/all-about-git : 有趣的总结
 - https://stackoverflow.com/questions/4713088/how-to-use-git-bisect
+
+- https://mailweb.openeuler.org/hyperkitty/list/kernel@openeuler.org/thread/3CPAMRVNTNOT2TQ4W5S7HNY2HXPBBO4G/
 
 ## TODO
 - http://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html

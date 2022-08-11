@@ -9,7 +9,7 @@
 - 使用的分支 2.70.2
 
 最后简化之后统计结果如下:
-```c
+```txt
       14 text files.
       14 unique files.
        0 files ignored.
