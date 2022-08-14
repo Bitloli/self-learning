@@ -1,3 +1,5 @@
+## 问题
+- everything is file 和 socket 接口的差别是什么，为什么如果是 socket 最好是使用 socket 的
 ## todo
 - [ ] openwrt 到底是什么?
   - 教别人编译的 : https://github.com/coolsnowwolf/lede
@@ -431,6 +433,9 @@ nixos 默认是打开防火墙的：
 
 ## [ ] tunneling 是个什么东西，如何实现的
 https://github.com/anderspitman/awesome-tunneling
+
+
+- https://news.ycombinator.com/item?id=32225532
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

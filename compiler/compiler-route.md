@@ -113,10 +113,12 @@ https://news.ycombinator.com/item?id=24170201 : 感觉完成度还可以的 浏�
 
 ## jvm
 
-## GC
+## gc
 - https://draveness.me/system-design-memory-management/
   - 最后一部分关于 gc，应该是比较简明的了
 - https://tip.golang.org/doc/gc-guide : go 语言 GC 介绍
+- [A simple garbage collector for C](https://news.ycombinator.com/item?id=21841368)
+
 
 ## deep learning
 - https://tvm.apache.org/2021/12/15/tvm-unity
@@ -137,6 +139,9 @@ https://news.ycombinator.com/item?id=24170201 : 感觉完成度还可以的 浏�
 
 ## lexer
 - https://github.com/Geal/nom : Rust
+
+## js runtime
+- https://github.com/oven-sh/bun
 
 ## 被 review 过的资源
 - [HOW TO LEARN COMPILERS: LLVM EDITION](https://lowlevelbits.org/how-to-learn-compilers-llvm-edition/) : 好吧，似乎其实 llvm 没有什么资源

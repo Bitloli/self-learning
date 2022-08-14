@@ -81,7 +81,6 @@ ldd：List dynamic dependencies
 .a（扩展名a）：Archive，static library
 .so（扩展名so）：Shared object，dynamically linked library
 .o（扩展名o）：Object file，complied result of C/C++ source file
-RPM：Red hat package manager
 dpkg: Debian package manager
 apt：Advanced package tool（Debian或基于Debian的发行版中提供）
 
@@ -196,7 +195,6 @@ rev = reverse
 rm = remove
 rn = read news
 roff = runoff
-rpm = rpm package manager = redhat package manager
 rsh, rlogin, rvim中的r = remote
 rxvt = our xvt
 sed = stream editor

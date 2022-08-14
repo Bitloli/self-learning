@@ -32,6 +32,7 @@
   * [常用命令行工具的替代](#常用命令行工具的替代)
   * [一些小技巧](#一些小技巧)
   * [shell 中移动](#shell-中移动)
+  * [一些库](#一些库)
   * [reference](#reference)
 
 <!-- vim-markdown-toc -->
@@ -356,6 +357,10 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 
 ## shell 中移动
 - http://blog.jcix.top/2021-10-05/shell-shortcuts/
+
+## 一些库
+- [gum](https://github.com/charmbracelet/gum)
+
 
 ## reference
 [^1]: https://github.com/agarrharr/awesome-cli-apps

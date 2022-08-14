@@ -18,3 +18,12 @@ https://www.kernel.org/doc/htmldocs/kernel-locking/index.html
 ## 硬件支持上也可以分析一下
 - [CPU 多核指令 —— WFE 原理](http://www.wowotech.net/armv8a_arch/499.html)
   - http://www.wowotech.net/sort/armv8a_arch : 其实 wowotech 关于 ARM 的 atomic 分析了不少内容
+
+- https://news.ycombinator.com/item?id=20096946
+  - The design and implementation of a lock-free ring-buffer with contiguous reservations
+  - 好像 dpdk 中也是提到过这个事情的
+
+- umwait 指令: https://lwn.net/Articles/790920/
+
+- 也许，我们应该增加一个项目，叫做不同的语言是如何设计锁的:
+  - https://course.rs/advance/concurrency-with-threads/thread.html

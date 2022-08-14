@@ -41,7 +41,9 @@ perf report 的比例明显不对啊
 - perf list kvm
 - perf diff perf-1.data perf-2.data ： 按照 diff 差距来分析
 
-更多的参考: https://www.brendangregg.com/perf.html
+更多的参考:
+- https://www.brendangregg.com/perf.html
+- https://jvns.ca/perf-zine.pdf
 
 ### Questions
 - [ ] 为什么有时候需要 mount debugfs
@@ -243,6 +245,7 @@ dpdk 测试工具
 
 ## rusage
 - time 的源码: https://savannah.gnu.org/git/?group=time
+  - [ ] nixos 上不知道为什么，我不能正确的编译
 - 原来是有个系统调用的: https://man7.org/linux/man-pages/man2/getrusage.2.html
 - fs/proc/stat.c 中的信息才是 top 如何统计的
 - 通过 `vtime_guest_enter` 去理解为什么 qemu 在运行起来的时候，发现 user 是占据大多数的，因为统计将 non-root 中的运行统计到 user 中了。

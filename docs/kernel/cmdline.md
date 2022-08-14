@@ -2,6 +2,8 @@
 
 官方文档: https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
 
+
+- https://askubuntu.com/questions/716957/what-do-the-nomodeset-quiet-and-splash-kernel-parameters-mean
 - [ ] http://happyseeker.github.io/kernel/2018/05/31/about-spectre_v2-boot-parameters.html
 - [ ] quiet
 - [ ] idle=poll

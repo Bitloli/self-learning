@@ -4,3 +4,6 @@
 
 - [ ] https://brennan.io/2021/05/05/kernel-mailing-lists-thunderbird-nntp/
 - [ ] 理解一下为什么 kernel 的分支关系
+
+## 参与社区
+- http://vger.kernel.org/lkml/

@@ -12,6 +12,15 @@
 - pillar
 - elucidate
 - scrub
+- incorporate
+- conjecture
+- waterproof
+- graft
+- espionage
+- insidious
+- preen
+- promiscuous
+- de facto
 
 
 ## 超过的
