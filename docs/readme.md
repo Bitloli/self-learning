@@ -65,6 +65,10 @@
 #### BOOM 源码阅读: 从静态 5 级 MIPS 流水线到乱序多发射 RISC-V CPU
 <!-- - [准备工作]() -->
 
+- [如何设计一个成功的指令集架构](./cpu/arch-design.md)
+<!-- - 如何设计一个 Hypervisor，通过对比 HyperV, Xen 和 ESXi -->
+<!-- - 如何设计一个虚拟化指令 -->
+
 ## Compiler
 
 ### Lua 解释器源码分析
@@ -109,7 +113,7 @@
 
 ## Loongson
 - [X86 上阅读 Loongarch 内核](./loongarch/ccls.md)
-- [Replace My x86 Laptop With 3A5000](./loongarch/neovim.md)
+- [使用 3A5000 作为我的主力机](./loongarch/neovim.md)
 
 ## Multiprocessor Programming
 - [Quiescent consistency，Sequential consistency 和 Linearizability](./concurrent/linearizability.md)

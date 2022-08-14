@@ -1,3 +1,6 @@
+## 设计文档
+- https://assets.amazon.science/96/c6/302e527240a3b1f86c86c3e8fc3d/firecracker-lightweight-virtualization-for-serverless-applications.pdf
+
 ## make it run
 I think what we should do when coming back
 - [ ] vmm

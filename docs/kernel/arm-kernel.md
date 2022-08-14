@@ -3,8 +3,9 @@ Take advantage of raspberry, qemu and [visual](https://salmanarif.bitbucket.io/v
 https://people.kernel.org/linusw/how-the-arm32-kernel-starts : 启动
 
 在 x86 上使用 acpi, 在 arm 上使用 dtb 来描述设备的逻辑关系[^2]
+##
 
-## GIC-v2 
+## GIC-v2
 - [ ] [^1]P86 启动一个 arm 操作系统看看
 
 ```c
@@ -111,11 +112,11 @@ fwnode 只是一个通用的部分，而 device_node 则是 dtb 的具体的实�
       - irq_domain_alloc_irqs :
         - `__irq_domain_alloc_irqs`
             - irq_domain_alloc_irqs_hierarchy
-              - gic_irq_domain_alloc : 调用 gic 的回调函数 
+              - gic_irq_domain_alloc : 调用 gic 的回调函数
                 - gic_irq_domain_map
       - irq_create_mapping : 如果所在的 domain 不在 IRQ_DOMAIN_FLAG_HIERARCHY
 
 > - [ ] 从这里分析，可以理解其中的 irq 的映射过程，但是，无法理解层级的概念，或者，多个中断控制器是如何工作的 ?
 
-[^1]: 奔跑吧 linux 内核 第二版 卷2
+[^1]: 奔跑吧 linux 内核 第二版 卷 2
 [^2]: https://stackoverflow.com/questions/58577825/what-does-fwnode-in-struct-device-do-in-linux-kernel

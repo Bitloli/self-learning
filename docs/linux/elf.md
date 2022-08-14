@@ -42,3 +42,6 @@ file 帮助我解决了 在 x86 上交叉编译内核，让后 sync 到 3a4000 �
 https://tinylab-1.gitbook.io/cbook/02-chapter4
 
 ## 辅助向量
+
+## 工具
+- https://github.com/horsicq/XELFViewer

@@ -1,4 +1,4 @@
-# Replace My x86 Laptop With 3A5000
+# 使用 3A5000 作为我的主力机
 
 <!-- vim-markdown-toc GitLab -->
 
@@ -15,8 +15,8 @@
 * [Browser](#browser)
 * [Scientific Network Access](#scientific-network-access)
 * [lazygit](#lazygit)
-* [No more works in 3A5000](#no-more-works-in-3a5000)
-* [Works perfectly in 3A5000 without extra efforts](#works-perfectly-in-3a5000-without-extra-efforts)
+* [无法正确工作的代码](#无法正确工作的代码)
+* [无需额外努力，完美工作的程序](#无需额外努力完美工作的程序)
 
 <!-- vim-markdown-toc -->
 龙芯的 3A5000 的一周我自己的使用体验总结：基本可以替代我的 x86 电脑。
@@ -166,7 +166,7 @@ I don't try to port them. use another x86 to setup the network proxy and share i
 [lazygit](https://github.com/jesseduffield/lazygit) is not available because of outdated golang toolchain.
 so use [tig](https://jonas.github.io/tig/doc/tig.1.html) as a substitute.
 
-## No more works in 3A5000
+## 无法正确工作的代码
 
 | What                      | Why                                                                                    |
 |---------------------------|----------------------------------------------------------------------------------------|
@@ -177,7 +177,8 @@ so use [tig](https://jonas.github.io/tig/doc/tig.1.html) as a substitute.
 | coc-ci                    | don't know why, no time to investigate                                                 |
 
 The fan is always buzzing. I have to wear the WH-1000XM3
-## Works perfectly in 3A5000 without extra efforts
+
+## 无需额外努力，完美工作的程序
 - flameshot
 - ag
 
