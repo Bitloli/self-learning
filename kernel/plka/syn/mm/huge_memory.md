@@ -71,8 +71,8 @@ unsigned long transparent_hugepage_flags __read_mostly =
 ## zero page
 By default kernel tries to use huge zero page on read page fault to anonymous mapping. It’s possible to disable huge zero page by writing 0 or enable it back by writing 1:
 
-Contrary to the zero page's original preferential use, 
-some modern operating systems such as FreeBSD, Linux and Microsoft Windows[2] actually make the zero page inaccessible to trap uses of null pointers. 
+Contrary to the zero page's original preferential use,
+some modern operating systems such as FreeBSD, Linux and Microsoft Windows[2] actually make the zero page inaccessible to trap uses of null pointers.
 
 ## pmd && pud 的含义
 1. 如果 vma 是可以写的，那么 pmd 就是设置为可写的
@@ -120,7 +120,7 @@ void prep_transhuge_page(struct page *page)
 }
 ```
 
-## do_huge_pmd_anonymous_page 
+## do_huge_pmd_anonymous_page
 ```c
 /*
  * By the time we get here, we already hold the mm semaphore
@@ -131,16 +131,16 @@ void prep_transhuge_page(struct page *page)
 static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
 		unsigned long address, unsigned int flags)
     // pud_none : 只有说 pud 为 none
-    // 1. 那么 cow 机制怎么处理 TODO 
-    // 2. 应该不会处理 swap 机制吧 TODO 
+    // 1. 那么 cow 机制怎么处理 TODO
+    // 2. 应该不会处理 swap 机制吧 TODO
 	if (pud_none(*vmf.pud) && __transparent_hugepage_enabled(vma)) {  // __transparent_hugepage_enabled 中间会检查其中的各种 enable 机制
 
 static inline vm_fault_t create_huge_pmd(struct vm_fault *vmf)
 {
-	if (vma_is_anonymous(vmf->vma)) //  只有是 anonymous 或者 
+	if (vma_is_anonymous(vmf->vma)) //  只有是 anonymous 或者
 		return do_huge_pmd_anonymous_page(vmf); //
 	if (vmf->vma->vm_ops->huge_fault)
-		return vmf->vma->vm_ops->huge_fault(vmf, PE_SIZE_PMD); // shared 
+		return vmf->vma->vm_ops->huge_fault(vmf, PE_SIZE_PMD); // shared
 	return VM_FAULT_FALLBACK;
 }
 
@@ -187,11 +187,11 @@ static inline vm_fault_t wp_huge_pmd(struct vm_fault *vmf, pmd_t orig_pmd)
 ```
 
 ## core function : do_huge_pmd_anonymous_page
-1. 检查是否 vma 中间是否可以容纳 hugepage 
+1. 检查是否 vma 中间是否可以容纳 hugepage
 2. 假如可以使用 zero page 机制
 3. 利用 alloc_hugepage_direct_gfpmask 计算出来 buddy allocator
 4. prep_transhuge_page @todo 不知道干嘛的
-5. `__do_huge_pmd_anonymous_page` : 将分配的 page 和 page table 组装 
+5. `__do_huge_pmd_anonymous_page` : 将分配的 page 和 page table 组装
 
 ```c
 vm_fault_t do_huge_pmd_anonymous_page(struct vm_fault *vmf)
@@ -199,7 +199,7 @@ vm_fault_t do_huge_pmd_anonymous_page(struct vm_fault *vmf)
 
 #define alloc_hugepage_vma(gfp_mask, vma, addr, order) \
 	alloc_pages_vma(gfp_mask, order, vma, addr, numa_node_id(), true)
-   
+
 void prep_transhuge_page(struct page *page)
 {
 	/*
@@ -261,7 +261,3 @@ bool transparent_hugepage_enabled(struct vm_area_struct *vma)
 	return false;
 }
 ```
-
-
-
-

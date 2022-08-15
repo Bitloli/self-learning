@@ -36,8 +36,28 @@
 - perf
 - vdso
 - memory model
+- memory management
+  - page table
+  - ioremap
+  - hugetlb
 - ACPI
 - 锁
+- trace
+  - krpoeb / uprobe
+  - pmc
+- kdump
+- mmio
+- kgdb
+- context switch
+  - `__switch_to`
+- fork
+  - `arch_dup_task_struct`
+  - `copy_thread`
+  - `ret_from_fork`
+- boot
+  - `setup_arch`
+- signal
+- 各种使用汇编写的库
 
 ### Firmware
 - 主要是 edk2 的移植

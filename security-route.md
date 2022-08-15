@@ -16,6 +16,7 @@
 - [漏洞利用的基本小技巧](https://github.com/Naetw/CTF-pwn-tips)
 - https://cybercoastal.com/cybersecurity-brief-guide-for-beginners-phishing-attacks/ : 网络钓鱼之类的原理
 - [Hack Night is an open weekly training session run by the OSIRIS lab.](https://github.com/osirislab/Hack-Night)
+- [写给开发人员的实用密码学（七）—— 非对称密钥加密算法 RSA/ECC](https://thiscute.world/posts/practical-cryptography-basics-7-asymmetric-key-ciphers/)
 
 ## 案例
 - https://www.openwall.com/lists/oss-security/2021/07/20/1 :

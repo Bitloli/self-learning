@@ -1066,7 +1066,6 @@ In addition, this package also provides a programming API and manual pages. The 
        int hugetlbfs_unlinked_fd_for_size(long page_size);
        // hugetlbfs_unlinked_fd, hugetlbfs_unlinked_fd_for_size - Obtain a file descriptor for a new unlinked file in hugetlbfs
 ```
-> 实在是不知道 hugetlbfs 的作用是什么 ?
 
 
 One important common point between them all is how huge pages are faulted and when the huge pages are allocated.
