@@ -30,21 +30,24 @@
 ### 运行 efi
 参考 [osdev](https://wiki.osdev.org/UEFI#Linux.2C_root_not_required) 上，我构建出来了一个小脚本
 [uefi.sh](https://github.com/Martins3/Martins3.github.io/tree/master/docs/uefi/uefi/uefi.sh)，其参数为将要测试的 efi.
-然后在 QEMU 的图形界面中，可以看到 UEFI shell, 在其中输入 FS0:，最后执行程序。
+然后在 QEMU 的图形界面中，可以看到 UEFI shell, 在其中输入 `FS0:`，最后执行程序。
 
 ## 编译 edk2
-参考[官方文档](https://github.com/tianocore/tianocore.github.io/wiki/Using-EDK-II-with-Native-GCC)
+参考 [官方文档](https://github.com/tianocore/tianocore.github.io/wiki/Common-instructions)
 
 ```bash
 git clone https://github.com/tianocore/edk2.git
 cd edk2
+git submodule update --init
 make -C BaseTools
 source edksetup.sh # 几乎所有的教程都是 . edksetup.sh，但是 source edksetup.sh 也可以
 ```
+
 然后修改 Conf/target.txt 中修改
 ```txt
-ACTIVE_PLATFORM       = MdeModulePkg/MdeModulePkg.dsc
-TARGET_ARCH           = X64 # 因为上面的 QEMU
+ACTIVE_PLATFORM       = MdeModulePkg/MdeModulePkg.dsc # 想要编译的内容
+TARGET_ARCH           = X64 # 取决于你要运行的 Guest 机器的架构
+TOOL_CHAIN_TAG        = GCC5
 MAX_CONCURRENT_THREAD_NUMBER = 9 # 这个取决于你的机器 CPU 核心数量
 ```
 
@@ -63,11 +66,26 @@ build
 ```
 ![](./uefi/img/MdeModulePkg_hello_world.png)
 
+类似，如果想要在 x86 电脑上编译安装 ARM 版本的 edk2，其 Conf/target.txt 对应的配置为:
+```txt
+ACTIVE_PLATFORM       = ArmVirtPkg/ArmVirtQemu.dsc
+TARGET_ARCH           = AARCH64
+TOOL_CHAIN_TAG        = GCC5
+MAX_CONCURRENT_THREAD_NUMBER = 50
+```
+
+参考[这篇 blog](https://damn99.com/2021-06-19-edk2-cross-build-for-amd64/)
+
+运行 build 之前，首先执行：
+```sh
+export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
+```
+
 ## 构建基于 edk2 的 HelloWorld
 虽然上面使用 MdeModulePkg 的 HelloWorld，但是 MdeModulePkg 包含的内容过多，现在构建一个更加简单的 HelloWorld
 
 几乎可以参照 https://damn99.com/2020-05-18-edk2-first-app/ 这个来写，但是需要在 .dsc 中添加上
-```c
+```txt
 !include MdePkg/MdeLibs.dsc.inc
 ```
 

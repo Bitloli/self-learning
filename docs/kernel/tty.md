@@ -192,6 +192,10 @@ https://www.quora.com/How-do-I-understand-the-tmux-design-architecture-and-inter
   - 其中分别构建了 mini 的 `tty_operations` 和 `uart_ops` 的实现
 - [The Linux Programming Interface : Chapter 62](https://man7.org/tlpi/)
 
+## 扩展阅读
+- [A toy remote login server](https://jvns.ca/blog/2022/07/28/toy-remote-login-server/)
+- [What happens when you press a key in your terminal?](https://jvns.ca/blog/2022/07/20/pseudoterminals/)
+
 [^1]: 为了让 Hello World 程序更加明显，最好是循环输出多次，例如 100000 。
 
 <script src="https://giscus.app/client.js"

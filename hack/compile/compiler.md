@@ -1,6 +1,5 @@
 # Compiler for linux kernel
 
-
 ## gcc plugins
 - https://lwn.net/Articles/691102/
 - https://www.kernel.org/doc/html/v5.10/kbuild/gcc-plugins.html
@@ -27,44 +26,12 @@ ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make defconfig
 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make
 ```
 
-
 使用 LLVM 编译 x86
 ```
 # Use clang 9 or newer.
 make ARCH=x86_64 LLVM=1 defconfig
 make ARCH=x86_64 LLVM=1 -j10
 ```
-
-在最近的内核版本如果遇到问题，很有可能是
-```diff
-diff --git a/include/linux/compiler-clang.h b/include/linux/compiler-clang.h
-index 230604e7f057..e913000f4b95 100644
---- a/include/linux/compiler-clang.h
-+++ b/include/linux/compiler-clang.h
-@@ -7,7 +7,7 @@
-                     + __clang_minor__ * 100    \
-                     + __clang_patchlevel__)
-
--#if CLANG_VERSION < 100001
-+#if CLANG_VERSION < 100000
- # error Sorry, your version of Clang is too old - please use 10.0.1 or newer.
- #endif
-```
-
-### 对于 Loongnix 的交叉编译:
-1. http://www.loongnix.org/index.php/Cross-compile 下载 gcc-4.9.3 64位
-2. 执行:
-```sh
-CC_PREFIX=~/Downloads/cross-gcc-4.9.3-n64-loongson-rc6.1
-
-export ARCH=mips
-export CROSS_COMPILE=mips64el-loongson-linux-
-export PATH=$CC_PREFIX/usr/bin:$PATH
-export LD_LIBRARY_PATH=$CC_PREFIX/usr/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$CC_PREFIX/usr/x86_64-unknown-linux-gnu/mips64el-loongson-linux/lib/:$LD_LIBRARY_PATH
-```
-3. 并行 make 可能对于 MIPS 出现问题，那么
-https://unix.stackexchange.com/questions/496500/how-to-get-php-7-1-to-use-libreadline-so-8
 
 ### Cross Compile standard MIPS
 Tried, but faile to find the compiler
@@ -123,3 +90,4 @@ sudo ln -f -s clang-tidy-11 clang-tidy
 
 ## static key
 - `sched_dynamic_update`
+- 在函数 page_fixed_fake_head 有 static_branch_unlikely

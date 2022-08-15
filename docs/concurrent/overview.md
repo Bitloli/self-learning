@@ -27,3 +27,4 @@ https://www.kernel.org/doc/htmldocs/kernel-locking/index.html
 
 - 也许，我们应该增加一个项目，叫做不同的语言是如何设计锁的:
   - https://course.rs/advance/concurrency-with-threads/thread.html
+- https://www.kawabangga.com/posts/4777

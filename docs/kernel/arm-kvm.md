@@ -126,6 +126,10 @@ D13.2.37 中
 #define FSC_SECC_TTW3   (0x1f)
 ```
 
+## ARM page table
+- https://developer.arm.com/documentation/101811/0102/Translation-granule
+- page walk 和 pagesize
+
 ## ARM exception
 - http://osnet.cs.nchu.edu.tw/powpoint/Embedded94_1/Chapter%207%20ARM%20Exceptions.pdf
 - LoyenWang 是分析过 ARM 的中断的过程的哇

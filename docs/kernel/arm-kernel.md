@@ -3,7 +3,11 @@ Take advantage of raspberry, qemu and [visual](https://salmanarif.bitbucket.io/v
 https://people.kernel.org/linusw/how-the-arm32-kernel-starts : 启动
 
 在 x86 上使用 acpi, 在 arm 上使用 dtb 来描述设备的逻辑关系[^2]
-##
+
+## 可以大致浏览一下这个: https://www.kernel.org/doc/html/latest/arm64/index.html
+
+### https://www.kernel.org/doc/html/latest/arm64/memory.html
+- 这个 memory 分布中，其 PCI mmio 的大小相比 x86 小几个数量级了
 
 ## GIC-v2
 - [ ] [^1]P86 启动一个 arm 操作系统看看
