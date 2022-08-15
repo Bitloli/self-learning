@@ -323,9 +323,6 @@ int hugetlb_mempolicy_sysctl_handler(struct ctl_table *, int,
 					void __user *, size_t *, loff_t *);
 #endif
 
-void hugetlb_report_meminfo(struct seq_file *);
-int hugetlb_report_node_meminfo(int, char *);
-void hugetlb_show_meminfo(void);
 unsigned long hugetlb_total_pages(void);
 ```
 

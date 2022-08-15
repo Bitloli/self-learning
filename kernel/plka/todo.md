@@ -59,9 +59,6 @@ https://stackoverflow.com/questions/56097946/get-cpu-var-put-cpu-var-not-updatin
 问一个问题: pg_data_t 中间 pg 是什么？ ask the stackoverflow
 
 
-回答这一个问题:
-https://unix.stackexchange.com/questions/297591/swap-cache-of-vmstat-vs-swapcached-of-proc-meminfo
-
 gerrit kernel
 1. 看懂了 ？ x86  初始化 probe 中断 bottom half (fifo & 串口)
 2. 调试方法，分析方法。

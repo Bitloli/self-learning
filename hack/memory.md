@@ -1095,35 +1095,6 @@ Further, there are important differences between shared and private mappings dep
 
 [HugeTLB Pages](https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html) 的阅读结果 ：
 
-- [ ] /proc/meminfo /proc/sys/vm/nr_hugepages /proc/sys/vm/nr_overcommit_hugepages /sys/kernel/mm/hugepages /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/ /sys/kernel/
-/sys/kernel/mm/hugepages/hugepages-1048576kB/nr_hugepages 都是一些什么东西 :
-检查以下这些参数的作用
-  - [ ] /proc/meminfo 的 HugePages_Rsvd 的含义是什么 ? 下面的代码，为什么不会导致 HugePages_Free 减少，而是 HugePages_Rsvd 增加
-```c
-#include <stdio.h>
-#include <stdlib.h> // malloc
-#include <sys/mman.h>
-#include <asm/mman.h>
-#include <sys/types.h>
-#include <unistd.h> // sleep
-
-int main(int argc, char *argv[]) {
-  size_t SIZE_2M = 1 << 21;
-  char *addr = (char *)mmap(0, SIZE_2M, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0);
-  if (addr == MAP_FAILED) {
-    perror("mmap");
-    exit(1);
-  }
-  for (int i = 0; i < SIZE_2M; ++i) {
-    addr[i] = 'a';
-  }
-  sleep(100);
-  return 0;
-}
-```
-
-
-
 > /proc/sys/vm/nr_hugepages indicates the current number of “persistent” huge pages in the kernel’s huge page pool. “Persistent” huge pages will be returned to the huge page pool when freed by a task. A user with root privileges can dynamically allocate more or free some persistent huge pages by increasing or decreasing the value of nr_hugepages.
 >
 > Pages that are used as huge pages are reserved inside the kernel and **cannot** be used for other purposes. Huge pages cannot be swapped out under memory pressure.
