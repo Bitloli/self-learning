@@ -253,11 +253,13 @@ dpdk 测试工具
 ## blktrace
 - https://developer.aliyun.com/article/698568
 
-
 ## [ ] cflow
 - https://graphviz.org/
 - https://graphviz.org/pdf/gvpr.1.pdf
 - https://www.gnu.org/software/cflow/manual/cflow.html : 可以绘制整个图形的
+
+## sudo cat /proc/self/stack
+检查一个进程在内核中的 stack
 
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)

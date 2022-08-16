@@ -158,20 +158,21 @@ SSLRandomSeed connect builtin
 
 ## 安装
 1. 切换用户
-```
+```sh
 sudo su gerrit
 ```
 
 2. 检查Java版本
-```
+```sh
 [gerrit@shen-pc ~]$ java -version
 openjdk version "1.8.0_222"
 OpenJDK Runtime Environment (build 1.8.0_222-b05)
 OpenJDK 64-Bit Server VM (build 25.222-b05, mixed mode)
 ```
 
-#### 使用 development_become_any_account　认真模式
-```
+#### 使用 `development_become_any_account`　认真模式
+
+```txt
 [gerrit@shen-pc ~]$ java -jar ~/gerrit-3.0.1.war init  -d ~/Gerrit
 Using secure store: com.google.gerrit.server.securestore.DefaultSecureStore
 [2019-07-20 22:47:12,441] [main] INFO  com.google.gerrit.server.config.GerritServerConfigProvider : No /home/gerrit/Gerrit/etc/gerrit.config; assuming defaults
@@ -458,3 +459,5 @@ The HTTP server did not provide the username in the Authorization header when it
 If the HTTP server is Apache HTTPd, check the proxy configuration includes an authorization directive with the proper location, ensuring it ends with '/':
 ...
 ```
+## 结论
+不要在 Arch 上搭建 Gerrit，尝试在 Ubuntu 上搭建吧。

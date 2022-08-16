@@ -1,4 +1,7 @@
 - https://unix.stackexchange.com/questions/297591/swap-cache-of-vmstat-vs-swapcached-of-proc-meminfo
+  - 这里面介绍了好几个工具，都仔细看看
+
+- [ ] 将 /proc/sys/vm 中的内容分析一下
 
 - [ ] /proc/meminfo /proc/sys/vm/nr_hugepages /proc/sys/vm/nr_overcommit_hugepages /sys/kernel/mm/hugepages /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/ /sys/kernel/
 /sys/kernel/mm/hugepages/hugepages-1048576kB/nr_hugepages 都是一些什么东西 :
@@ -48,37 +51,37 @@ As with pdflush, per-BDI writeback is controlled through the `writeback_control`
  * in a manner such that unspecified fields are set to zero.
  */
 struct writeback_control {
-	long nr_to_write;		/* Write this many pages, and decrement
-					   this for each page written */
-	long pages_skipped;		/* Pages which were not written */
+    long nr_to_write;       /* Write this many pages, and decrement
+                       this for each page written */
+    long pages_skipped;     /* Pages which were not written */
 
-	/*
-	 * For a_ops->writepages(): if start or end are non-zero then this is
-	 * a hint that the filesystem need only write out the pages inside that
-	 * byterange.  The byte at `end' is included in the writeout request.
-	 */
-	loff_t range_start;
-	loff_t range_end;
+    /*
+     * For a_ops->writepages(): if start or end are non-zero then this is
+     * a hint that the filesystem need only write out the pages inside that
+     * byterange.  The byte at `end' is included in the writeout request.
+     */
+    loff_t range_start;
+    loff_t range_end;
 
-	enum writeback_sync_modes sync_mode;
+    enum writeback_sync_modes sync_mode;
 
-	unsigned for_kupdate:1;		/* A kupdate writeback */
-	unsigned for_background:1;	/* A background writeback */
-	unsigned tagged_writepages:1;	/* tag-and-write to avoid livelock */
-	unsigned for_reclaim:1;		/* Invoked from the page allocator */
-	unsigned range_cyclic:1;	/* range_start is cyclic */
-	unsigned for_sync:1;		/* sync(2) WB_SYNC_ALL writeback */
+    unsigned for_kupdate:1;     /* A kupdate writeback */
+    unsigned for_background:1;  /* A background writeback */
+    unsigned tagged_writepages:1;   /* tag-and-write to avoid livelock */
+    unsigned for_reclaim:1;     /* Invoked from the page allocator */
+    unsigned range_cyclic:1;    /* range_start is cyclic */
+    unsigned for_sync:1;        /* sync(2) WB_SYNC_ALL writeback */
 #ifdef CONFIG_CGROUP_WRITEBACK
-	struct bdi_writeback *wb;	/* wb this writeback is issued under */
-	struct inode *inode;		/* inode being written out */
+    struct bdi_writeback *wb;   /* wb this writeback is issued under */
+    struct inode *inode;        /* inode being written out */
 
-	/* foreign inode detection, see wbc_detach_inode() */
-	int wb_id;			/* current wb id */
-	int wb_lcand_id;		/* last foreign candidate wb id */
-	int wb_tcand_id;		/* this foreign candidate wb id */
-	size_t wb_bytes;		/* bytes written by current wb */
-	size_t wb_lcand_bytes;		/* bytes written by last candidate */
-	size_t wb_tcand_bytes;		/* bytes written by this candidate */
+    /* foreign inode detection, see wbc_detach_inode() */
+    int wb_id;          /* current wb id */
+    int wb_lcand_id;        /* last foreign candidate wb id */
+    int wb_tcand_id;        /* this foreign candidate wb id */
+    size_t wb_bytes;        /* bytes written by current wb */
+    size_t wb_lcand_bytes;      /* bytes written by last candidate */
+    size_t wb_tcand_bytes;      /* bytes written by this candidate */
 #endif
 };
 ```
@@ -87,16 +90,16 @@ The struct `bdi_writeback` keeps all information required for flushing the dirty
 
 ```c
 struct bdi_writeback {
-	struct backing_dev_info *bdi;
-	unsigned int nr;
-	struct task_struct	*task;
-	wait_queue_head_t	wait;
-	struct list_head	b_dirty;
-	struct list_head	b_io;
-	struct list_head	b_more_io;
+    struct backing_dev_info *bdi;
+    unsigned int nr;
+    struct task_struct  *task;
+    wait_queue_head_t   wait;
+    struct list_head    b_dirty;
+    struct list_head    b_io;
+    struct list_head    b_more_io;
 
-	unsigned long		nr_pages;
-	struct super_block	*sb;
+    unsigned long       nr_pages;
+    struct super_block  *sb;
 };
 ```
 The `bdi_writeback` structure is initialized when the device is registered through `bdi_register()`. The fields of the `bdi_writeback` are:
@@ -119,3 +122,10 @@ The `bdi_writeback_task()` function waits for the `dirty_writeback_interval`, wh
 - int hugetlb_report_node_meminfo(int, char *);
 - void hugetlb_report_meminfo(struct seq_file *);
 - void hugetlb_show_meminfo(void);
+
+## 这几个接口也是可以调查一下的
+- slabtop
+- /proc/meminfo
+  - [ ] 从这里看，存在一个 zone 居然是 device
+- /proc/buddyinfo
+- /proc/pagetypeinfo
