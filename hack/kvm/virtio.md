@@ -4,33 +4,8 @@
 2. Device Driver => Block devices => Virtio block io
 3. Device Driver => Network Device support => Virtio network driver
 
-- [ ] 打开 console 的方法, 不然 kvm 中的 mini-img 中的串口无法使用
+- [ ] 打开 console , 不然 kvm 中的 mini-img 中的串口无法使用
   - 如果不打开 block device driver 的，直接无法启动
-
-
-应该使用这种方法配置:
-https://lore.kernel.org/patchwork/patch/267098/
-```
-CONFIG_BLK_MQ_VIRTIO=y
-CONFIG_NET_9P_VIRTIO=y
-CONFIG_VIRTIO_BLK=y
-CONFIG_VIRTIO_NET=y
-CONFIG_VIRTIO_CONSOLE=y
-# CONFIG_HW_RANDOM_VIRTIO is not set
-# CONFIG_DRM_VIRTIO_GPU is not set
-CONFIG_VIRTIO=y
-CONFIG_VIRTIO_PCI_LIB=y
-CONFIG_VIRTIO_MENU=y
-CONFIG_VIRTIO_PCI=y
-CONFIG_VIRTIO_PCI_LEGACY=y
-CONFIG_VIRTIO_BALLOON=y
-CONFIG_VIRTIO_INPUT=y
-CONFIG_VIRTIO_MMIO=y
-CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
-# CONFIG_RPMSG_VIRTIO is not set
-# CONFIG_CRYPTO_DEV_VIRTIO is not set
-```
-
 
 为了共享 folder :
 ```
@@ -58,12 +33,10 @@ CONFIG_VHOST_NET=y
 VIRTIO_SCSI 打开:
 Device Driver ==> SCSI device support ==> SCSI low-level drivers ==> virtio-scsi support
 
-**kvmtool** 的编译安装
-
-- [ ] 如果 guest kernel 不支持 virtio, 但是 kvmtool / qemu 还是指定使用 virtio ，出现了错误，怎么办法
+## 核心的结构体
+- virtio_config_ops ：类似，将关键的结构体找到
 
 # TODO
-
 - [ ] /home/maritns3/core/firecracker/src/devices/src/virtio/vsock/csm/connection.rs has a small typo
 - [ ] virtio and msi:
 - [ ] We're over optimistic about the meaning of the complexity of virtio, try to read **/home/maritns3/core/linux/drivers/virtio**, please.

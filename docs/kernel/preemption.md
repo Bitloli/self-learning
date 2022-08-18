@@ -20,6 +20,7 @@ https://github.com/torvalds/linux/blob/70664fc10c0d722ec79d746d8ac1db8546c94114/
 ## Questions
 - arch/arm64/arm.c:kvm_arch_vcpu_ioctl_run 中，有一个 handle_exit_early 必须在打开 preemption 之前执行的代码
   - 我是一直没有理解什么样的代码不能被 preemption 的。
+- gather_bootmem_prealloc 为什么需要有 cond_resched
 
 ## [ ] preemption 和 softirq 都是可以嵌套的，但是 hwirq 不可以
 

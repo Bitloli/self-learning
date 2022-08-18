@@ -22,7 +22,6 @@
 * [compaction](#compaction)
     * [compact deferred](#compact-deferred)
 * [tlb](#tlb)
-* [hugetlb](#hugetlb)
 * [compound page](#compound-page)
 * [THP](#thp)
     * [THP admin manual](#thp-admin-manual)
@@ -1034,79 +1033,6 @@ struct zone {
 
 ## tlb
 x86/mm/tlb.c
-
-## hugetlb
-- [ ] https://lwn.net/Articles/839737/
-
-1. 为了实现简单，那么 hugetlb 减少处理什么东西 ?
-
-https://www.ibm.com/developerworks/cn/linux/l-cn-hugetlb/
-https://www.ibm.com/developerworks/cn/linux/1305_zhangli_hugepage/index.html
-
-总结一下 :
-1. subpool, resv_map , enqueue 机制
-2. hugetlb_file_setup hugetlb_fault 和对外提供的关键接口
-3. 利用 sys 提供了很多接口
-
-Huge pages can improve performance through reduced page faults (a single fault brings in a large chunk of memory at once) and by reducing the cost of virtual to physical address translation (fewer levels of page tables must be traversed to get to the physical address).
-
-用户层 : https://lwn.net/Articles/375096/ 中间的使用首先理解清楚吧 !
-
-https://github.com/libhugetlbfs/libhugetlbfs
-> 其中包含有大量的测试
-The library provides support for automatically backing text, data, heap and shared memory segments with huge pages.
-In addition, this package also provides a programming API and manual pages. The behaviour of the library is controlled by environment variables (as described in the libhugetlbfs.7 manual page) with a launcher utility hugectl that knows how to configure almost all of the variables. hugeadm, hugeedit and pagesize provide information about the system and provide support to system administration. tlbmiss_cost.sh automatically calculates the average cost of a TLB miss. cpupcstat and oprofile_start.sh provide help with monitoring the current behaviour of the system. Manual pages are available describing in further detail each utility.
-
-1. shmget() : SHM_HUGETLB
-2. hugetlbfs : 似乎用户共享的，同时可以用于实现
-
-```c
-       #include <hugetlbfs.h>
-       int hugetlbfs_unlinked_fd(void);
-       int hugetlbfs_unlinked_fd_for_size(long page_size);
-       // hugetlbfs_unlinked_fd, hugetlbfs_unlinked_fd_for_size - Obtain a file descriptor for a new unlinked file in hugetlbfs
-```
-
-
-One important common point between them all is how huge pages are faulted and when the huge pages are allocated.
-Further, there are important differences between shared and private mappings depending on the exact kernel version used. [^1]
-> 重点处理的方面
-
-1. fault
-2. shared/private
-3. hugetlb 不处理 swap，所以到底如何
-
-
-为什么使用 superpages 无法在内核中间自动化部署，而需要用户自行配置 ?
-显然，内核缺少必要的信息做决断，而这些信息是用户层次才具有的(内核在初始化的时候，会使用hugetlb 来映射内核的代码段数据段吗 ?)
-1. 内核无法判断使用 hugepage 是否可以抵消维护 metadata 的开销。
-2. Second, there can be architectural limitations that prevent a different page size being used within an address range once one page has been inserted.
-3. TLB 的结构差异让内核无法确定使用多少hugepage
-
-
-和正常大小的 page 的比较
-1. hugetlb_fault
-
-2. include/asm-generic/hugetlb.h : 如果架构含有关于 page table 的不同处理，
-那么就可以使用
-
-- [ ] 了解一下，从 mmap 的进入到 hugetlb
-  - [ ] 似乎还可以在 hugetlb 的文件系统中间创建文件，然后 open ?
-
-[HugeTLB Pages](https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html) 的阅读结果 ：
-
-> /proc/sys/vm/nr_hugepages indicates the current number of “persistent” huge pages in the kernel’s huge page pool. “Persistent” huge pages will be returned to the huge page pool when freed by a task. A user with root privileges can dynamically allocate more or free some persistent huge pages by increasing or decreasing the value of nr_hugepages.
->
-> Pages that are used as huge pages are reserved inside the kernel and **cannot** be used for other purposes. Huge pages cannot be swapped out under memory pressure.
->
-> Once a number of huge pages have been pre-allocated to the kernel huge page pool, a user with appropriate privilege can use either the mmap system call or shared memory system calls to use the huge pages.
-
-- [ ]
-- [ ] 是不是没有 preallocated 的 page 会导致分配失败 ？
-
-**TO BE CONTINUE**
-- [ ] 这个文档还是没有看完的，感觉 hugetlb 设计有点问题
-- [ ] issue #14 的检查一下
 
 
 ## compound page

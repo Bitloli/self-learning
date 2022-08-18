@@ -38,11 +38,11 @@ if [[ $use_nvme_as_root = true ]]; then
   root=/dev/nvme1n1
 fi
 
-arg_kernel_args="root=$root nokaslr console=ttyS0 earlyprink=serial"
+arg_kernel_args="root=$root nokaslr console=ttyS0 earlyprink=serial default_hugepagesz=1G hugepagesz=1G hugepages=8"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 # 可选参数
-arg_mem="-m 1G -smp 8"
+arg_mem="-m 12G -smp 8"
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on" # q35
 arg_cpu="-cpu host"

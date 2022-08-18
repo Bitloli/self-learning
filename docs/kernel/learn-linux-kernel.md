@@ -27,14 +27,14 @@
 - [深入理解计算机体系结构](https://book.douban.com/subject/26912767/)
 - [陈海波的操作系统课程](https://ipads.se.sjtu.edu.cn/mospi/)
 - [谭志虎的计算机组成原理](https://www.ryjiaoyu.com/book/details/42720)
-- 一个上万行的小型操作系统，比如清华的[ucore](https://github.com/chyyuu/ucore_os_lab) 或者 [xv6](https://github.com/mit-pdos/xv6-riscv)
+- 一个上万行的小型操作系统，比如清华的[ucore](https://github.com/chyyuu/ucore_os_lab) [^1] 或者 [xv6](https://github.com/mit-pdos/xv6-riscv)
 
 ## 环境准备
 1. 阅读环境准备
     - 首先你要保证你的操作系统是 Linux 内核，让自己对于 kernel 支撑起来的用户态环境有一个感性的认识。
 2. 保证你的编辑器可以正确跳转，如果你恰好使用的是 neovim, 可以参考[我的 neovim 配置](https://github.com/Martins3/My-Linux-Config), 图形化的工具，我使用过[sourcetrail](https://www.sourcetrail.com/)，很不错，但是很卡。
     - 或者 VSCode 的配置: [DKernel-Plus](https://github.com/ShaoxunZeng/DKernel-Plus)
-3. [QEMU, dataframe 和 bpftrace](https://martins3.github.io/tips-reading-kernel.html) 等工具也是可以大大加快分析的速度的。
+3. [QEMU, dataframe 和 bpftrace](./tips-reading-kernel.md) 等工具也是可以大大加快分析的速度的。
 
 ## 内核学习
 我个人认为需要将**理解用户态**, **读书**, **分析源代码**, **写代码**。
@@ -70,6 +70,8 @@ Richard Stevens 英年早逝，这导致 Advanced Unix Programming 这本书接�
 
 ### 其他的学习资源
 我在自己的学习过程中间收集了一些资源，放到了[这里](https://github.com/Martins3/Martins3.github.io/blob/master/os/os-route.md), 可以作为参考。
+
+[^1]: https://github.com/rcore-os 以及 https://github.com/LearningOS 中利用 rust 来构建操作系统，也许更加现代化。
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

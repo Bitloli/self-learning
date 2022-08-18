@@ -129,3 +129,6 @@ The `bdi_writeback_task()` function waits for the `dirty_writeback_interval`, wh
   - [ ] 从这里看，存在一个 zone 居然是 device
 - /proc/buddyinfo
 - /proc/pagetypeinfo
+
+## 忽然发现这是一个大主题
+- MIGRATE_PCPTYPES

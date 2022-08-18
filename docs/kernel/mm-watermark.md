@@ -42,5 +42,20 @@ bool zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 
 - min_free_kbytes
 
+## 那么 Node number !=0 的那些普通的内存都是被谁使用的
+
+## khugepaged
+- 观察其运行过程中的结果:
+
+- set_recommended_min_free_kbytes
+
+
 ## 分析一下，是如何决定触发 OOM 的
 - http://linux.laoqinren.net/linux/out-of-memory/
+
+## total_reseve_page 和 min low high 是什么关系
+
+- `__setup_per_zone_wmarks` ：计算 min low high 的数值
+
+
+## `zone_managed_pages` 到底是包含 hugepage 的吗
