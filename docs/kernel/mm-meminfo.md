@@ -33,7 +33,6 @@ int main(int argc, char *argv[]) {
 #### [Flushing out pdflush](https://lwn.net/Articles/326552/)
 The amount of dirty memory is listed in `/proc/meminfo`.
 
-
 Jens Axboe in [his patch](http://lwn.net/Articles/324833/) set proposes a new idea of using flusher threads per **backing device info (BDI)**, as a replacement for pdflush threads. Unlike pdflush threads, per-BDI flusher threads focus on a single disk spindle. With per-BDI flushing, when the request_queue is congested, blocking happens on request allocation, avoiding request starvation and providing better fairness.
 > BDI 相比 pdflush 到底有什么好处
 
@@ -132,3 +131,8 @@ The `bdi_writeback_task()` function waits for the `dirty_writeback_interval`, wh
 
 ## 忽然发现这是一个大主题
 - MIGRATE_PCPTYPES
+
+
+这两个是做啥用的:
+- zone_batchsize
+- zone_highsize

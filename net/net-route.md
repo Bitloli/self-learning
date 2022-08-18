@@ -433,9 +433,12 @@ nixos 默认是打开防火墙的：
 
 ## [ ] tunneling 是个什么东西，如何实现的
 https://github.com/anderspitman/awesome-tunneling
-
-
 - https://news.ycombinator.com/item?id=32225532
+
+## tcp metrics
+记录 tcp 参数:
+- https://segmentfault.com/a/1190000020473127
+
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

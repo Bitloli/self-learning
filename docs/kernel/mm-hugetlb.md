@@ -4,6 +4,7 @@
 
 ## TODO
 - [ ] transparent huge tlb 的论文找过来一下，实际上，没有人使用这个。
+- [ ] https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
 
 ## 需要分析的
 - [ ] 似乎和 overcommit 有关的

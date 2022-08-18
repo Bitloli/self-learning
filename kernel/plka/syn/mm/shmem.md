@@ -10,18 +10,16 @@ tmpfs           7.8G     0  7.8G   0% /sys/fs/cgroup
 tmpfs           7.8G  4.3M  7.8G   1% /tmp
 ```
 3. /tmp is mount by mount(8),  /dev/shm/ is mount by mount(8) too !
-    1. `shmem_init` mount the 
-    
-
+    1. `shmem_init` mount the
 4. how we implemented the posix shared memory ?
-    1. it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html 
+    1. it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html
 
 ```
 tmpfs has the following uses:
 
 1) There is always a kernel internal mount which you will not see at
    all. This is used for shared anonymous mappings and SYSV shared
-   memory. 
+   memory.
 
    This mount does not depend on CONFIG_TMPFS. If CONFIG_TMPFS is not
    set, the user visible part of tmpfs is not build. But the internal
@@ -88,7 +86,7 @@ static const struct address_space_operations shmem_aops = {
 	.error_remove_page = generic_error_remove_page, // 通用函数
 };
 ```
-1. shmem_writepage : used for wirte to swap cache ! In fact, the swap cache looks like regular file 
+1. shmem_writepage : used for wirte to swap cache ! In fact, the swap cache looks like regular file
 2. shmem_write_begin, shmem_write_end : it work with generic_file_write_iter which is assigned to shmem_file_operations::write_iter
     1. shmem_write_begin : shmem_getpage
     2. shmem_write_end : do something clean up :
@@ -140,7 +138,7 @@ shmem_write_end(struct file *file, struct address_space *mapping,
 
 ## struct file_operations shmem_file_operations
 1. shmem_mmap : mmap_region => call_mmap => shmem_mmap, nothing special, assign shmem_vm_ops
-2. shmem_get_unmapped_area : @todo I don't know why find unmapped area in the virtual address space is related to specific file system 
+2. shmem_get_unmapped_area : @todo I don't know why find unmapped area in the virtual address space is related to specific file system
     1. After skim the implementation of shmem_get_unmapped_area, `current->mm->get_unmapped_area` @todo
 
 ```c
@@ -151,7 +149,7 @@ static const struct file_operations shmem_file_operations = {
 	.llseek		= shmem_file_llseek,
 	.read_iter	= shmem_file_read_iter,
 	.write_iter	= generic_file_write_iter,
-	.fsync		= noop_fsync,  // in-memory 不需要 fsync 
+	.fsync		= noop_fsync,  // in-memory 不需要 fsync
 	.splice_read	= generic_file_splice_read, // todo 请问 splice_read 和 read_iter 的关系是什么 ? 请参考 splice 似乎是可以管理
 	.splice_write	= iter_file_splice_write,
 	.fallocate	= shmem_fallocate,
@@ -289,7 +287,7 @@ int shmem_unuse(swp_entry_t swap, struct page *page) // 居然被 swapfile try_t
 
 
 ## shmem_getpage
-1. shmem_fault is a simple warpper of shmem_getpage_gfp 
+1. shmem_fault is a simple warpper of shmem_getpage_gfp
 
 ```c
 int shmem_getpage(struct inode *inode, pgoff_t index, // 几乎所有的函数的入口
@@ -333,7 +331,7 @@ static struct inode *shmem_get_inode(struct super_block *sb, const struct inode 
 	inode = new_inode(sb);// crate and init inode, shmem_alloc_inode is used to alloc shmem_inode_info instead !
 	if (inode) {
 		inode->i_ino = get_next_ino();
-		inode_init_owner(inode, dir, mode); // uid gid 
+		inode_init_owner(inode, dir, mode); // uid gid
 		inode->i_blocks = 0;
 		inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
 		inode->i_generation = prandom_u32();
@@ -341,7 +339,7 @@ static struct inode *shmem_get_inode(struct super_block *sb, const struct inode 
 		memset(info, 0, (char *)inode - (char *)info);
 		spin_lock_init(&info->lock);
 		atomic_set(&info->stop_eviction, 0);
-		info->seals = F_SEAL_SEAL; // todo 
+		info->seals = F_SEAL_SEAL; // todo
 		info->flags = flags & VM_NORESERVE;
 		INIT_LIST_HEAD(&info->shrinklist);
 		INIT_LIST_HEAD(&info->swaplist);
@@ -384,7 +382,7 @@ static struct inode *shmem_get_inode(struct super_block *sb, const struct inode 
 ```
 
 ## shmem_rmdir : shmem_unlink drop_nlink
-1. drop_nlink : @todo really wired 
+1. drop_nlink : @todo really wired
 
 ```c
 static int shmem_rmdir(struct inode *dir, struct dentry *dentry)
@@ -430,7 +428,7 @@ int shmem_unuse(unsigned int type, bool frontswap,
 		return 0;
 
 	mutex_lock(&shmem_swaplist_mutex);
-	list_for_each_entry_safe(info, next, &shmem_swaplist, swaplist) { 
+	list_for_each_entry_safe(info, next, &shmem_swaplist, swaplist) {
 		if (!info->swapped) {
 			list_del_init(&info->swaplist);
 			continue;
@@ -505,19 +503,16 @@ struct file *shmem_kernel_file_setup(const char *name, loff_t size, unsigned lon
 7ff044e6e000-7ff044eb9000 r--p 00171000 103:05 2670807                   /usr/lib/libc-2.31.so
 7ff044eb9000-7ff044ebc000 r--p 001bb000 103:05 2670807                   /usr/lib/libc-2.31.so
 7ff044ebc000-7ff044ebf000 rw-p 001be000 103:05 2670807                   /usr/lib/libc-2.31.so
-7ff044ebf000-7ff044ec5000 rw-p 00000000 00:00 0 
+7ff044ebf000-7ff044ec5000 rw-p 00000000 00:00 0
 7ff044f0f000-7ff044f11000 r--p 00000000 103:05 2654500                   /usr/lib/ld-2.31.so
 7ff044f11000-7ff044f31000 r-xp 00002000 103:05 2654500                   /usr/lib/ld-2.31.so
 7ff044f31000-7ff044f39000 r--p 00022000 103:05 2654500                   /usr/lib/ld-2.31.so
 7ff044f39000-7ff044f3a000 rw-s 00000000 00:01 65536                      /SYSV00001234 (deleted)
 7ff044f3a000-7ff044f3b000 r--p 0002a000 103:05 2654500                   /usr/lib/ld-2.31.so
 7ff044f3b000-7ff044f3c000 rw-p 0002b000 103:05 2654500                   /usr/lib/ld-2.31.so
-7ff044f3c000-7ff044f3d000 rw-p 00000000 00:00 0 
+7ff044f3c000-7ff044f3d000 rw-p 00000000 00:00 0
 7ffcfae37000-7ffcfae59000 rw-p 00000000 00:00 0                          [stack]
 7ffcfaf1d000-7ffcfaf20000 r--p 00000000 00:00 0                          [vvar]
 7ffcfaf20000-7ffcfaf21000 r-xp 00000000 00:00 0                          [vdso]
 ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
 ```
-
-
-
