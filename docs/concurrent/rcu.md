@@ -5,7 +5,8 @@
 - [ ] https://liburcu.org/ : 提供了三个很好的资源
 - https://mp.weixin.qq.com/s/SZqmxMGMyruYUH5n_kobYQ
 - https://hackmd.io/@sysprog/linux-rcu?type=view
-
+- `__d_lookup_rcu`
+  - 实际上，rcu 的组件比想想的更加多
 
 ## What is Rcu
 
@@ -125,6 +126,7 @@ start_secondary+278
 secondary_startup_64_no_verify+213
 ```
 - 为什么 `__irq_exit_rcu` 会调用到 `__softirqentry_text_start`，是 backtrace 的 bug 吧！
+
 
 ### 参考资料
 - [What is RCU, Fundamentally?](https://lwn.net/Articles/262464/)

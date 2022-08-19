@@ -20,6 +20,8 @@ make -j
 ../configure --target-list=aarch64-softmmu --disable-werror
 ```
 
+在 x86 上交叉编译 ARM QEMU，感觉很难，放弃。
+
 ## 基本使用方法
 **各种脚本都是在这里: https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/**
 - config.json 中保存配置，设置内核和 QEMU 路径，以及各种镜像保存的位置

@@ -35,13 +35,46 @@
 - `struct socket`
   - `struct proto_ops` : 每一个协议都会对应的注册，例如 inet
 - `net_proto_family` : 只有一个 create hook，相比 `struct proto_ops` 是一个更大的分类，例如在 `inet6_family_ops` 下， 有 `inet6_dgram_ops` 和 `inet6_stream_ops`
+- `net_device` ：基于 virtio_net 来看看吧
+- `proto`
+- `packet_type`
+- `dst_entry`
 
+```c
+/* Networking protocol blocks we attach to sockets.
+ * socket layer -> transport layer interface
+ */
+struct proto {
+```
+- `net_protocol`
+  - ip_protocol_deliver_rcu : 接受的包中解析上层的协议是什么，如果是 TCP，那么使用 tcp 注册的协议
+
+socket 的 ops 是一个指向 struct proto_ops 的指针，sock 的 ops 是一个指向 struct proto 的指针, 它们在结构被创建时确定[^1]
+`socket->ops` 和 `sock->ops` 由前两个参数 socket_family 和 socket_type 共同确定。
+
+以 INET 协议簇为例，注册接口是
+```c
+int inet_add_protocol(const struct net_protocol *prot, unsigned char protocol);
+```
+
+L2->L3 如出一辙。只不过注册接口变成了
+```c
+void dev_add_pack(struct packet_type *pt)
+```
+
+对于需要本机上送的报文
+ rth->dst.input = ip_local_deliver;
+对需要转发的报文
+ rth->dst.input = ip_forward;
+对本机发送的报文
+ rth->dst.output = ip_output;
 
 ## 基本流程
 - `sys_socket`
   - `sock_create`
   - `sock_map_fd` : 将 socket 和 fd 关联起来
 
-
 ## 关键目录
-net/ethernet/eth.c
+- net/ethernet/eth.c
+
+[^1]: https://switch-router.gitee.io/blog/linux-net-stack/

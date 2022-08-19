@@ -78,7 +78,8 @@ MAX_CONCURRENT_THREAD_NUMBER = 50
 
 运行 build 之前，首先执行：
 ```sh
-export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-
+export GCC5_AARCH64_PREFIX=aarch64-linux-gnu-          # ubuntu 中
+export GCC5_AARCH64_PREFIX=aarch64-unknown-linux-gnu-  # nixos 中
 ```
 
 ## 构建基于 edk2 的 HelloWorld
@@ -175,8 +176,8 @@ build -p AppPkg/AppPkg.dsc
 ```
 
 ## 生成 compile_commands.json
-虽然 edk2 是一个和操作系统无关的，但是 edk2 编译出来了的 efi 格式实际上是 Windows 二进制格式，项目的构建似乎默认 VS 的风格。
-想要在 vim 越快的阅读代码需要生成 compile_commands.json，但是这个编译系统不是 CMake, Make, Ninja 之类的，想要生成，并不容易。
+虽然 edk2 是一个和操作系统无关，但是 edk2 编译出来了的 efi 格式实际上是 Windows 二进制格式，项目的构建也是 VS 的风格。
+想要在 vim 愉快阅读代码需要生成 compile_commands.json，但是这个编译系统不是 CMake, Make, Ninja 之类的，想要生成，并不容易。
 
 从 https://bugzilla.tianocore.org/show_bug.cgi?id=2850 可以找到 https://github.com/makaleks/edk2-tools/tree/master/compilation_database_patch
 
@@ -207,7 +208,7 @@ Error: cc or cc_flags is not defined!
 - 原来的 compile_commands.json 都是生成在 package 下的，比如 AppPkg/compile_commands.json，如果同时阅读多个 pkg 的代码，还需要手动将这些 compile_commands.json 合并起来，我调整了一下脚本，让所有的信息都是放到 edk2 的根路径上的
 
 对于 tag 为 `edk2-stable202111`
-1. 添加修改之后的 [edk2_compile_commands.py](https://github.com/Martins3/Martins3.github.io/tree/master/docs/uefi/uefi/compile_commands_patch/edk2_compile_commands.py)
+1. 将 [edk2_compile_commands.py](https://github.com/Martins3/Martins3.github.io/tree/master/docs/uefi/uefi/compile_commands_patch/edk2_compile_commands.py) 拷贝到 $(EDK2_ROOT)/BaseTools/Source/Python/edk2_compile_commands.py 中:
 2. 修改 BaseTools/Source/Python/AutoGen/GenMake.py
   - 在文件头修改 `from edk2_compile_commands import update_compile_commands_file`
   - 在 1067 行下添加 `update_compile_commands_file(TargetDict, self._AutoGenObject, self.Macros)`

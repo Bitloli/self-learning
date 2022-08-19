@@ -1,5 +1,7 @@
-## 问题
-- everything is file 和 socket 接口的差别是什么，为什么如果是 socket 最好是使用 socket 的
+# Network Route
+
+- https://switch-router.gitee.io/categories/ ：阅读其中的每一篇文章
+
 ## todo
 - [ ] openwrt 到底是什么?
   - 教别人编译的 : https://github.com/coolsnowwolf/lede
@@ -13,6 +15,7 @@
 - https://www.learncloudnative.com/blog/2020-04-25-beginners-guide-to-gateways-proxies/ : 讲解网关
 - https://news.ycombinator.com/item?id=23241934 : ssh-agent 的工作原理是什么 ?
 - https://www2.tkn.tu-berlin.de/teaching/rn/animations/gbn_sr/ : 拥塞网络图形化演示
+- everything is file 和 socket 接口的差别是什么，为什么如果是 socket 最好是使用 socket 的
 
 - 仅仅是看一看
 ```txt
@@ -28,8 +31,10 @@
 - 所以 -nic 和 -netdev 都是做啥的?
 - -nic 后面跟着的这么多的设备是做啥的
 
-- [ ] 在内核源码中找到 loopback 的实现位置
-- [ ] 验证一下，
+- [ ] 使用 ip 来分析一下内核是如何实现路由的
+
+## checksheet
+- [CyC2018/CS-Notes : TCP 总结的真的到位](https://github.com/CyC2018/CS-Notes/blob/master/notes/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%20-%20%E4%BC%A0%E8%BE%93%E5%B1%82.md)
 
 ## [ ] 必看文件
 - [ ] net/core/dev.c
@@ -439,6 +444,11 @@ https://github.com/anderspitman/awesome-tunneling
 记录 tcp 参数:
 - https://segmentfault.com/a/1190000020473127
 
+## 网络代码记录
+- net/core/gen_stats.c ：提供给 net//sched，用于统计的
+
+## rds
+- [What are RDS or reliable datagram sockets](https://stackoverflow.com/questions/27980309/what-are-rds-or-reliable-datagram-sockets) 对应 net/rds 目录
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/
