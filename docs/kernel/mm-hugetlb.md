@@ -5,6 +5,8 @@
 ## TODO
 - [ ] transparent huge tlb 的论文找过来一下，实际上，没有人使用这个。
 - [ ] https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
+- [ ] mem_cgroup_charge 是用户态分配内存检查的位置，但是为什么 hugetlb 的分配是完全没有使用
+  - 或者 hugetlb 的 memcg 在什么位置
 
 ## 需要分析的
 - [ ] 似乎和 overcommit 有关的

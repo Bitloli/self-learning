@@ -50,7 +50,6 @@
 * [swap](#swap)
     * [swap cache](#swap-cache)
     * [swapfile](#swapfile)
-* [out of memory killer](#out-of-memory-killer)
 * [vmstate](#vmstate)
 * [mlock](#mlock)
 * [lock](#lock)
@@ -2338,20 +2337,6 @@ static int claim_swapfile(struct swap_info_struct *p, struct inode *inode)
 2. swapoff : 如果彻底理解 swapon，那么不难，关键 : try_to_unuse 调用两个函数
     1. shmem_unuse
     2. unuse_mm : 逐个清理
-
-## out of memory killer
-
-- [ ] oom reaper
-
-- [ ] cgroup
-
-- [ ] dump
-
-- out_of_memory
-
-- [ ] `__oom_kill_process`
-
-
 
 ## vmstate
 // 搞清楚如何使用这个代码吧 !

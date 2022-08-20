@@ -1072,10 +1072,9 @@ int cgroup_add_legacy_cftypes(struct cgroup_subsys *ss, struct cftype *cfts)
 struct cpuset {
   struct cgroup_subsys_state css;
 ```
-怀疑所有的subsys 采用这种机制
 
-- [ ] kernel/cgroup/cpuset.md
-> 以后再说吧! 这他妈是什么啊 ?
+
+- [ ]https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/cpusets.html
 
 ## cgroup core files
 fils lies in /sys/fs/cgroup ?
