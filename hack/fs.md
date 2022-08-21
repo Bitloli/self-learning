@@ -628,6 +628,8 @@ aio_complete 会调用 eventfd_signal，这是实现 epoll 机制的核心。
 > 2. aio 不能使用 page cache, 那么对于 metadata 的读取， aio 可以实现异步吗 ? (我猜测，应该所有的文件系统都是不支持的吧!)
 
 #### io uring
+- 基于 io-uring 的 ubd： https://lwn.net/Articles/900690/
+
 - [迟先生 : io_uring 的接口与实现](https://www.skyzh.dev/posts/articles/2021-06-14-deep-dive-io-uring/)
 
 ![](https://kernel.taobao.org/2020/09/IO_uring_Optimization_for_Nginx/3.png)
@@ -685,6 +687,8 @@ https://kernel-recipes.org/en/2019/talks/faster-io-through-io_uring/
 - IORING_SETUP_SQPOLL
 - IORING_ENTER_GETEVENTS
 - IORING_ENTER_SQ_WAKEUP
+
+- https://github.com/tokio-rs/io-uring
 
 ## file writeback
 fs/file-writeback.c 中间到底完成什么工作

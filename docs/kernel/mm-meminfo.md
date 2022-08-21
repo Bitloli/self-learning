@@ -136,3 +136,10 @@ The `bdi_writeback_task()` function waits for the `dirty_writeback_interval`, wh
 这两个是做啥用的:
 - zone_batchsize
 - zone_highsize
+
+## /proc/meminfo 中这些是啥
+```txt
+DirectMap4k:       36680 kB
+DirectMap2M:     3108864 kB
+DirectMap1G:    11534336 kB
+```

@@ -3,20 +3,21 @@
 核心结构体 `oom_control`，主要记录事发现场。
 
 主要的入口为 `out_of_memory`，调用着有三个
-- `page_alloc.c:__alloc_pages_may_oom`
+- `mmecontrol:mem_cgroup_out_of_memory` : 用户程序分配内存的时候，经过 cgroup 的检查 `mem_cgroup_charge` 没有通过。
+- `page_alloc.c:__alloc_pages_may_oom` : 在此处失败，是因为不受 cgroup 管理的用户进程分配内存失败。
 - `sysrq:moom_callback` : 通过  sudo echo f > /proc/sysrq-trigger 手动触发
-- `mmecontrol:mem_cgroup_out_of_memory` : 用户程序分配内存的时候，经过 cgroup 的检查 `mem_cgroup_charge` 没有通过
 
-- 为什么 oom 会因为 cpuset ？
+1. 为什么 oom 会因为 cpuset ？
 ```c
 struct oom_control {
 	/* Used to determine cpuset */
 	struct zonelist *zonelist;
 ```
+因为该进程运行执行的 node 上没有内存了。
 
-- `__cpuset_node_allowed` ：深入调查一下这个
+2. reaper 是做啥的?
 
-- reaper 是做啥的?
+参考 `oom_kill_process` 中，将那些**已经被杀死**进程持有的内存直接释放掉。
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

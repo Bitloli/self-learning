@@ -6,7 +6,62 @@
 - [ ] transparent huge tlb 的论文找过来一下，实际上，没有人使用这个。
 - [ ] https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
 - [ ] mem_cgroup_charge 是用户态分配内存检查的位置，但是为什么 hugetlb 的分配是完全没有使用
-  - 或者 hugetlb 的 memcg 在什么位置
+  - 或者说 hugetlb 的 memcg 在什么位置
+- [ ] echo 20 > /proc/sys/vm/nr_hugepages 是做什么的?
+- [ ] ➜  linux git:(master) ✗ /home/martins3/core/linux/Documentation/translations/zh_CN/mm/hugetlbfs_reserv.rst
+- [ ] https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html
+- [ ] https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html
+
+```sh
+void *ptr = mmap(NULL, 8 * (1 << 21), PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB,
+                 -1, 0))
+```
+
+## [ ] 是在什么时间点预留的
+
+## [ ] 预留的时候如何考虑 numa 的
+
+## [ ] 为什么需要借助 fs 的存在
+
+## [ ] 预留的时候需要制定每一种大小的 page 的数量吗
+
+## [x] 如果 hugetlb_file_setup 是入口，那个文件系统还需要使用吗
+
+ksys_mmap_pgoff 中处理过，
+
+## [ ] init_hugetlbfs_fs 是什么时候调用的
+
+## [ ] init_hugetlbfs_fs 中，似乎每一个 size 都是单独的一个 mount 点
+
+## [ ] 测试一下 hugetlbfs_symlink / hugetlbfs_tmpfile
+
+默认的 mount 点:
+```txt
+hugetlbfs /dev/hugepages hugetlbfs rw,seclabel,relatime,pagesize=1024M 0 0
+```
+libhugetlbfs 中有个函数 : `hugetlbfs_find_path_for_size`
+
+- hugetlb_file_setup
+  - hugetlb_reserve_pages
+  - alloc_file_pseudo ：如果成功，该文件关联的的 hugetlbfs_file_operations
+
+- [ ] hugetlbfs_read_iter : 这个是做啥的
+
+```c
+struct hugetlbfs_inode_info {
+	struct shared_policy policy;
+	struct inode vfs_inode;
+	unsigned int seals;
+};
+```
+- [ ] `hugetlbfs_setattr` 中为什么需要修改 inode 的大小
+
+- [ ] 我是没有想到，居然 2021 才支持的: https://lwn.net/Articles/872070/
+  - https://stackoverflow.com/questions/27997934/mremap2-with-hugetlb-to-change-virtual-address : 直接可以通过 hugetlbfs 来实现
+
+
+## [ ] vm_operations_struct
 
 ## 需要分析的
 - [ ] 似乎和 overcommit 有关的
@@ -22,7 +77,6 @@ obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
 
 ## 首先使用起来
 - https://github.com/lagopus/lagopus/blob/master/docs/how-to-allocate-1gb-hugepages.md
-- [ ] 居然是可以直接 mmap 空间就分配大页的，实在是无法理解
 
 ## hugetlb
 
@@ -81,12 +135,10 @@ Further, there are important differences between shared and private mappings dep
 >
 > Once a number of huge pages have been pre-allocated to the kernel huge page pool, a user with appropriate privilege can use either the mmap system call or shared memory system calls to use the huge pages.
 
-- [ ]
 - [ ] 是不是没有 preallocated 的 page 会导致分配失败 ？
 
 **TO BE CONTINUE**
 - [ ] 这个文档还是没有看完的，感觉 hugetlb 设计有点问题
-- [ ] issue #14 的检查一下
 
 # hugetlbfs
 如何分配 1G 的 page

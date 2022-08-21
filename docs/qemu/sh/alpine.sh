@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 
 use_nvme_as_root=false
 use_default_kernel=false
@@ -20,8 +20,9 @@ abs_loc=$(dirname "$(realpath "$0")")
 
 kernel=${kernel_dir}/arch/x86/boot/bzImage
 
-iso=${workstation}/alpine.iso
-disk_img=${workstation}/alpine.qcow2
+distribution=centos
+iso=${workstation}/${distribution}.iso
+disk_img=${workstation}/${distribution}.qcow2
 ext4_img1=${workstation}/img1.ext4
 ext4_img2=${workstation}/img2.ext4
 
@@ -31,14 +32,14 @@ LAUNCH_GDB=false
 
 # 必选参数
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
-root=/dev/vdb2
+root=/dev/vdb3
 
 if [[ $use_nvme_as_root = true ]]; then
   arg_img="-device nvme,drive=nvme3,serial=foo -drive file=${disk_img},format=qcow2,if=none,id=nvme3"
   root=/dev/nvme1n1
 fi
 
-arg_kernel_args="root=$root nokaslr console=ttyS0 earlyprink=serial default_hugepagesz=1G hugepagesz=1G hugepages=8"
+arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial default_hugepagesz=1G hugepagesz=1G hugepages=8"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 # 可选参数
@@ -136,7 +137,7 @@ if [ ! -f "${disk_img}" ]; then
   sure "install alpine image"
   qemu-img create -f qcow2 "${disk_img}" 100G
   # 很多发行版的安装必须使用图形界面，如果在远程，那么需要 vnc
-  arg_monitor="-vnc :0,password=on"
+  arg_monitor="-vnc :0,password=on -monitor stdio"
   qemu-system-x86_64 \
     -boot d \
     -cdrom "$iso" \
@@ -144,13 +145,13 @@ if [ ! -f "${disk_img}" ]; then
     -hda "${disk_img}" \
     -enable-kvm \
     -m 2G \
-    -smp 2 $arg_monitor -monitor stdio
+    -smp 2 $arg_monitor
   exit 0
 fi
 
 if [[ $use_default_kernel = true ]]; then
-  arg_monitor="-vnc :0,password=on -monitor stdio"
-  # arg_monitor="-nographic"
+  arg_monitor="-vnc :0,password -monitor stdio"
+  arg_monitor="-nographic"
   qemu-system-x86_64 \
     -cpu host $arg_img \
     -enable-kvm \

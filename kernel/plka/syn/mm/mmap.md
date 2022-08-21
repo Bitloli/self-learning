@@ -10,7 +10,7 @@
 3. stack 有什么什么需要特殊处理的吗 ?
 
 
-## mmap_pgoff 和 munmap 
+## mmap_pgoff 和 munmap
 1. 根本的两个 syscall 机制
 2. munmap 应该是需要调用 rmap 来释放一下相关的内容，但是目前没有找到证据(todo)
 
@@ -28,24 +28,6 @@ SYSCALL_DEFINE2(munmap, unsigned long, addr, size_t, len)
 	return vm_munmap(addr, len);
 }
 ```
-
-
-
-## vma_is_anonymous  
-
-1. 最关键的区别
-```c
-static inline bool vma_is_anonymous(struct vm_area_struct *vma)
-{
-	return !vma->vm_ops;
-}
-```
-
-1. vm_operations_struct 的存在 : 一共存在哪几种 vma_area, 居然是各种驱动会给 `vm_operations_struct->open` 赋值
-    1. vm_operations_struct 各种成员的总用是什么 ? 
-    2. 
-
-
 
 ## 和 rmap 的交互
 1. find_mergeable_anon_vma
@@ -336,12 +318,12 @@ static inline int vma_adjust(struct vm_area_struct *vma, unsigned long start,
 2. 参数 vma insert expand 的含义:
     1. 被 vma_merge 调用时，参数 insert 总是 NULL
     2. vma_adjust 在 mmap.c 中间被 `__split_vma`
-    3. 所以，`__vma_adjust` 函数表示调整 vma 的 start end 和 pgoff，insert 表示调整的时候拆出来的 vma，expand 表示用来 expand 的vma 
+    3. 所以，`__vma_adjust` 函数表示调整 vma 的 start end 和 pgoff，insert 表示调整的时候拆出来的 vma，expand 表示用来 expand 的vma
 
 
 3. 问题 :
     1. 参数 vma 和 expand 可能是同一个变量，这对应于什么情况 ? (强行将 vma 展开吗 ?)
-    2. 
+    2.
 
 ```c
 /*
@@ -449,7 +431,7 @@ int __vma_adjust(struct vm_area_struct *vma, unsigned long start,
 		 */
 
     // 当 importer 没有持有 anon_vma 的时候，那么公用一下
-    // 这里提供了 : anon_vma_clone 的情况不仅仅是 fork 
+    // 这里提供了 : anon_vma_clone 的情况不仅仅是 fork
 		if (exporter && exporter->anon_vma && !importer->anon_vma) {
 			int error;
 

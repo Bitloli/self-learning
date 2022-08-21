@@ -316,7 +316,7 @@ Boredom is one of the most common human experiences, yet it seems continually to
 
 ## [Alice and Bob](http://cryptocouple.com/)
 
-## [现在有人把Deep learning 的不可知 当做理论](https://en.wikipedia.org/wiki/Polanyi%E2%80%99s_paradox)
+## [现在有人把Deep learning 的不可知当做理论](https://en.wikipedia.org/wiki/Polanyi%E2%80%99s_paradox)
 > 看来单词还是需要背
 
 ## [物理和数学的关系](http://www.damtp.cam.ac.uk/events/strings02/dirac/speach.html)
@@ -329,13 +329,8 @@ Boredom is one of the most common human experiences, yet it seems continually to
 
 ## [Think in math, Write in code !](https://justinmeiners.github.io/think-in-math/)
 
-
 ## [量子计算机中间实现时间翻转](https://www.independent.co.uk/life-style/gadgets-and-tech/news/time-reverse-quantum-computer-science-study-moscow-a8820516.html)
 Laboratory of the Physics of Quantum Information at the Moscow Institute of Physics & Technology (MIPT)的研究者发现可以使用量子计算机模拟时间翻转。
-## [一些删除的项目](git.com)
-cello
-ogl
-jemalloc
 
 ## [How to write thesis](https://www.amazon.com/How-Write-Thesis-MIT-Press/dp/0262527138)
 

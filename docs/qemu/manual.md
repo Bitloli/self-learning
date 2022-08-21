@@ -53,21 +53,13 @@ arg_kernel_args="console=ttyS0 root=/dev/ram rdinit=/hello.out"
 ```
 这是因为我们的程序名称为 hello.out ，如果将 hello.out 修改为 init，那么就无需使用额外的参数了。
 
-### busybox
-- [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/busybox.sh)
-
-基础的部分参考这个：
-- https://www.cnblogs.com/wipan/p/9272255.html
-- https://gist.github.com/chrisdone/02e165a0004be33734ac2334f215380e
-
-network 的事情参考这个部分：
-- https://www.digi.com/resources/documentation/digidocs/90001515/task/yocto/t_configure_network.htm
-
 ### Alpine
 - [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/alpine.sh)
 
+因为这个脚本就是我日常使用的，总是在其中测试各种 QEMU 和 Linux 的特性，有点复杂，如果一时难以接受，可以查看下面的几个脚本。
+
 简单解释几个点:
-1. 其中采用 alpine 作为镜像，因为 alpine 是 Docker 选择的轻量级镜像，比 Yocto 功能齐全(包管理器)，而且比 Ubuntu 简单
+1. 其中采用 alpine 作为镜像，因为 alpine 是 Docker 选择的轻量级镜像，比 Yocto 功能齐全(包管理器)，而且比 Ubuntu 简单。
 2. 第一步使用 iso 来安装镜像，这次运行的是 iso 中是包含了一个默认内核, 安装镜像之后，使用 -kernel 指定内核
 3. 在 [How to use custom image kernel for ubuntu in qemu?](https://stackoverflow.com/questions/65951475/how-to-use-custom-image-kernel-for-ubuntu-in-qemu) 的这个问题中，我回答了如何设置内核参数 sda
 
@@ -80,16 +72,27 @@ network 的事情参考这个部分：
 > 默认 root 登录
 ![](./img/x-2.png)
 
-> 选择 f 也即是自动选择最快的
+> 选择 aliyun，或者 f 自动选择最快的，
 ![](./img/x-1.png)
 
 > 将系统安装到脚本制作的 image 中
 ![](./img/x-3.png)
 
-构建好了之后，就可以像是调试普通进程一样调试内核了，非常地好用。而且 Alpine 自带网络管理:
+构建好了之后，就可以像是调试普通进程一样调试内核了，非常地好用。而且 Alpine 自带包管理:
 ```sh
 apk add pciutils
 ```
+
+
+### busybox
+- [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/busybox.sh)
+
+基础的部分参考这个：
+- https://www.cnblogs.com/wipan/p/9272255.html
+- https://gist.github.com/chrisdone/02e165a0004be33734ac2334f215380e
+
+network 的事情参考这个部分：
+- https://www.digi.com/resources/documentation/digidocs/90001515/task/yocto/t_configure_network.htm
 
 ### Ubuntu Desktop
 - [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/ubuntu.sh)

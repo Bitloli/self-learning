@@ -96,17 +96,18 @@
 
 ## Linux Kernel
 - [内核学习的一点经验之谈](./kernel/learn-linux-kernel.md)
-- 🚧 [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md)
+- [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md)
 - [tty 到底是什么](./kernel/tty.md)
-- 🚧 [syscall](./kernel/syscall.md)
+<!-- - 🚧 [syscall](./kernel/syscall.md) -->
 - [mknod](./kernel/mknod.md)
--  🚧 [Linux 设备模型](./kernel/device.md)
+<!-- -  🚧 [Linux 设备模型](./kernel/device.md) -->
 <!-- - [irq domain](./kernel/irq-domain.md) -->
 -  🚧 [LWN 阅读笔记](./lwn.md)
--  🚧 [softirq](./kernel/softirq.md)
+<!-- -  🚧 [softirq](./kernel/softirq.md) -->
 <!-- - [iommu 基本原理介绍](.) -->
 <!-- - [vfio : Linux 内核实现](.) -->
 <!-- - [vfio : QEMU 实现](.) -->
+- [oom](./kernel/mm-oom.md)
 
 ## Database
 <!-- - [leveldb 源码分析](./database/leveldb.md) -->
