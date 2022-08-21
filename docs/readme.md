@@ -35,13 +35,13 @@
 - [QEMU 和 seabios 的数据传输协议: `fw_cfg`](./qemu/fw_cfg.md)
 - [QEMU 如何加载 Linux kernel image](./qemu/load-kernel-image.md)
 - [QEMU 的参数解析](./qemu/options.md)
-- 🚧 [QEMU 二进制翻译基础](./qemu/tcg.md)
-- 🚧 [QEMU 时钟模拟](./qemu/timer.md)
-- 🚧 [QEMU 如何模拟 PCI 设备](./qemu/pci.md)
-- 🚧 [seabios 源码分析](./qemu/seabios.md)
-- 🚧 [QEMU Hash Table 设计](./qemu/qht.md)
-- 🚧 [QEMU ACPI 模拟](./qemu/acpi.md)
-- 🚧 [QEMU Hotplug 和 Reset](./qemu/reset.md)
+<!-- - 🚧 [QEMU 二进制翻译基础](./qemu/tcg.md) -->
+<!-- - 🚧 [QEMU 时钟模拟](./qemu/timer.md) -->
+<!-- - 🚧 [QEMU 如何模拟 PCI 设备](./qemu/pci.md) -->
+<!-- - 🚧 [seabios 源码分析](./qemu/seabios.md) -->
+<!-- - 🚧 [QEMU Hash Table 设计](./qemu/qht.md) -->
+<!-- - 🚧 [QEMU ACPI 模拟](./qemu/acpi.md) -->
+<!-- - 🚧 [QEMU Hotplug 和 Reset](./qemu/reset.md) -->
 - [QEMU 中的线程和事件循环](./qemu/threads.md)
 - [QEMU 中的锁](./qemu/cpus.md)
 - [QEMU 如何模拟中断](./qemu/interrupt.md)
@@ -80,10 +80,10 @@
 - [使用 Github 记录笔记和搭建 blog](./setup-github-pages.md)
 
 ## PCIe
-- 🚧 [PCIe 的基本原理](.)
-- 🚧 [Seabios 如何探测 PCIe](.)
+<!-- - 🚧 [PCIe 的基本原理](.) -->
+<!-- - 🚧 [Seabios 如何探测 PCIe](.) -->
 - [Linux Kernel 如何管理 PCIe 设备](./pci/kernel.md)
-- 🚧 [QEMU 如何模拟 PCIe 设备](.)
+<!-- - 🚧 [QEMU 如何模拟 PCIe 设备](.) -->
 
 ## Tools
 - [My Linux Config](https://martins3.github.io/My-Linux-Config/)
@@ -119,8 +119,8 @@
 ## Multiprocessor Programming
 - [Quiescent consistency，Sequential consistency 和 Linearizability](./concurrent/linearizability.md)
 - [wait free，lockfree 和 obstruction free 区分](./concurrent/lock-free.md)
-- 🚧 [memory model](./concurrent/memory-model.md)
-- 🚧 [volatile 关键字说明](./concurrent/volatile.md)
+<!-- - 🚧 [memory model](./concurrent/memory-model.md) -->
+<!-- - 🚧 [volatile 关键字说明](./concurrent/volatile.md) -->
 
 ## Potpourri
 - [what is x86 IA-32 IA-64 x86-64 and amd64 ?](./x86-names.md)

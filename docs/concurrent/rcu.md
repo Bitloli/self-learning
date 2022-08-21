@@ -127,6 +127,62 @@ secondary_startup_64_no_verify+213
 ```
 - 为什么 `__irq_exit_rcu` 会调用到 `__softirqentry_text_start`，是 backtrace 的 bug 吧！
 
+## 使用 QEMU 调试的过程中，Guest 首先一致卡在 idel 中，然后触发这个 bug
+```c
+[ 4192.186591] rcu: INFO: rcu_preempt detected stalls on CPUs/tasks:
+[ 4192.187264]  (detected by 7, t=42141 jiffies, g=10393, q=61 ncpus=8)
+[ 4192.187264] rcu: All QSes seen, last rcu_preempt kthread activity 42025 (4298858205-4298816180), jiffies_till_next_fqs=3, root ->qsmask 0x0
+[ 4192.187264] rcu: rcu_preempt kthread timer wakeup didn't happen for 42031 jiffies! g10393 f0x2 RCU_GP_WAIT_FQS(5) ->state=0x200
+[ 4192.187264] rcu:     Possible timer handling issue on cpu=1 timer-softirq=2124
+[ 4192.187264] rcu: rcu_preempt kthread starved for 42048 jiffies! g10393 f0x2 RCU_GP_WAIT_FQS(5) ->state=0x200 ->cpu=1
+[ 4192.187264] rcu:     Unless rcu_preempt kthread gets sufficient CPU time, OOM is now expected behavior.
+[ 4192.187264] rcu: RCU grace-period kthread stack dump:
+[ 4192.187264] task:rcu_preempt     state:R stack:14976 pid:   14 ppid:     2 flags:0x00004000
+[ 4192.187264] Call Trace:
+[ 4192.187264]  <TASK>
+[ 4192.187264]  __schedule+0x2a4/0x7a0
+[ 4192.187264]  ? rcu_gp_cleanup+0x4f0/0x4f0
+[ 4192.187264]  schedule+0x55/0xa0
+[ 4192.187264]  schedule_timeout+0x83/0x150
+[ 4192.187264]  ? _raw_spin_unlock_irqrestore+0x16/0x30
+[ 4192.187264]  ? timer_migration_handler+0x90/0x90
+[ 4192.187264]  rcu_gp_fqs_loop+0x129/0x5d0
+[ 4192.187264]  rcu_gp_kthread+0x19b/0x240
+[ 4192.187264]  kthread+0xe0/0x110
+[ 4192.187264]  ? kthread_complete_and_exit+0x20/0x20
+[ 4192.187264]  ret_from_fork+0x1f/0x30
+[ 4192.187264]  </TASK>
+[ 4192.187264] rcu: Stack dump where RCU GP kthread last ran:
+[ 4192.187264] Sending NMI from CPU 7 to CPUs 1:
+[ 4150.290203] NMI backtrace for cpu 1 skipped: idling at default_idle+0xb/0x10
+[ 4213.292264] rcu: INFO: rcu_preempt detected stalls on CPUs/tasks:
+[ 4213.293260]  (detected by 0, t=63241 jiffies, g=10393, q=151 ncpus=8)
+[ 4213.293260] rcu: All QSes seen, last rcu_preempt kthread activity 63126 (4298879306-4298816180), jiffies_till_next_fqs=3, root ->qsmask 0x0
+[ 4213.293260] rcu: rcu_preempt kthread timer wakeup didn't happen for 63133 jiffies! g10393 f0x2 RCU_GP_WAIT_FQS(5) ->state=0x200
+[ 4213.293260] rcu:     Possible timer handling issue on cpu=1 timer-softirq=2124
+[ 4213.293260] rcu: rcu_preempt kthread starved for 63151 jiffies! g10393 f0x2 RCU_GP_WAIT_FQS(5) ->state=0x200 ->cpu=1
+[ 4213.293260] rcu:     Unless rcu_preempt kthread gets sufficient CPU time, OOM is now expected behavior.
+[ 4213.293260] rcu: RCU grace-period kthread stack dump:
+[ 4213.293260] task:rcu_preempt     state:R stack:14976 pid:   14 ppid:     2 flags:0x00004000
+[ 4213.293260] Call Trace:
+[ 4213.293260]  <TASK>
+[ 4213.293260]  __schedule+0x2a4/0x7a0
+[ 4213.293260]  ? rcu_gp_cleanup+0x4f0/0x4f0
+[ 4213.293260]  schedule+0x55/0xa0
+[ 4213.293260]  schedule_timeout+0x83/0x150
+[ 4213.293260]  ? _raw_spin_unlock_irqrestore+0x16/0x30
+[ 4213.293260]  ? timer_migration_handler+0x90/0x90
+[ 4213.293260]  rcu_gp_fqs_loop+0x129/0x5d0
+[ 4213.293260]  rcu_gp_kthread+0x19b/0x240
+[ 4213.293260]  kthread+0xe0/0x110
+[ 4213.293260]  ? kthread_complete_and_exit+0x20/0x20
+[ 4213.293260]  ret_from_fork+0x1f/0x30
+[ 4213.293260]  </TASK>
+[ 4213.293260] rcu: Stack dump where RCU GP kthread last ran:
+[ 4213.293260] Sending NMI from CPU 0 to CPUs 1:
+[ 4192.297288] NMI backtrace for cpu 1 skipped: idling at default_idle+0xb/0x10
+```
+
 
 ### 参考资料
 - [What is RCU, Fundamentally?](https://lwn.net/Articles/262464/)

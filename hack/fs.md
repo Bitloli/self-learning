@@ -689,6 +689,7 @@ https://kernel-recipes.org/en/2019/talks/faster-io-through-io_uring/
 - IORING_ENTER_SQ_WAKEUP
 
 - https://github.com/tokio-rs/io-uring
+- https://lwn.net/Articles/879724/ ：终于，两年之后，开始处理网络的问题了
 
 ## file writeback
 fs/file-writeback.c 中间到底完成什么工作

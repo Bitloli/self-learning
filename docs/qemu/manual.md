@@ -218,6 +218,8 @@ open vnc://192.168.23.126:5900
 (qemu) set_password vnc 123456
 ```
 
+## 删除 Guest 机器代码
+参考[这里](https://askubuntu.com/questions/281074/can-i-set-my-user-account-to-have-no-password)
 
 ## TODO
 - [ ] 利用 QEMU 给一个分区安装操作系统

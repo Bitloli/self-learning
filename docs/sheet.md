@@ -15,6 +15,9 @@
 - rpm2cpio shim-15.4-2.oe2203.src.rpm | cpio -idmv  : 解压一个 rpm 包
 - rpm -i --force -nodeps url 可以自动下载安装内核
 - yum install whatprovides xxd
+- yum install epel-release
+  - 为了安装 sshfs
+  - https://support.moonpoint.com/os/unix/linux/centos/epel_repository.php
 
 ## tar
 - tar czf name_of_archive_file.tar.gz name_of_directory_to_tar

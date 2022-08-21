@@ -32,7 +32,7 @@ LAUNCH_GDB=false
 
 # 必选参数
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
-root=/dev/vdb3
+root=/dev/vdb2
 
 if [[ $use_nvme_as_root = true ]]; then
   arg_img="-device nvme,drive=nvme3,serial=foo -drive file=${disk_img},format=qcow2,if=none,id=nvme3"
