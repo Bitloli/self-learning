@@ -148,19 +148,15 @@ ssh martins3@10.0.2.2
 ```
 使用这个方法可以同步 host 的代码到 guest 中:
 ```sh
-git clone  martins3@10.0.2.2:path_to_repo
+git clone martins3@10.0.2.2:path_to_repo
 ```
 
-当然也可以 rsync 或者 sshfs 也是不错的方法。
+当然最方便的方法还是 sshfs
 
-### [ ] ftp
-有待开发
-
-### [ ] nbd
-有待开发
-
-### [ ] virtiofs
-有待开发
+```sh
+mkdir mnt
+sshfs martins3@10.0.2.2:path_to_repo  ~/mnt
+```
 
 ## [PCI bridge](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/bridge.sh)
 
@@ -217,6 +213,12 @@ open vnc://192.168.23.126:5900
 ```txt
 (qemu) set_password vnc 123456
 ```
+
+## 模拟 numa
+内核内存管理中，numa 相关的代码是无处不在的，而一般只有在服务器中才有 numa 的机器，为了测试相关的代码，可以通过 QEMU 来模拟 numa 。
+
+
+- https://futurewei-cloud.github.io/ARM-Datacenter/qemu/how-to-configure-qemu-numa-nodes/
 
 ## 删除 Guest 机器代码
 参考[这里](https://askubuntu.com/questions/281074/can-i-set-my-user-account-to-have-no-password)

@@ -22,3 +22,10 @@
 ## tar
 - tar czf name_of_archive_file.tar.gz name_of_directory_to_tar
   - https://unix.stackexchange.com/questions/46969/compress-a-folder-with-tar
+
+## tools
+- ipcs : 查看 share memory 的
+
+## systemd
+- systemctl --user list-timers --all
+- systemctl list-timers --all

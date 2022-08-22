@@ -3,6 +3,7 @@ set -ex
 
 use_nvme_as_root=false
 use_default_kernel=false
+use_numa=true
 
 abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json
@@ -41,12 +42,18 @@ fi
 
 arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial default_hugepagesz=1G hugepagesz=1G hugepages=8"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
-
 # 可选参数
-arg_mem="-m 12G -smp 8"
+
+arg_mem_cpu="-m 12G -cpu host -smp 8"
+arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
+if [[ $use_numa == true ]]; then
+  # @todo qemu-system-x86_64: -numa node,mem=6G,cpus=0-3,nodeid=0: Parameter -numa node,mem is not supported by this machine type
+  memdev="-object memory-backend-ram,size=4G,id=m0 -object memory-backend-ram,size=4G,id=m1"
+  arg_mem_cpu="$memdev -cpu host -m 8G -smp cpus=4 -numa node,memdev=m0,cpus=0-1,nodeid=0 -numa node,memdev=m1,cpus=2-3,nodeid=1"
+  arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
+fi
+
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
-arg_machine="-machine pc,accel=kvm,kernel-irqchip=on" # q35
-arg_cpu="-cpu host"
 if [[ -n ${seabios+x} ]]; then
   arg_seabios="-chardev file,path=/tmp/seabios.log,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios -bios ${seabios}"
 else
@@ -93,7 +100,7 @@ while getopts "dskthpcm" opt; do
   p) debug_qemu="perf record -F 1000" ;;
   s) debug_kernel="-S -s" ;;
   k) LAUNCH_GDB=true ;;
-  t) arg_machine="--accel tcg,thread=single" arg_cpu="" ;;
+  t) arg_machine="--accel tcg,thread=single" arg_mem_cpu="" ;;
   h) show_help ;;
   c) socat -,echo=0,icanon=0 unix-connect:$serial_socket_path ;;
   m) socat -,echo=0,icanon=0 unix-connect:$mon_socket_path ;;
@@ -167,7 +174,7 @@ if [ $LAUNCH_GDB = true ]; then
   exit 0
 fi
 
-cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem} ${arg_cpu} \
+cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
   ${arg_machine} ${arg_monitor} ${arg_qmp} ${arg_initrd} \
   ${arg_tmp}"

@@ -1,4 +1,5 @@
 # IOMMU
+- [ ] drivers/iommu/hyperv-iommu.c 是个什么概念 ?
 
 ## https://events19.linuxfoundation.cn/wp-content/uploads/2017/11/Shared-Virtual-Addressing_Yisheng-Xie-_-Bob-Liu.pdf
 
@@ -21,7 +22,7 @@ io device 经过各级 pci hub 到达 root complex,  进入 iommu 翻译，然�
 > ‒ No CPU transfer
 > ‒ More efficient
 
->  If access occurs, OS gets notified and can shut the device & driver down and notifies the user or administrator 
+>  If access occurs, OS gets notified and can shut the device & driver down and notifies the user or administrator
 
 - [ ] 找到这一个 os 来处理  malicious driver 的情况
 
@@ -42,10 +43,10 @@ io device 经过各级 pci hub 到达 root complex,  进入 iommu 翻译，然�
 > ‒ But the memory is not accessible concurrently, because of cache policies
 >
 > Two memory pools remain (cache coherent + non-coherent memory regions)
-> 
+>
 > Jobs are still queued through the OS driver chain and suffer from overhead
 >
-> Still requires expert programmers to get performance 
+> Still requires expert programmers to get performance
 
 > IOMMU Driver (running on CPU) issues commands to IOMMU
 > ‒ e.g., Invalidate IOMMU TLB Entry, Invalidate IOTLB Entry
@@ -54,7 +55,7 @@ io device 经过各级 pci hub 到达 root complex,  进入 iommu 翻译，然�
 >
 > Issued via Command Buffer
 > ‒ Memory resident circular buffer
-> ‒ MMIO registers: Base, Head, and Tail register 
+> ‒ MMIO registers: Base, Head, and Tail register
 
 > ![](./img/c.png)
 > device remapping table
@@ -68,5 +69,3 @@ io device 经过各级 pci hub 到达 root complex,  进入 iommu 翻译，然�
 ## https://kernelgo.org/intel_iommu.html
 
 [^1]: http://pages.cs.wisc.edu/~basu/isca_iommu_tutorial/IOMMU_TUTORIAL_ASPLOS_2016.pdf
-
-

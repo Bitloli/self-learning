@@ -1,15 +1,39 @@
-## 如何使用内核参数预留 hugetlb
-
+# hugetlb
 - 无需考虑碎片化的问题。
 - 内核不用使用这些页面。
 - 不用 swap 的。
 - 其 cgroup 是单独分析的。
+- 不会用在 page cache 上的。
 
-alloc_fresh_huge_page
+首先，注意区分一下
+```txt
+obj-$(CONFIG_HUGETLBFS)	+= hugetlb.o
+obj-$(CONFIG_CGROUP_HUGETLB) += hugetlb_cgroup.o
+obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
+```
 
-- 分配过程中，如何逐个地被 memory policy ，cpuset 和 cgroup 管理
+- 如果，hugepage 中的页可以 overcommit 的，但是和 memory 的 overcommit 不是一个东西。
 
-## [ ] 一个 mmap 的时候，其中是否可以同时包含两种 page
+- https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html
+- https://github.com/lagopus/lagopus/blob/master/docs/how-to-allocate-1gb-hugepages.md
+
+## file_operations::mmap 和 vm_area_struct::vm_operations_struct::fault 的关系
+
+- hugetlbfs_file_mmap 中会根据文件的大小预留内存 hugetlb_reserve_pages
+
+调用 hugetlb_reserve_pages 的两个位置:
+- hugetlbfs_file_mmap
+  - newseg : shm.c
+  - ksys_mmap_pgoff : mmap.c
+  - memfd_create : memfd.c
+- hugetlb_file_setup
+
+## [ ] memfd 是做啥的
+
+## [ ] 一个 mmap 的时候，其中是否可以同时包含两种 size 大小的 page
+- 不是有一个 mask 吗?
+
+## 分配过程中，如何逐个地被 memory policy ，cpuset 和 cgroup 管理
 
 ## 理解一下核心结构体
 
@@ -79,8 +103,6 @@ dequeue_huge_page_vma 中还是有 memory policy 的代码的啊
   - 或者说 hugetlb 的 memcg 在什么位置
 - [ ] echo 20 > /proc/sys/vm/nr_hugepages 是做什么的?
 - [ ] ➜  linux git:(master) ✗ /home/martins3/core/linux/Documentation/translations/zh_CN/mm/hugetlbfs_reserv.rst
-- [ ] https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html
-
 ## CONFIG_CONTIG_ALLOC 是做什么
 
 ```txt
@@ -170,7 +192,36 @@ const struct vm_operations_struct hugetlb_vm_ops = {
 ## 和 gup 还有关系，靠
 - follow_huge_pud 和类似的一堆函数 follow 函数
 
-## 和 memory policy 有关系的
+## [ ] 似乎 hugepage 在 numa 中不是均匀分布的
+
+如何解释下面的现象哇 ?
+```txt
+[martins3@localhost ~]$ numactl -H
+available: 2 nodes (0-1)
+node 0 cpus: 0 1 2 3
+node 0 size: 3931 MB
+node 0 free: 2769 MB
+node 1 cpus: 4 5 6 7
+node 1 size: 4030 MB
+node 1 free: 677 MB
+node distances:
+node   0   1
+  0:  10  20
+  1:  20  10
+```
+
+## [ ] 和 memory policy 有关系的
+### nr_hugepages_mempolicy 的含义是什么
+
+### hugetlbfs_inode_info::policy 似乎根本没有用
+```c
+struct hugetlbfs_inode_info {
+	struct shared_policy policy;
+	struct inode vfs_inode;
+	unsigned int seals;
+};
+```
+- [ ] 什么叫做 shared policy ?
 
 ## 分配和回收是如何进行的
 
@@ -305,8 +356,6 @@ reservation 应该是创建的时候就存在的，但是为什么要设计出�
 
 ## pool
 
-- [ ] subpool 是个什么概念
-
 通过触发 /proc/sys/vm/nr_hugepages 来控制 pool 中的 pages 的数量
 ```txt
 #0  remove_pool_huge_page (h=h@entry=0xffffffff834abe20 <hstates>, nodes_allowed=nodes_allowed@entry=0xffffffff82cf8218 <node_states+24>, acct_surplus=acct_surplu
@@ -328,6 +377,8 @@ s.h:2187
 #11 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
 #12 0x0000000000000000 in ?? ()
 ```
+
+- [ ] subpool 是个什么概念
 
 ## hugepage_subpool_get_pages
 
@@ -394,21 +445,12 @@ n_level=min_level@entry=-1, max_level=max_level@entry=-1, arg=0x0 <fixed_percpu_
 #10 0x0000000000000000 in ?? ()
 ```
 
-- 为什么要调用两次哇
+-  [ ] 为什么要调用两次哇
 
 ## 需要分析的
 
-首先，注意区分一下
-```txt
-obj-$(CONFIG_HUGETLBFS)	+= hugetlb.o
-obj-$(CONFIG_CGROUP_HUGETLB) += hugetlb_cgroup.o
-obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
-```
 - [ ] https://lwn.net/Articles/839737/
   - https://lwn.net/ml/linux-kernel/20201210035526.38938-1-songmuchun@bytedance.com/
-
-## 首先使用起来
-- https://github.com/lagopus/lagopus/blob/master/docs/how-to-allocate-1gb-hugepages.md
 
 ## hugetlb
 
@@ -473,16 +515,6 @@ Further, there are important differences between shared and private mappings dep
 - [ ] 这个文档还是没有看完的，感觉 hugetlb 设计有点问题
 
 # hugetlbfs
-如何分配 1G 的 page
-
-1. 每一个 pagesize 都是添加一个大小
-2. `gather_bootmem_prealloc` : 似乎的确对于 bootmem 存在特殊处理
-3. 阅读 linhugetlbfs ，其大致的功能是 : 在该文件系统中间的 mmap 出来的都是 hugepage，但是现在不知道如何测试！
-4. subpool 和 reserved map 都是为了 alloc huge page 处理的。
-5. `alloc_huge_page` 还会处理 numa 之类的各种业务
-6. `enqueue_huge_page` : huge page 的关系需要单独的分析。
-7. page cache 相关的
-
 ```c
 /*
  * node_hstate/s - associate per node hstate attributes, via their kobjects,
@@ -519,138 +551,63 @@ struct resv_map {
 };
 ```
 
-```c
-#define HSTATE_NAME_LEN 32
-/* Defines one hugetlb page size */
-struct hstate {
-	int next_nid_to_alloc;
-	int next_nid_to_free;
-	unsigned int order;
-	unsigned long mask;
-	unsigned long max_huge_pages;
-	unsigned long nr_huge_pages;
-	unsigned long free_huge_pages;
-	unsigned long resv_huge_pages;
-	unsigned long surplus_huge_pages;
-	unsigned long nr_overcommit_huge_pages;
-	struct list_head hugepage_activelist;
-	struct list_head hugepage_freelists[MAX_NUMNODES];
-	unsigned int nr_huge_pages_node[MAX_NUMNODES];
-	unsigned int free_huge_pages_node[MAX_NUMNODES];
-	unsigned int surplus_huge_pages_node[MAX_NUMNODES];
-#ifdef CONFIG_CGROUP_HUGETLB
-	/* cgroup control files */
-	struct cftype cgroup_files_dfl[5];
-	struct cftype cgroup_files_legacy[5];
-#endif
-	char name[HSTATE_NAME_LEN];
-};
-```
 
 ## hugepage_subpool
-```c
-struct hugepage_subpool *hugepage_new_subpool(struct hstate *h, long max_hpages,
-						long min_hpages);
-void hugepage_put_subpool(struct hugepage_subpool *spool);
+
+hugepage_put_subpool 和 hugepage_new_subpool 是对应的:
+```txt
+#0  hugepage_new_subpool (h=0xffffffff834abe20 <hstates>, max_hpages=-1, min_hpages=2) at include/linux/slab.h:600
+#1  0xffffffff81432d2b in hugetlbfs_fill_super (sb=0xffff888302e7e000, fc=<optimized out>) at fs/hugetlbfs/inode.c:1359
+#2  0xffffffff813207c9 in vfs_get_super (fill_super=0xffffffff81432c90 <hugetlbfs_fill_super>, keying=vfs_get_independent_super, fc=0xffff8883042c29c0) at fs/super.c:1168
+#3  get_tree_nodev (fc=0xffff8883042c29c0, fill_super=0xffffffff81432c90 <hugetlbfs_fill_super>) at fs/super.c:1198
+#4  0xffffffff8131ee8d in vfs_get_tree (fc=0xffffffff834abe20 <hstates>, fc@entry=0xffff8883042c29c0) at fs/super.c:1530
+#5  0xffffffff813482d3 in do_new_mount (data=0xffff88830a771000, name=0xffff888300d273d0 "none", mnt_flags=32, sb_flags=<optimized out>, fstype=0x20 <fixed_percpu_data+32> <error: Cannot acc
+ess memory at address 0x20>, path=0xffffc90000cb7ef8) at fs/namespace.c:3040
+#6  path_mount (dev_name=dev_name@entry=0xffff888300d273d0 "none", path=path@entry=0xffffc90000cb7ef8, type_page=type_page@entry=0xffff8883086e9f10 "hugetlbfs", flags=<optimized out>, flags@
+entry=3236757504, data_page=data_page@entry=0xffff88830a771000) at fs/namespace.c:3370
+#7  0xffffffff81348b72 in do_mount (data_page=0xffff88830a771000, flags=3236757504, type_page=0xffff8883086e9f10 "hugetlbfs", dir_name=0x555d2fa642f0 "/mnt/huge", dev_name=0xffff888300d273d0
+ "none") at fs/namespace.c:3383
+#8  __do_sys_mount (data=<optimized out>, flags=3236757504, type=<optimized out>, dir_name=0x555d2fa642f0 "/mnt/huge", dev_name=<optimized out>) at fs/namespace.c:3591
+#9  __se_sys_mount (data=<optimized out>, flags=3236757504, type=<optimized out>, dir_name=93858719744752, dev_name=<optimized out>) at fs/namespace.c:3568
+#10 __x64_sys_mount (regs=<optimized out>) at fs/namespace.c:3568
+#11 0xffffffff81ea93c8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90000cb7f58) at arch/x86/entry/common.c:50
 ```
 
-被 hugetlbfs_fill_super 调用，也就是一个 mount point 对应一个.
+- [ ] hugepage_subpool_get_pages 和 hugepage_subpool_put_pages 是如何使用的
 
-pool 就会用于预留 hugepage
+## inode
 
-
-1. get pages
-```c
-/*
- * Subpool accounting for allocating and reserving pages.
- * Return -ENOMEM if there are not enough resources to satisfy the
- * the request.  Otherwise, return the number of pages by which the
- * global pools must be adjusted (upward).  The returned value may
- * only be different than the passed value (delta) in the case where
- * a subpool minimum size must be manitained.
- */
-static long hugepage_subpool_get_pages(struct hugepage_subpool *spool,
-				      long delta)
-{
-	long ret = delta;
-
-	if (!spool)
-		return ret;
-
-	spin_lock(&spool->lock);
-
-	if (spool->max_hpages != -1) {		/* maximum size accounting */
-		if ((spool->used_hpages + delta) <= spool->max_hpages)
-			spool->used_hpages += delta;
-		else {
-			ret = -ENOMEM;
-			goto unlock_ret;
-		}
-	}
-
-	/* minimum size accounting */
-	if (spool->min_hpages != -1 && spool->rsv_hpages) {
-		if (delta > spool->rsv_hpages) {
-			/*
-			 * Asking for more reserves than those already taken on
-			 * behalf of subpool.  Return difference.
-			 */
-			ret = delta - spool->rsv_hpages;
-			spool->rsv_hpages = 0;
-		} else {
-			ret = 0;	/* reserves already accounted for */
-			spool->rsv_hpages -= delta;
-		}
-	}
-
-unlock_ret:
-	spin_unlock(&spool->lock);
-	return ret;
-}
+```txt
+#0  hugetlbfs_create (mnt_userns=0xffffffff82a618e0 <init_user_ns>, dir=0xffff88830c764010, dentry=0xffff8883081b39c0, mode=33188, excl=false) at fs/hugetlbfs/inode.c:931
+#1  0xffffffff8132eb98 in lookup_open (op=0xffffc9000237fedc, op=0xffffc9000237fedc, got_write=true, file=0xffff88830591ff00, nd=0xffffc9000237fdc0) at fs/namei.c :3413
+#2  open_last_lookups (op=0xffffc9000237fedc, file=0xffff88830591ff00, nd=0xffffc9000237fdc0) at fs/namei.c:3481
+#3  path_openat (nd=nd@entry=0xffffc9000237fdc0, op=op@entry=0xffffc9000237fedc, flags=flags@entry=65) at fs/namei.c:3688
+#4  0xffffffff8132fd0d in do_filp_open (dfd=dfd@entry=-100, pathname=pathname@entry=0xffff8883020a5000, op=op@entry=0xffffc9000237fedc) at fs/namei.c:3718
+#5  0xffffffff813198d5 in do_sys_openat2 (dfd=dfd@entry=-100, filename=<optimized out>, how=how@entry=0xffffc9000237ff18) at fs/open.c:1311
+#6  0xffffffff81319cb0 in do_sys_open (mode=<optimized out>, flags=<optimized out>, filename=<optimized out>, dfd=-100) at fs/open.c:1327
+#7  __do_sys_open (mode=<optimized out>, flags=<optimized out>, filename=<optimized out>) at fs/open.c:1335
+#8  __se_sys_open (mode=<optimized out>, flags=<optimized out>, filename=<optimized out>) at fs/open.c:1331
+#9  __x64_sys_open (regs=<optimized out>) at fs/open.c:1331
+#10 0xffffffff81ea93c8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc9000237ff58) at arch/x86/entry/common.c:50
+#11 do_syscall_64 (regs=0xffffc9000237ff58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#12 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
 ```
 
-2. put pages
+- `hugetlbfs_file_operations` 是没有注册对应的 write 操作的，只有 `hugetlbfs_read_iter` 和 `hugetlbfs_file_mmap` 的操作，
 
-```c
-/*
- * Subpool accounting for freeing and unreserving pages.
- * Return the number of global page reservations that must be dropped.
- * The return value may only be different than the passed value (delta)
- * in the case where a subpool minimum size must be maintained.
- */
-static long hugepage_subpool_put_pages(struct hugepage_subpool *spool,
-				       long delta)
-{
-	long ret = delta;
+使用 echo aaa > a 会失败的
 
-	if (!spool)
-		return delta;
-
-	spin_lock(&spool->lock);
-
-	if (spool->max_hpages != -1)		/* maximum size accounting */
-		spool->used_hpages -= delta;
-
-	 /* minimum size accounting */
-	if (spool->min_hpages != -1 && spool->used_hpages < spool->min_hpages) {
-		if (spool->rsv_hpages + delta <= spool->min_hpages)
-			ret = 0;
-		else
-			ret = spool->rsv_hpages + delta - spool->min_hpages;
-
-		spool->rsv_hpages += delta;
-		if (spool->rsv_hpages > spool->min_hpages)
-			spool->rsv_hpages = spool->min_hpages;
-	}
-
-	/*
-	 * If hugetlbfs_put_super couldn't free spool due to an outstanding
-	 * quota reference, free it now.
-	 */
-	unlock_or_release_subpool(spool);
-
-	return ret;
-}
+```txt
+#0  hugetlbfs_read_iter (iocb=0xffffc90002e67e98, to=0xffffc90002e67e70) at fs/hugetlbfs/inode.c:290
+#1  0xffffffff8131ce0c in call_read_iter (iter=0xffffc90002e67e70, kio=0xffffc90002e67e98, file=0xffff88830c7d5300) at include/linux/fs.h:2181
+#2  new_sync_read (ppos=0xffffc90002e67f08, len=1073741824, buf=0x7f8f4d05f000 <error: Cannot access memory at address 0x7f8f4d05f000>, filp=0xffff88830c7d5300) at fs/read_write.c:389
+#3  vfs_read (file=file@entry=0xffff88830c7d5300, buf=buf@entry=0x7f8f4d05f000 <error: Cannot access memory at address 0x7f8f4d05f000>, count=count@entry=1073741824, pos=pos@entry=0xffffc90002e67f08) at fs/read_write.c:470
+#4  0xffffffff8131d5da in ksys_read (fd=<optimized out>, buf=0x7f8f4d05f000 <error: Cannot access memory at address 0x7f8f4d05f000>, count=1073741824) at fs/read_write.c:607
+#5  0xffffffff81ea93c8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90002e67f58) at arch/x86/entry/common.c:50
+#6  do_syscall_64 (regs=0xffffc90002e67f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#7  0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+#8  0x0000000000000fff in ?? ()
+#9  0x0000000000000000 in ?? ()
 ```
 
 ## alloc_huge_page && hugetlb_reserve_pages
