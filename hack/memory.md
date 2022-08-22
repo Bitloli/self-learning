@@ -1829,43 +1829,6 @@ enum migratetype {
  Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ```
 
-
-
-
-## numa
-1. 创建的内存最好是就是在附近 ：buddy 和 slub 分配器的策略，这些策略被整理成为 mempolicy.c
-2. 运行过程中间发生变化 : migrate.c
-
-首先分析一波 numa 的基础知识 [^6]
-
-用户层次:
-Available policies are
-1. **page interleaving** (i.e., allocate in a round-robin fashion from all, or a subset, of the nodes on the system), inorder to overload the initial boot node with boot-time allocations.
-2. **preferred node allocation** (i.e., preferably allocate on a particular node),
-3. **local allocation** (i.e., allocate on the node on which the task is currently executing), or
-4. **allocation only on specific nodes** (i.e., allocate on some subset of the available nodes).  It is also possible to bind tasks to specific nodes.
-
-分析 syscall :
-1. get_mempolicy
-2. mbind
-3. migrate_page
-
-
-
-
-#### mempolicy
-读一下文档: [^7] (文档很清晰)
-1. Memory policies are a programming interface that a NUMA-aware application can take advantage of. (**所以向用户提供了什么 interface **)
-2. cpusets which is an administrative mechanism for restricting the nodes from which memory may be allocated by a set of processes.  cpuset 和 numa mempolicy 同时出现的时候，cpuset 优先(**cpuset 是什么**)
-3. 一共四个模式 和 两个flags MPOL_F_STATIC_NODES 和 MPOL_F_RELATIVE_NODES (**flag 的作用有点迷**)
-4. 还分析了一下 mol_put 和 mol_get 的问题
-
-```c
-// 获取 vma 对应的 policy ，解析出来 preferred_nid 和 nodemask 然后
-struct page * alloc_pages_vma(gfp_t gfp, int order, struct vm_area_struct *vma, unsigned long addr, int node, bool hugepage)
-```
-> 感觉 mempolicy 并没有什么特殊的地方，只是提供一个syscall 给用户。
-
 ## madvise && fadvise
 madvise 告知内核该范围的内存如何访问
 fadvise 告知内核该范围的文件如何访问，内核从而可以调节 readahead 的参数，或者清理掉该范围的page cache
@@ -2879,8 +2842,6 @@ https://mp.weixin.qq.com/s/ZLXAz8dAdcqS52MzmXU_YA
 [^2]: [lwn : An end to high memory?](https://lwn.net/Articles/813201/)
 [^3]: [lwn#memory management](https://lwn.net/Kernel/Index/#Memory_management)
 [^5]: [Complete virtual memory map of x86_64](https://www.kernel.org/doc/html/latest/x86/x86_64/mm.html)
-[^6]: [NUMA (Non-Uniform Memory Access): An Overview](https://queue.acm.org/detail.cfm?id=2513149)
-[^7]: [kernel doc : numa memory policy](https://www.kernel.org/doc/html/latest/admin-guide/mm/numa_memory_policy.html)
 [^8]: [kernel doc : pin_user_pages() and related calls](https://www.kernel.org/doc/html/latest/core-api/pin_user_pages.html)
 [^9]: [lwn : Explicit pinning of user-space pages](https://lwn.net/Articles/807108/)
 [^10]: [stackoverflow : Using move_pages() to move hugepages?](https://stackoverflow.com/questions/59726288/using-move-pages-to-move-hugepages)

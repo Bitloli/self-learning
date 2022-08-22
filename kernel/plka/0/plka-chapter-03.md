@@ -270,63 +270,6 @@ struct zonelist {
 
 If more than one node can be present on the system, the kernel keeps a bitmap that provides state information for each node. The states are specified with a bitmask, and the following values are possible:
 
-
-一些辅助函数:
-```c
-static inline void node_set_state(int node, enum node_states state) {
-  __node_set(node, &node_states[state]);
-}
-
-
-static __always_inline void __node_set(int node, volatile nodemask_t *dstp) {
-  set_bit(node, dstp->bits);
-}
-
-
-set_bit(long nr, volatile unsigned long *addr) {
-  if (IS_IMMEDIATE(nr)) {
-    asm volatile(LOCK_PREFIX "orb %1,%0"
-      : CONST_MASK_ADDR(nr, addr)
-      : "iq" ((u8)CONST_MASK(nr))
-      : "memory");
-  } else {
-    asm volatile(LOCK_PREFIX "bts %1,%0"
-      : BITOP_ADDR(addr) : "Ir" (nr) : "memory");
-  }
-}
-```
->  除非理解下面的`node_states`中间内容是什么!
-
-```c
-/*
- * Array of node states.
- */
-nodemask_t node_states[NR_NODE_STATES] __read_mostly = {
-  [N_POSSIBLE] = NODE_MASK_ALL,
-  [N_ONLINE] = { { [0] = 1UL } },
-#ifndef CONFIG_NUMA
-  [N_NORMAL_MEMORY] = { { [0] = 1UL } },
-#ifdef CONFIG_HIGHMEM
-  [N_HIGH_MEMORY] = { { [0] = 1UL } },
-#endif
-#ifdef CONFIG_MOVABLE_NODE
-  [N_MEMORY] = { { [0] = 1UL } },
-#endif
-  [N_CPU] = { { [0] = 1UL } },
-#endif  /* NUMA */
-};
-EXPORT_SYMBOL(node_states);
-
-
-typedef struct { DECLARE_BITMAP(bits, MAX_NUMNODES); } nodemask_t;
-
-
-#define DECLARE_BITMAP(name,bits) \
-  unsigned long name[BITS_TO_LONGS(bits)]
-
-#define BITS_TO_LONGS(nr) DIV_ROUND_UP(nr, BITS_PER_BYTE * sizeof(long))
-```
-
 > 本节的内容，正如NUMA的架构，从node -> zone -> page frame 逐级分析的.
 
 

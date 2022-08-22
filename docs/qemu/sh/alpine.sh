@@ -40,7 +40,7 @@ if [[ $use_nvme_as_root = true ]]; then
   root=/dev/nvme1n1
 fi
 
-arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial default_hugepagesz=1G hugepagesz=1G hugepages=8"
+arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 # 可选参数
 

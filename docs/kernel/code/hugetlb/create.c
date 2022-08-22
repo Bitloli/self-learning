@@ -19,8 +19,10 @@ int main(int argc, char *argv[]) {
   } else {
     printf("failed !\n");
   }
+  int c;
+  scanf("%d", &c);
   char *a = (char *)ptr;
-  *a = 'a';
+  *a = '0' + c;
 
   return 0;
 }

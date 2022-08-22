@@ -5,6 +5,7 @@
 不想相同的问题 stackoverflow 两次。
 
 ## Shell
+- export PS1="\W" : 命令提示符只有 working dir
 
 ## find
 - 计算所有一个目录中所有的文件的 hash: find path/to/folder -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum

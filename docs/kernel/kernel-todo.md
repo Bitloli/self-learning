@@ -9,6 +9,14 @@
   - 什么 uninterruptable sleep 之类的哇
 - memory policy, cgroup cpuset, cgroup memory 三个位置同时可以限制内存使用
 
+- [ ] ksm
+- [ ] shmem
+- [ ] /home/maritns3/core/vn/kernel/plka/syn/mm/memory.md 整理一下 pgfault 的过程
+- [ ] gup 机制 : FOLL_GET 之类的 flags 烦死人了
+
+- kobj_to_hstate
+  - 当内核中写 /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages 的时候，通过这个可以知道当前的 node 是什么
+
 ## 写一个内核依赖图
 > 先收集起来
 
