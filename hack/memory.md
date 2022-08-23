@@ -1,102 +1,5 @@
 # linux Memory Management
 
-<!-- vim-markdown-toc GitLab -->
-
-* [introduction](#introduction)
-* [page allocator](#page-allocator)
-    * [page free](#page-free)
-* [page ref](#page-ref)
-* [page fault](#page-fault)
-    * [cow](#cow)
-    * [page table](#page-table)
-* [virtual memory](#virtual-memory)
-    * [fork](#fork)
-    * [paging](#paging)
-    * [copy_from_user](#copy_from_user)
-* [mm_struct](#mm_struct)
-* [mmap](#mmap)
-    * [brk](#brk)
-    * [mmap layout](#mmap-layout)
-    * [page walk](#page-walk)
-    * [process vm access](#process-vm-access)
-* [compaction](#compaction)
-    * [compact deferred](#compact-deferred)
-* [tlb](#tlb)
-* [compound page](#compound-page)
-* [THP](#thp)
-    * [THP admin manual](#thp-admin-manual)
-    * [THP kernel](#thp-kernel)
-    * [THP khugepaged](#thp-khugepaged)
-    * [THP split](#thp-split)
-* [page cache](#page-cache)
-* [address_space](#address_space)
-* [address_space_operations](#address_space_operations)
-    * [page writeback](#page-writeback)
-    * [watermark](#watermark)
-    * [truncate](#truncate)
-    * [readahead](#readahead)
-* [buffer cache](#buffer-cache)
-* [migrate](#migrate)
-* [numa](#numa)
-    * [mempolicy](#mempolicy)
-* [madvise && fadvise](#madvise-fadvise)
-* [highmem](#highmem)
-* [pmem](#pmem)
-    * [vmemmap](#vmemmap)
-* [mmio](#mmio)
-* [physical memory initialization](#physical-memory-initialization)
-* [memory zone](#memory-zone)
-* [shmem](#shmem)
-* [swap](#swap)
-    * [swap cache](#swap-cache)
-    * [swapfile](#swapfile)
-* [vmstate](#vmstate)
-* [mlock](#mlock)
-* [lock](#lock)
-* [hot plug](#hot-plug)
-* [ioremap](#ioremap)
-* [mremap](#mremap)
-* [debug](#debug)
-    * [page owner](#page-owner)
-    * [KASAN](#kasan)
-    * [kmemleak](#kmemleak)
-* [dmapool](#dmapool)
-* [mempool](#mempool)
-* [virtual machine](#virtual-machine)
-    * [mmu notifier](#mmu-notifier)
-    * [balloon compaction](#balloon-compaction)
-* [hmm](#hmm)
-* [CMA](#cma)
-* [zsmalloc](#zsmalloc)
-* [z3fold](#z3fold)
-* [zud](#zud)
-* [memory control group](#memory-control-group)
-* [page poison](#page-poison)
-* [msync](#msync)
-* [mpage](#mpage)
-* [memblock](#memblock)
-* [malloc](#malloc)
-    * [jemalloc](#jemalloc)
-* [profiler](#profiler)
-* [skbuff](#skbuff)
-* [struct page](#struct-page)
-* [idel page](#idel-page)
-* [mprotect](#mprotect)
-* [vma](#vma)
-    * [vm_ops](#vm_ops)
-    * [vm_flags](#vm_flags)
-    * [page_flags](#page_flags)
-* [vmalloc](#vmalloc)
-* [mincore](#mincore)
-* [pageblock](#pageblock)
-* [user address space](#user-address-space)
-* [kaslr](#kaslr)
-* [memfd](#memfd)
-* [DAX](#dax)
-* [CXL](#cxl)
-
-<!-- vim-markdown-toc -->
-
 布局: introduction 写一个综述，然后 reference 各个 section 和 subsection 中间的内容。
 
 // TODO 经过讲解PPT的内容之后，可以整体框架重做为 物理内存，虚拟内存，page cache 和 swap cache 四个部分来分析
@@ -377,76 +280,6 @@ static const struct vm_operations_struct xfs_file_vm_ops = {
 };
 ```
 
-
-#### cow
-- [ ] 如果可以理解 dirty cow，应该 COW 就没有问题吧 https://dirtycow.ninja/
-  - [ ] https://chao-tic.github.io/blog/2017/05/24/dirty-cow : and this one
-- [ ] 理解一下文件系统的 cow 的实现e.g., btrfs
-
-- [ ] check the code related with copying page table when cow
-- 1. do_wp_page 和 do_cow_page 是什么关系 ?
-    1. do_cow_page : 和 mmap 的第一次创建有关系
-2. 什么时候进行 page table 的拷贝 ?
-
-- [ ] do_swap_page is used for read page from anonymous vma, check it's usage
-
-```
-handle_pte_fault ==>
-                    ==> do_wp_page ==> wp_page_copy
-do_swap_page     ==>
-```
-
-- [ ] do_wp_page
-  - [ ] why we should check `PageAnon(vmf->page)` especially
-  - [ ] `return VM_FAULT_WRITE;` check why it need return value
-  - [ ] `(unlikely((vma->vm_flags & (VM_WRITE|VM_SHARED)) == (VM_WRITE|VM_SHARED))` if a write protection fault can be triggered on the writable page.
-
-
-
-- [x] why do_swap_page called do_wp_page ?
-  - at first glance, it's unreasonable, but what if a shared page is swapped out and a process it's trying to write to it.
-```c
-vm_fault_t do_swap_page(struct vm_fault *vmf){
-// ...
-  if (vmf->flags & FAULT_FLAG_WRITE) {
-    ret |= do_wp_page(vmf);
-    if (ret & VM_FAULT_ERROR)
-      ret &= VM_FAULT_ERROR;
-    goto out;
-  }
-// ...
-}
-```
-
-- [x] is_cow_mapping : if the page is shared in parent, it's meanless for child to cow it, just access it.
-```c
-static inline bool is_cow_mapping(vm_flags_t flags)
-{
-  return (flags & (VM_SHARED | VM_MAYWRITE)) == VM_MAYWRITE;
-}
-```
-- https://stackoverflow.com/questions/48241187/memory-region-flags-in-linux-why-both-vm-write-and-vm-maywrite-are-needed
-- https://stackoverflow.com/questions/13405453/shared-memory-pages-and-fork
-
-
-This is a interesting question, if we want to protect a page being written by cow,
-- if the page is writable, so we should clear the writable flags of it ?
-- but if the page is not writable, so we should fail the cow page fault ?
-
-[内存在父子进程间的共享时间及范围](https://www.cnblogs.com/tsecer/p/10487840.html)
-
-```
-sys_fork--->>>>do_fork--->>>copy_process---->>>copy_mm---->>>dup_mm---->>>dup_mmap---->>>copy_page_range---->>>>copy_pud_range---->>>copy_pmd_range---->>>copy_pte_range
----->>>copy_nonpresent_pte
----->>>copy_present_pte
-    ---->>> copy_present_page
-```
-> mmap时它mmap的是私有的，这一点就导致is_cow_mapping中VM_SHARED是没有置位，因此函数返回值为true；对于代码段中的空间，它的VM_SHARED是满足的，所以函数返回false，进而导致父进程和子进程直接共享页面，不会设置COW属性。
-
-
-- [x] copy_nonpresent_pte : copy swap entry, migration entry and device entry
-- [x] copy_present_pte
-- [x] copy_present_page : really simple without dma
 
 #### page table
 - [ ] https://stackoverflow.com/questions/32943129/how-does-arm-linux-emulate-the-dirty-accessed-and-file-bits-of-a-pte
@@ -1063,6 +896,8 @@ x86/mm/tlb.c
 - [] read the article
 
 ## THP
+- 原来的那个文章找过来看看
+
 - [ ] PageDoubleMap
 - [ ] THP only support PMD ? so can it support more than 2M space (21bit) ?
 - [ ] https://gist.github.com/shino/5d9aac68e7ebf03d4962a4c07c503f7d, check references in it
@@ -2825,9 +2660,6 @@ ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsysca
 - [ ] Sometimes /proc/$pid/maps show text address start at 0x400000, sometimes 0x055555555xxx,
 maybe because of user space address randomization
     - [  ] https://www.theurbanpenguin.com/aslr-address-space-layout-randomization/
-
-## memfd
-https://mp.weixin.qq.com/s/ZLXAz8dAdcqS52MzmXU_YA
 
 ## DAX
 面试的时候被问了好几次

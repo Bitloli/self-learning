@@ -1,3 +1,76 @@
+
+- https://stackoverflow.com/questions/9519648/what-is-the-difference-between-map-shared-and-map-private-in-the-mmap-function
+
+#### cow
+- [ ] 如果可以理解 dirty cow，应该 COW 就没有问题吧 https://dirtycow.ninja/
+  - [ ] https://chao-tic.github.io/blog/2017/05/24/dirty-cow : and this one
+- [ ] 理解一下文件系统的 cow 的实现 e.g., btrfs
+
+- [ ] check the code related with copying page table when cow
+- 1. do_wp_page 和 do_cow_page 是什么关系 ?
+    1. do_cow_page : 和 mmap 的第一次创建有关系
+2. 什么时候进行 page table 的拷贝 ?
+
+- [ ] do_swap_page is used for read page from anonymous vma, check it's usage
+
+```plain
+handle_pte_fault ==>
+                    ==> do_wp_page ==> wp_page_copy
+do_swap_page     ==>
+```
+
+- [ ] do_wp_page
+  - [ ] why we should check `PageAnon(vmf->page)` especially
+  - [ ] `return VM_FAULT_WRITE;` check why it need return value
+  - [ ] `(unlikely((vma->vm_flags & (VM_WRITE|VM_SHARED)) == (VM_WRITE|VM_SHARED))` if a write protection fault can be triggered on the writable page.
+
+
+
+- [x] why do_swap_page called do_wp_page ?
+  - at first glance, it's unreasonable, but what if a shared page is swapped out and a process it's trying to write to it.
+```c
+vm_fault_t do_swap_page(struct vm_fault *vmf){
+// ...
+  if (vmf->flags & FAULT_FLAG_WRITE) {
+    ret |= do_wp_page(vmf);
+    if (ret & VM_FAULT_ERROR)
+      ret &= VM_FAULT_ERROR;
+    goto out;
+  }
+// ...
+}
+```
+
+- [x] is_cow_mapping : if the page is shared in parent, it's meanless for child to cow it, just access it.
+```c
+static inline bool is_cow_mapping(vm_flags_t flags)
+{
+  return (flags & (VM_SHARED | VM_MAYWRITE)) == VM_MAYWRITE;
+}
+```
+- https://stackoverflow.com/questions/48241187/memory-region-flags-in-linux-why-both-vm-write-and-vm-maywrite-are-needed
+- https://stackoverflow.com/questions/13405453/shared-memory-pages-and-fork
+
+
+This is a interesting question, if we want to protect a page being written by cow,
+- if the page is writable, so we should clear the writable flags of it ?
+- but if the page is not writable, so we should fail the cow page fault ?
+
+[内存在父子进程间的共享时间及范围](https://www.cnblogs.com/tsecer/p/10487840.html)
+
+```plain
+sys_fork--->>>>do_fork--->>>copy_process---->>>copy_mm---->>>dup_mm---->>>dup_mmap---->>>copy_page_range---->>>>copy_pud_range---->>>copy_pmd_range---->>>copy_pte_range
+---->>>copy_nonpresent_pte
+---->>>copy_present_pte
+    ---->>> copy_present_page
+```
+> mmap 时它 mmap 的是私有的，这一点就导致 is_cow_mapping 中 VM_SHARED 是没有置位，因此函数返回值为 true；对于代码段中的空间，它的 VM_SHARED 是满足的，所以函数返回 false，进而导致父进程和子进程直接共享页面，不会设置 COW 属性。
+
+
+- [x] copy_nonpresent_pte : copy swap entry, migration entry and device entry
+- [x] copy_present_pte
+- [x] copy_present_page : really simple without dma
+
 # Dirty Cow 漏洞的复现和利用
 
 ## 前言

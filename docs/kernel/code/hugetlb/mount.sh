@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-mount -t hugetlbfs -o min_size=2G,nr_inodes=100 none /mnt/huge
 
-# 如果想要制定大小，如何处理 pagesize
+# @todo 如何设置 page size
+mount -t hugetlbfs -o min_size=100M,nr_inodes=100 none /mnt/huge

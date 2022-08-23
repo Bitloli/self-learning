@@ -22,6 +22,47 @@ obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
   - /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages
   - /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages_mempolicy
 
+
+默认的 mount 点:
+```txt
+hugetlbfs /dev/hugepages hugetlbfs rw,seclabel,relatime,pagesize=1024M 0 0
+```
+libhugetlbfs 中有个函数 : `hugetlbfs_find_path_for_size`
+
+- hugetlb_file_setup
+  - hugetlb_reserve_pages
+  - alloc_file_pseudo ：如果成功，该文件关联的的 hugetlbfs_file_operations
+
+```c
+struct hugetlbfs_inode_info {
+    struct shared_policy policy;
+    struct inode vfs_inode;
+    unsigned int seals;
+};
+```
+- `hugetlbfs_setattr` 中为什么需要修改 inode 的大小
+  - 应该是修改文件的大小的
+
+- [ ] 我是没有想到，居然 2021 才支持的: https://lwn.net/Articles/872070/
+  - https://stackoverflow.com/questions/27997934/mremap2-with-hugetlb-to-change-virtual-address : 直接可以通过 hugetlbfs 来实现
+
+
+- VM_MAYSHARE 是什么时候创建的
+  - do_mmap 的时候，参数 MMAP_SHARE
+
+## hugetlb 是如何影响文件系统的
+- 不能作为 page cache 的？
+- 对于文件系统是透明的吗?
+
+## [ ] 如果一个共享的 vma ，两个 thread 同时读一个位置，如何保证不会出现错误
+
+## alloc_huge_page && hugetlb_reserve_pages
+都是 hugepage_subpool_get_pages 打交道，只是一个在 page fault 的时候处理，一个是在 mmap 的时候
+
+alloc_huge_page 调用位置 : hugetlb_cow(被 hugetlb_no_page 调用) hugetlb_no_page(被 hugetlb_fault 调用)
+
+hugetlb_reserve_pages :  hugetlb_file_setup 和 hugetlbfs_file_mmap
+
 ## file_operations::mmap 和 vm_area_struct::vm_operations_struct::fault 的关系
 
 - hugetlbfs_file_mmap 中会根据文件的大小预留内存 hugetlb_reserve_pages
@@ -33,8 +74,6 @@ obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
   - memfd_create : memfd.c
 - hugetlb_file_setup
 
-## [ ] memfd 是做啥的
-
 ## 普通的 page 和 hugepage 是如何转换的
 
 ```c
@@ -44,7 +83,7 @@ obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
 最后全部在:
 
 - set_max_huge_pages
-  - [ ] try_to_free_low : 没有太看懂，但是
+  - [ ] try_to_free_low : 没有太看懂，但是 highmem 的时候才需要
   - remove_pool_huge_page
     - `__remove_hugetlb_page` ：从其中看，hugepage 和 普通的 page 都是可以释放的
   - update_and_free_pages_bulk
@@ -68,6 +107,7 @@ free 2M 的
 ```
 
 free 1G 也是类似的，但是需要注意的，当把数值降低之后，是没有办法再将数值升高的。
+如果 hugetlb 永远不会增加了。
 
 ## [ ] 大页如何 KSM
 
@@ -124,8 +164,6 @@ struct hstate {
 
 ## [ ] transpaent huge page 的代码量为什么少，到底是为了处理什么问题，让 hugetlb 如此复杂
 
-从 `set_max_huge_pages` 中分析
-
 ## [ ] demote 如何工作的
 
 ## [ ] alloc_buddy_huge_page_with_mpol 为什么正好在  dequeue_huge_page_vma 分配不出来的时候进行
@@ -137,15 +175,20 @@ dequeue_huge_page_vma 中还是有 memory policy 的代码的啊
     hugetlb_cgroup_commit_charge(idx, pages_per_huge_page(h), h_cg, page);
 ```
 
+## cgroup 是如何影响的
+- hugetlb_cgroup_charge_cgroup 和 hugetlb_cgroup_commit_charge_rsvd 在 alloc_huge_page 的时候被检查
+
+## [ ] cpuset 是如何影响的
+- dequeue_huge_page_nodemask 中会检查 cpuset_zone_allowed
+- [ ] hugetlb_acct_memory : 这个功能是啥，暂时不知道
 
 ## TODO
-- https://zhuanlan.zhihu.com/p/392703566
-- [ ] transparent huge tlb 的论文找过来一下，实际上，没有人使用这个。
 - [ ] https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
-- [ ] mem_cgroup_charge 是用户态分配内存检查的位置，但是为什么 hugetlb 的分配是完全没有使用
-  - 或者说 hugetlb 的 memcg 在什么位置
-- [ ] echo 20 > /proc/sys/vm/nr_hugepages 是做什么的?
-- [ ] ➜  linux git:(master) ✗ /home/martins3/core/linux/Documentation/translations/zh_CN/mm/hugetlbfs_reserv.rst
+- [ ] /home/martins3/core/linux/Documentation/translations/zh_CN/mm/hugetlbfs_reserv.rst
+- [ ] https://lwn.net/Articles/839737/
+  - https://lwn.net/ml/linux-kernel/20201210035526.38938-1-songmuchun@bytedance.com/
+- https://zhuanlan.zhihu.com/p/392703566
+
 ## CONFIG_CONTIG_ALLOC 是做什么
 
 ```txt
@@ -165,38 +208,7 @@ config CONTIG_ALLOC
 ## [ ] 预留的时候需要制定每一种大小的 page 的数量吗
 
 ## [x] 如果 hugetlb_file_setup 是入口，那个文件系统还需要使用吗
-
 ksys_mmap_pgoff 中处理过，
-
-## [ ] init_hugetlbfs_fs 是什么时候调用的
-
-## [ ] init_hugetlbfs_fs 中，似乎每一个 size 都是单独的一个 mount 点
-
-## [ ] 测试一下 hugetlbfs_symlink / hugetlbfs_tmpfile
-
-默认的 mount 点:
-```txt
-hugetlbfs /dev/hugepages hugetlbfs rw,seclabel,relatime,pagesize=1024M 0 0
-```
-libhugetlbfs 中有个函数 : `hugetlbfs_find_path_for_size`
-
-- hugetlb_file_setup
-  - hugetlb_reserve_pages
-  - alloc_file_pseudo ：如果成功，该文件关联的的 hugetlbfs_file_operations
-
-- [ ] hugetlbfs_read_iter : 这个是做啥的
-
-```c
-struct hugetlbfs_inode_info {
-    struct shared_policy policy;
-    struct inode vfs_inode;
-    unsigned int seals;
-};
-```
-- [ ] `hugetlbfs_setattr` 中为什么需要修改 inode 的大小
-
-- [ ] 我是没有想到，居然 2021 才支持的: https://lwn.net/Articles/872070/
-  - https://stackoverflow.com/questions/27997934/mremap2-with-hugetlb-to-change-virtual-address : 直接可以通过 hugetlbfs 来实现
 
 
 ## [ ] vm_operations_struct
@@ -230,7 +242,13 @@ const struct vm_operations_struct hugetlb_vm_ops = {
 ```
 - hugetlb_vm_op_open 不会被调用，是因为其只是在被 copy 的时候才有用的。
 
-## 和 gup 还有关系，靠
+下面几个都是什么意思:
+- [ ] open
+- [ ] close
+- [ ] may_split
+- [ ] pagesize
+
+## gup
 - follow_huge_pud 和类似的一堆函数 follow 函数
 
 ## [ ] 似乎 hugepage 在 numa 中不是均匀分布的
@@ -275,9 +293,12 @@ HugePages_Free:     1835
 ```
 而同时大小为 1G 的页面还是那么多，看来 demote 是有点难以触发的。
 
-## [ ] 和 memory policy 有关系的
+## [ ] copy_hugetlb_page_range
 
-### hugetlbfs_inode_info::policy 似乎根本没有用
+## memory policy 只是在调整 nr_hugepages 的时候有用，在 fault 的时候应该也是效果的才对吧
+- 是的，在分配的环节中，dequeue_huge_page_vma => huge_node ，在其中分配的时候，将会
+
+## [ ] hugetlbfs_inode_info::policy 似乎根本没有用过
 ```c
 struct hugetlbfs_inode_info {
     struct shared_policy policy;
@@ -287,6 +308,24 @@ struct hugetlbfs_inode_info {
 ```
 - 什么叫做 shared policy ?
 
+## seal
+
+- [mm: Add an F_SEAL_FUTURE_WRITE seal to memfd](https://lwn.net/Articles/768785/)
+
+hugetlbfs_inode_info 中的 policy 是没有用吧的发
+```c
+struct hugetlbfs_inode_info {
+    struct shared_policy policy;
+    struct inode vfs_inode;
+    unsigned int seals;
+};
+```
+
+- hugetlbfs_get_inode 和 shmem_get_inode 相同，默认初始化 seals 为  F_SEAL_SEAL，表示所有的操作都可以，但是之后可以通过 memfd 实现。
+
+- hugetlbfs_inode_info::seals :  在 hugetlbfs_get_inode
+
+## set_max_huge_pages
 - /sys/devices/system/node/node[0-9]*/hugepages/ 中的 nr_hugepages 是什么含义
   - 最后会调用到 set_max_huge_pages ，但是 /proc/sys/vm/nr_hugepages 应该也是可以调用到此处，其中的差别在于
 
@@ -365,8 +404,6 @@ struct hugetlbfs_inode_info {
 hugetlb_vm_op_fault 是一定不会触发的，因为很早的时候就已经被 handle_mm_fault 中被劫持了。
 
 - [ ] 但是为什么不使用常规路径哇，而是非要改动主线代码?
-
-
 
 ## reservation
 - [ ] hugetlb_vm_op_open 处理 reservation 的
@@ -470,7 +507,22 @@ s.h:2187
 #12 0x0000000000000000 in ?? ()
 ```
 
-- [ ] subpool 是个什么概念
+## subpool
+
+通过 vma 必然找到其关联的文件，然后找到对应的 fs, 然后就是关联的 subpool
+```c
+static inline struct hugepage_subpool *subpool_inode(struct inode *inode)
+{
+    return HUGETLBFS_SB(inode->i_sb)->spool;
+}
+
+static inline struct hugepage_subpool *subpool_vma(struct vm_area_struct *vma)
+{
+    return subpool_inode(file_inode(vma->vm_file));
+}
+```
+从 hugetlbfs_fill_super 看，默认的 subpool 为 NULL，这导致 hugepage_subpool_get_pages 必然成功。
+
 
 ## hugepage_subpool_get_pages
 
@@ -495,8 +547,163 @@ try=3, flags=flags@entry=262178, pgoff=<optimized out>, pgoff@entry=0, populate=
 #13 0x0000000000000000 in ?? ()
 ```
 
-- alloc_huge_page 中间干了什么 ?
-  - 调用 dequeue_huge_page_vma
+## alloc_huge_page 中间干了什么
+
+- alloc_huge_page
+  - vma_needs_reservation : 检查将要分配的虚拟地址上是否存在，如果返回为 0，说明之前已经预留过
+    - `__vma_reservation_common`
+      - region_chg
+  - dequeue_huge_page_vma
+
+
+- `__vma_reservation_common` 到底需要多少次调用，在一次分配的时候
+
+```txt
+#0  __vma_reservation_common (h=0xffffffff834abe20 <hstates>, vma=0xffff88822998a180, addr=140245337112576, mode=VMA_COMMIT_RESV) at mm/hugetlb.c:2511
+#1  0xffffffff812f230e in vma_commit_reservation (addr=140245337112576, vma=0xffff88822998a180, h=0xffffffff834abe20 <hstates>) at mm/hugetlb.c:2597
+#2  alloc_huge_page (vma=vma@entry=0xffff88822998a180, addr=addr@entry=140245337112576, avoid_reserve=avoid_reserve@entry=0) at mm/hugetlb.c:2952
+#3  0xffffffff812f5c25 in hugetlb_no_page (flags=597, old_pte=..., ptep=0xffff8882281d1a60, address=140245337112576, idx=0, mapping=0xffff888228304188, vma=0xffff88822998a180, mm=0xffff88823951d400) at mm/hugetlb.c:5545
+#4  hugetlb_fault (mm=0xffff88823951d400, vma=vma@entry=0xffff88822998a180, address=address@entry=140245337112576, flags=flags@entry=597) at mm/hugetlb.c:5763
+#5  0xffffffff812be19b in handle_mm_fault (vma=0xffff88822998a180, address=address@entry=140245337112576, flags=flags@entry=597, regs=regs@entry=0xffffc90001d4ff58) at mm/memory.c:5149
+#6  0xffffffff810f2983 in do_user_addr_fault (regs=regs@entry=0xffffc90001d4ff58, error_code=error_code@entry=6, address=address@entry=140245337112576) at arch/x86/mm/fault.c:1397
+#7  0xffffffff81ead672 in handle_page_fault (address=140245337112576, error_code=6, regs=0xffffc90001d4ff58) at arch/x86/mm/fault.c:1488
+#8  exc_page_fault (regs=0xffffc90001d4ff58, error_code=6) at arch/x86/mm/fault.c:1544
+#9  0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+#10 0x0000000000000000 in ?? ()
+```
+
+的确是下面的场景:
+- NEED
+- COMMIT
+- NEED
+- END : 5622
+
+- copy_hugetlb_page_range
+  - restore_reserve_on_error
+    - vma_del_reservation
+    - vma_add_reservation ：这是 end 唯一的调用的位置，但是和 rmap 放到一起，痛苦面具
+
+## [ ] region_chg && region_add
+```txt
+#0  region_chg (resv=resv@entry=0xffff888228c272a0, f=0, t=1, out_regions_needed=out_regions_needed@entry=0xffffc90001abfd60) at include/linux/spinlock.h:349
+#1  0xffffffff812ef935 in __vma_reservation_common (h=<optimized out>, vma=0xffff8882257ec480, addr=<optimized out>, mode=VMA_NEEDS_RESV) at mm/hugetlb.c:2524
+#2  0xffffffff812f1f0f in vma_needs_reservation (addr=<optimized out>, vma=0xffff8882257ec480, h=0xffffffff834abe20 <hstates>) at mm/hugetlb.c:2591
+#3  alloc_huge_page (vma=vma@entry=0xffff8882257ec480, addr=addr@entry=139629120454656, avoid_reserve=avoid_reserve@entry=0) at mm/hugetlb.c:2875
+#4  0xffffffff812f5c25 in hugetlb_no_page (flags=597, old_pte=..., ptep=0xffff88822a000c08, address=139629120454656, idx=0, mapping=0xffff888228c48410, vma=0xffff8882257ec480, mm=0xffff8881226ee800) at mm/hugetlb.c:5545
+#5  hugetlb_fault (mm=0xffff8881226ee800, vma=vma@entry=0xffff8882257ec480, address=address@entry=139629120454656, flags=flags@entry=597) at mm/hugetlb.c:5763
+#6  0xffffffff812be19b in handle_mm_fault (vma=0xffff8882257ec480, address=address@entry=139629120454656, flags=flags@entry=597, regs=regs@entry=0xffffc90001abff58) at mm/memory.c:5149
+#7  0xffffffff810f2983 in do_user_addr_fault (regs=regs@entry=0xffffc90001abff58, error_code=error_code@entry=6, address=address@entry=139629120454656) at arch/x86/mm/fault.c:1397
+#8  0xffffffff81ead672 in handle_page_fault (address=139629120454656, error_code=6, regs=0xffffc90001abff58) at arch/x86/mm/fault.c:1488
+#9  exc_page_fault (regs=0xffffc90001abff58, error_code=6) at arch/x86/mm/fault.c:1544
+#10 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+#11 0x0000000000000000 in ?? ()
+```
+
+```txt
+#0  region_add (resv=resv@entry=0xffff888228c272a0, f=0, t=1, in_regions_needed=in_regions_needed@entry=1, h=h@entry=0x0 <fixed_percpu_data>, h_cg=h_cg@entry=0x0 <fixed_percpu_data>) at mm/hugetlb.c:531
+#1  0xffffffff812ef90c in __vma_reservation_common (h=<optimized out>, vma=0xffff8882257ec480, addr=<optimized out>, mode=VMA_COMMIT_RESV) at mm/hugetlb.c:2532
+#2  0xffffffff812f230e in vma_commit_reservation (addr=139629120454656, vma=0xffff8882257ec480, h=0xffffffff834abe20 <hstates>) at mm/hugetlb.c:2597
+#3  alloc_huge_page (vma=vma@entry=0xffff8882257ec480, addr=addr@entry=139629120454656, avoid_reserve=avoid_reserve@entry=0) at mm/hugetlb.c:2952
+#4  0xffffffff812f5c25 in hugetlb_no_page (flags=597, old_pte=..., ptep=0xffff88822a000c08, address=139629120454656, idx=0, mapping=0xffff888228c48410, vma=0xffff8882257ec480, mm=0xffff8881226ee800) at mm/hugetlb.c:5545
+#5  hugetlb_fault (mm=0xffff8881226ee800, vma=vma@entry=0xffff8882257ec480, address=address@entry=139629120454656, flags=flags@entry=597) at mm/hugetlb.c:5763
+#6  0xffffffff812be19b in handle_mm_fault (vma=0xffff8882257ec480, address=address@entry=139629120454656, flags=flags@entry=597, regs=regs@entry=0xffffc90001abff58) at mm/memory.c:5149
+#7  0xffffffff810f2983 in do_user_addr_fault (regs=regs@entry=0xffffc90001abff58, error_code=error_code@entry=6, address=address@entry=139629120454656) at arch/x86/mm/fault.c:1397
+#8  0xffffffff81ead672 in handle_page_fault (address=139629120454656, error_code=6, regs=0xffffc90001abff58) at arch/x86/mm/fault.c:1488
+#9  exc_page_fault (regs=0xffffc90001abff58, error_code=6) at arch/x86/mm/fault.c:1544
+#10 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+#11 0x0000000000000000 in ?? ()
+```
+
+分析 hugetlb_reserve_pages 中调用 region_chg 的位置，可以发现，如果是之所以创建出来各种 region 出来，是为了处理
+共享的情况，如果一个 mmap 一个共享的，第一个进程使用一部分，这需要 charge，然后第二个函数使用一部分，那么如果和之前的重叠了。
+
+在 hugetlb_no_page 中的这个位置，也有两个，调用这两个函数的位置:
+```c
+    /*
+     * If we are going to COW a private mapping later, we examine the
+     * pending reservations for this page now. This will ensure that
+     * any allocations necessary to record that reservation occur outside
+     * the spinlock.
+     */
+    if ((flags & FAULT_FLAG_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+        if (vma_needs_reservation(h, vma, haddr) < 0) {
+            ret = VM_FAULT_OOM;
+            goto backout_unlocked;
+        }
+        /* Just decrements count, does not deallocate */
+        vma_end_reservation(h, vma, haddr);
+    }
+```
+为什么设置出来
+
+## [ ] unmap_ref_private
+
+## vma_resv_map
+
+```c
+    if (vma->vm_flags & VM_MAYSHARE) {
+```
+- [x] 在 fs/hugetlbfs/inode.c 中创建出来的，一定会带上 `VM_MAYSHARE` 吗?
+  - 是的
+- 不是在 mmap 的时候也是创建了文件吗? hugetlb_file_setup
+    - 是的，即使是匿名映射，也是会关联文件的，因为是为了 : hugetlb_vm_ops
+    - [ ] 如果总是映射一个文件，那么 mremap 还可以操作吗? 还是可以增大 memory 的大小吗?
+
+```txt
+#0  hugetlbfs_file_mmap (file=0xffff8882213f7f00, vma=0xffff88822579b900) at include/linux/fs.h:1333
+#1  0xffffffff812c9a00 in call_mmap (vma=0xffff88822579b900, file=0xffff8882213f7f00) at include/linux/fs.h:2192
+#2  mmap_region (file=file@entry=0xffff8882213f7f00, addr=addr@entry=139783313555456, len=len@entry=16777216, vm_flags=vm_flags@entry=115, pgoff=<optimized out>, uf=uf@entry=0xffffc90001c0feb0) at mm/mmap.c:1749
+#3  0xffffffff812c9fbe in do_mmap (file=file@entry=0xffff8882213f7f00, addr=139783313555456, addr@entry=0, len=len@entry=16777216, prot=<optimized out>, prot@entry=3, flags=flags@entry=262178, pgoff=<optimized out>, pgoff@entry=0, populate=0xffffc90001c0fea8, uf=0xffffc90001c0feb0) at mm/mmap.c:1540
+#4  0xffffffff8129ee35 in vm_mmap_pgoff (file=file@entry=0xffff8882213f7f00, addr=addr@entry=0, len=len@entry=16777216, prot=prot@entry=3, flag=flag@entry=262178, pgoff=pgoff@entry=0) at mm/util.c:552
+#5  0xffffffff812c7333 in ksys_mmap_pgoff (addr=0, len=16777216, prot=3, flags=262178, fd=<optimized out>, pgoff=0) at mm/mmap.c:1586
+#6  0xffffffff81ea93c8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001c0ff58) at arch/x86/entry/common.c:50
+#7  do_syscall_64 (regs=0xffffc90001c0ff58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#8  0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+#9  0x0000000000000003 in fixed_percpu_data ()
+#10 0xffffffffffffffff in ?? ()
+#11 0x0000000000000000 in ?? ()
+```
+
+```c
+/*
+ * These helpers are used to track how many pages are reserved for
+ * faults in a MAP_PRIVATE mapping. Only the process that called mmap()
+ * is guaranteed to have their future faults succeed.
+ *
+ * With the exception of reset_vma_resv_huge_pages() which is called at fork(),
+ * the reserve counters are updated with the hugetlb_lock held. It is safe
+ * to reset the VMA at fork() time as it is not in use yet and there is no
+ * chance of the global counters getting corrupted as a result of the values.
+ *
+ * The private mapping reservation is represented in a subtly different
+ * manner to a shared mapping.  A shared mapping has a region map associated
+ * with the underlying file, this region map represents the backing file
+ * pages which have ever had a reservation assigned which this persists even
+ * after the page is instantiated.  A private mapping has a region map
+ * associated with the original mmap which is attached to all VMAs which
+ * reference it, this region map represents those offsets which have consumed
+ * reservation ie. where pages have been instantiated.
+ */
+static unsigned long get_vma_private_data(struct vm_area_struct *vma)
+{
+    return (unsigned long)vma->vm_private_data;
+}
+```
+
+
+## huge_add_to_page_cache
+
+两个位置调用 huge_add_to_page_cache
+1. hugetlbfs_fallocate : 的确是对于每一个 hugepage 都是需要调用的
+2. hugetlb_no_page : 分配的时候，如果发现其所在的 VM_MAYSHARE 的，那么将会
+
+- hugetlbfs_pagecache_page : 在一个 vma 中，找到对应位置的 page cache 是什么
+
+在 fallocate 的时候，就会分配 page，但是没有建立 mapping 的，然后 hugetlbfs_file_mmap 之后，那么会出现
+
+- hugetlbfs_file_mmap 中还是需要 hugetlb_reserve_pages，但是对于 share mapping 是有检查的
+
+最后，当 page fault 的时候，hugetlb_no_page 中，首先在 page table 中查询。
 
 ## 到底是如何分配的
 - hugetlb_hstate_alloc_pages ：这个是初始化的注册的函数
@@ -538,11 +745,6 @@ n_level=min_level@entry=-1, max_level=max_level@entry=-1, arg=0x0 <fixed_percpu_
 ```
 
 -  [ ] 为什么要调用两次哇
-
-## 需要分析的
-
-- [ ] https://lwn.net/Articles/839737/
-  - https://lwn.net/ml/linux-kernel/20201210035526.38938-1-songmuchun@bytedance.com/
 
 ## hugetlb
 
@@ -702,135 +904,10 @@ entry=3236757504, data_page=data_page@entry=0xffff88830a771000) at fs/namespace.
 #9  0x0000000000000000 in ?? ()
 ```
 
-## alloc_huge_page && hugetlb_reserve_pages
-都是 hugepage_subpool_get_pages 打交道，只是一个在 page fault 的时候处理，一个是在 mmap 的时候
-
-alloc_huge_page 调用位置 : hugetlb_cow(被 hugetlb_no_page 调用) hugetlb_no_page(被 hugetlb_fault 调用)
-
-hugetlb_reserve_pages :  hugetlb_file_setup 和 hugetlbfs_file_mmap
-
-
-## resv_map
-
-```c
-/*
- * Add the huge page range represented by [f, t) to the reserve
- * map.  Existing regions will be expanded to accommodate the specified
- * range, or a region will be taken from the cache.  Sufficient regions
- * must exist in the cache due to the previous call to region_chg with
- * the same range.
- *
- * Return the number of new huge pages added to the map.  This
- * number is greater than or equal to zero.
- */
-static long region_add(struct resv_map *resv, long f, long t)
-
-/*
- * vma_needs_reservation, vma_commit_reservation and vma_end_reservation
- * are used by the huge page allocation routines to manage reservations.
- *
- * vma_needs_reservation is called to determine if the huge page at addr
- * within the vma has an associated reservation.  If a reservation is
- * needed, the value 1 is returned.  The caller is then responsible for
- * managing the global reservation and subpool usage counts.  After
- * the huge page has been allocated, vma_commit_reservation is called
- * to add the page to the reservation map.  If the page allocation fails,
- * the reservation must be ended instead of committed.  vma_end_reservation
- * is called in such cases.
- *
- * In the normal case, vma_commit_reservation returns the same value
- * as the preceding vma_needs_reservation call.  The only time this
- * is not the case is if a reserve map was changed between calls.  It
- * is the responsibility of the caller to notice the difference and
- * take appropriate action.
- *
- * vma_add_reservation is used in error paths where a reservation must
- * be restored when a newly allocated huge page must be freed.  It is
- * to be called after calling vma_needs_reservation to determine if a
- * reservation exists.
- */
-enum vma_resv_mode {
-    VMA_NEEDS_RESV,
-    VMA_COMMIT_RESV,
-    VMA_END_RESV,
-    VMA_ADD_RESV,
-};
-```
-
-```c
-/*
- * Region tracking -- allows tracking of reservations and instantiated pages
- *                    across the pages in a mapping.
- *
- * The region data structures are embedded into a resv_map and protected
- * by a resv_map's lock.  The set of regions within the resv_map represent
- * reservations for huge pages, or huge pages that have already been
- * instantiated within the map.  The from and to elements are huge page
- * indicies into the associated mapping.  from indicates the starting index
- * of the region.  to represents the first index past the end of  the region.
- *
- * For example, a file region structure with from == 0 and to == 4 represents
- * four huge pages in a mapping.  It is important to note that the to element
- * represents the first element past the end of the region. This is used in
- * arithmetic as 4(to) - 0(from) = 4 huge pages in the region.
- *
- * Interval notation of the form [from, to) will be used to indicate that
- * the endpoint from is inclusive and to is exclusive.
- */
-struct file_region {
-    struct list_head link;
-    long from;
-    long to;
-};
-```
-
-> resv_map 就是给一个具体的 vma 处理的: @todo 但是为什么 vma 需要持有这个东西
-
-```c
-static struct resv_map *vma_resv_map(struct vm_area_struct *vma)
-{
-    VM_BUG_ON_VMA(!is_vm_hugetlb_page(vma), vma); // 首先这个 vma 必须持有这个东西
-    if (vma->vm_flags & VM_MAYSHARE) {
-        struct address_space *mapping = vma->vm_file->f_mapping;
-        struct inode *inode = mapping->host;
-
-        return inode_resv_map(inode);
-
-    } else {
-        return (struct resv_map *)(get_vma_private_data(vma) &
-                            ~HPAGE_RESV_MASK);
-    }
-}
-```
-
-```c
-/*
- * These helpers are used to track how many pages are reserved for
- * faults in a MAP_PRIVATE mapping. Only the process that called mmap()
- * is guaranteed to have their future faults succeed.
- *
- * With the exception of reset_vma_resv_huge_pages() which is called at fork(),
- * the reserve counters are updated with the hugetlb_lock held. It is safe
- * to reset the VMA at fork() time as it is not in use yet and there is no
- * chance of the global counters getting corrupted as a result of the values.
- *
- * The private mapping reservation is represented in a subtly different
- * manner to a shared mapping.  A shared mapping has a region map associated
- * with the underlying file, this region map represents the backing file
- * pages which have ever had a reservation assigned which this persists even
- * after the page is instantiated.  A private mapping has a region map
- * associated with the original mmap which is attached to all VMAs which
- * reference it, this region map represents those offsets which have consumed
- * reservation ie. where pages have been instantiated.
- */
-static unsigned long get_vma_private_data(struct vm_area_struct *vma)
-{
-    return (unsigned long)vma->vm_private_data;
-}
-```
-
-
-
+## resv_map 面对文件的伸缩，如何处理
+- [x] file : 直接预留，根本无需 reserve 的
+- [ ] shared 的
+- [ ] private 的
 
 
 
@@ -878,30 +955,6 @@ static inline bool is_file_hugepages(struct file *file)
 }
 ```
 
-## core one : hugetlb_file_setup
-1. 三个神奇的调用位置 : memfd.c mmap.c(mmap 系统调用必然经过) shmem.c(shmem 获取内存)
-得出来的结论，这就是 hugetlb 提供的功能，也就是使用 hugetlb 都是需要创建对应的文件的
-
-
-// 主要处理文件系统
-```c
-/*
-* Note that size should be aligned to proper hugepage size in caller side,
- * otherwise hugetlb_reserve_pages reserves one less hugepages than intended.
- */
-struct file *hugetlb_file_setup(const char *name, size_t size,
-                vm_flags_t acctflag, struct user_struct **user,
-                int creat_flags, int page_size_log)
-```
-
-2. hugetlb 并不一定总是需要 reserve_pages 的
-```c
-int hugetlb_reserve_pages(struct inode *inode,
-                    long from, long to,
-                    struct vm_area_struct *vma,
-                    vm_flags_t vm_flags)
-```
-
 ## core two : hugetlb_fault
 
 
@@ -916,6 +969,51 @@ static vm_fault_t hugetlb_cow(struct mm_struct *mm, struct vm_area_struct *vma,
                unsigned long address, pte_t *ptep,
                struct page *pagecache_page, spinlock_t *ptl)
 ```
+
+## 和 vm 打交道的关键的外部接口
+- unmap_single_vma : 将其中的 pagetable 拆掉
+  - `__unmap_hugepage_range`
+- vm_operations_struct::close -> hugetlb_vm_op_close 处理 cgroup 之类的事情
+
+```txt
+#0  __unmap_hugepage_range (tlb=tlb@entry=0xffffc90001d27df8, vma=vma@entry=0xffff888228c85480, start=start@entry=139726484930560, end=end@entry=139726501707776, ref_page=ref_page@entry=0x0 <fixed_percpu_data>, zap_flags=<optimized out>) at mm/hugetlb.c:4997
+#1  0xffffffff812f6c59 in __unmap_hugepage_range_final (tlb=tlb@entry=0xffffc90001d27df8, vma=vma@entry=0xffff888228c85480, start=start@entry=139726484930560, end=end@entry=139726501707776, ref_page=ref_page@entry=0x0 <fixed_percpu_data>, zap_flags=zap_flags@entry=1) at mm/hugetlb.c:5140
+#2  0xffffffff812bad8a in unmap_single_vma (tlb=tlb@entry=0xffffc90001d27df8, vma=vma@entry=0xffff888228c85480, start_addr=start_addr@entry=0, end_addr=end_addr@entry=18446744073709551615, details=details@entry=0xffffc90001d27d88) at mm/memory.c:1689
+#3  0xffffffff812bb21d in unmap_vmas (tlb=tlb@entry=0xffffc90001d27df8, vma=0xffff888228c85480, vma@entry=0xffff888228c859c0, start_addr=start_addr@entry=0, end_addr=end_addr@entry=18446744073709551615) at mm/memory.c:1731
+#4  0xffffffff812c852f in exit_mmap (mm=mm@entry=0xffff8881001ad800) at mm/mmap.c:3113
+#5  0xffffffff810ff6cd in __mmput (mm=0xffff8881001ad800) at kernel/fork.c:1187
+#6  mmput (mm=mm@entry=0xffff8881001ad800) at kernel/fork.c:1208
+#7  0xffffffff811085bb in exit_mm () at kernel/exit.c:510
+#8  do_exit (code=code@entry=0) at kernel/exit.c:782
+#9  0xffffffff81108e38 in do_group_exit (exit_code=0) at kernel/exit.c:925
+#10 0xffffffff81108eaf in __do_sys_exit_group (error_code=<optimized out>) at kernel/exit.c:936
+#11 __se_sys_exit_group (error_code=<optimized out>) at kernel/exit.c:934
+#12 __x64_sys_exit_group (regs=<optimized out>) at kernel/exit.c:934
+#13 0xffffffff81ea93c8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001d27f58) at arch/x86/entry/common.c:50
+#14 do_syscall_64 (regs=0xffffc90001d27f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#15 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+#16 0x0000000000000000 in ?? ()
+```
+
+- [x] 普通的页面没有 hugetlb_vm_op_close，那么其是如何被 cgroup 控制的
+
+应该是在 mem_cgroup_uncharge 中处理的，当释放 page 的时候，是可以知道该 page 被那个 memcg 管理，从而知道进行释放。
+```txt
+#0  mem_cgroup_uncharge (folio=0xffffea0004897740) at include/linux/memcontrol.h:706
+#1  __folio_put_small (folio=0xffffea0004897740) at mm/swap.c:104
+#2  __folio_put (folio=0xffffea0004897740) at mm/swap.c:128
+#3  0xffffffff812e648b in folio_put (folio=<optimized out>) at include/linux/mm.h:1125
+#4  0xffffffff812ca7be in __tlb_remove_table (table=<optimized out>) at arch/x86/include/asm/tlb.h:34
+#5  __tlb_remove_table_free (batch=0xffff88812251d000) at mm/mmu_gather.c:114
+#6  tlb_remove_table_rcu (head=0xffff88812251d000) at mm/mmu_gather.c:169
+#7  0xffffffff811812b4 in rcu_do_batch (rdp=0xffff88813bc2bd00) at kernel/rcu/tree.c:2245
+#8  rcu_core () at kernel/rcu/tree.c:2505
+#9  0xffffffff822000e1 in __do_softirq () at kernel/softirq.c:571
+#10 0xffffffff81109dda in invoke_softirq () at kernel/softirq.c:445
+#11 __irq_exit_rcu () at kernel/softirq.c:650
+#12 0xffffffff81ead0b2 in sysvec_apic_timer_interrupt (regs=0xffffc90001d27d98) at arch/x86/kernel/apic/apic.c:1106
+```
+但是，由于 hugetlb 的 free 过程是自营的，也就是 `__unmap_hugepage_range`，所以需要  vm_operations_struct::close
 
 ## 细节
 - flush_free_hpage_work ：为什么额外的需要 workfn 来处理

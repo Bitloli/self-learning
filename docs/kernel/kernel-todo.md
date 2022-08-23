@@ -17,6 +17,20 @@
 - kobj_to_hstate
   - 当内核中写 /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages 的时候，通过这个可以知道当前的 node 是什么
 
+- hugetlbfs_fallocate : 根本看不懂这个哇
+```c
+		cond_resched();
+
+		/*
+		 * fallocate(2) manpage permits EINTR; we may have been
+		 * interrupted because we are using up too much memory.
+		 */
+		if (signal_pending(current)) {
+			error = -EINTR;
+			break;
+		}
+```
+
 ## 写一个内核依赖图
 > 先收集起来
 
