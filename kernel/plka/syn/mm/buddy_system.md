@@ -1,10 +1,3 @@
-# 摘要
-However, the buddy systems of all zones and nodes are linked via the allocation fallback list.
-
-Grouping pages by mobility order is one possible method to prevent fragmentation of physical
-memory, but the kernel additionally provides another means to fight this problem: the virtual
-zone ZONE_MOVABLE.
-
 # 问题
 0. per_cpu_pageset 到底是用于管理缓存的还是管理migration的?
 1. 为什么定义如此之多的gfp_t 类型，都是用来做什么的 ? 都是如何被一一化解的 ?
@@ -17,54 +10,6 @@ zone ZONE_MOVABLE.
 2. fallback list ?
 3. pageset watermark 如何融合的 ?
 4. 如何通过zone movable机制实现anti-fragmentation
-
-# alloc_pages 调用链条
-```c
-# 逐步进入核心
-/*
- * This is the 'heart' of the zoned buddy allocator.
- */
-struct page *
-__alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order, int preferred_nid,
-							nodemask_t *nodemask)
-{
-
-
-
-static inline struct page *
-__alloc_pages(gfp_t gfp_mask, unsigned int order, int preferred_nid)
-{
-	return __alloc_pages_nodemask(gfp_mask, order, preferred_nid, NULL);
-}
-```
-
-
-mempolicy.c : 还需要考虑numa 的四种policy (现在默认分析default policy)
-// 进一步获取node 和 nodemsk
-```c
-struct page *alloc_pages_current(gfp_t gfp, unsigned order)
-{
-	struct mempolicy *pol = &default_policy;
-	struct page *page;
-
-	if (!in_interrupt() && !(gfp & __GFP_THISNODE))
-		pol = get_task_policy(current);
-
-	/*
-	 * No reference counting needed for current->mempolicy
-	 * nor system default_policy
-	 */
-	if (pol->mode == MPOL_INTERLEAVE)
-		page = alloc_page_interleave(gfp, order, interleave_nodes(pol));
-	else
-		page = __alloc_pages_nodemask(gfp, order,
-				policy_node(gfp, pol, numa_node_id()),
-				policy_nodemask(gfp, pol));
-
-	return page;
-}
-EXPORT_SYMBOL(alloc_pages_current);
-
 
 gfp.h
 ```c
@@ -222,7 +167,7 @@ static struct page *__rmqueue_pcplist(struct zone *zone, int migratetype,
 	do {
      // 从zone 中间获取，但是此时已经和pcp脱离关系了!
 		if (list_empty(list)) {
-      // 居然order = 0 难道不能order > 0 实现更加多，而且快速的分配吗 
+      // 居然order = 0 难道不能order > 0 实现更加多，而且快速的分配吗
 			pcp->count += rmqueue_bulk(zone, 0,
 					pcp->batch, list,
 					migratetype);
@@ -576,7 +521,7 @@ enum pageblock_bits {
 > 感觉pageblock_flags 就是用来处理migration 的 ?
 > compaction 是做什么的?
 
-mem_section => pageblock_flags 
+mem_section => pageblock_flags
 
 
 > 似乎就是简单的分析gfp_t来分析migration，因为gfp其实在 alloc_pages 参数加以指定。

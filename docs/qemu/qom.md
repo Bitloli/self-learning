@@ -2,27 +2,27 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-- [basic](#basic)
-- [init](#init)
-  - [type_init](#type_init)
-  - [init static part](#init-static-part)
-  - [init Non-static part](#init-non-static-part)
-- [cast](#cast)
-- [property](#property)
-  - [Non-object](#non-object)
-  - [QOM composition tree](#qom-composition-tree)
-    - [child](#child)
-    - [link](#link)
-  - [alias](#alias)
-  - [GlobalProperty](#globalproperty)
-  - [struct Property](#struct-property)
-- [qdev](#qdev)
-  - [realize](#realize)
-  - [qtree](#qtree)
-- [QOM in action](#qom-in-action)
-  - [cpu type](#cpu-type)
-  - [qdev realize](#qdev-realize)
-- [misc](#misc)
+* [basic](#basic)
+* [init](#init)
+  * [type_init](#type_init)
+  * [init static part](#init-static-part)
+  * [init Non-static part](#init-non-static-part)
+* [cast](#cast)
+* [property](#property)
+  * [Non-object](#non-object)
+  * [QOM composition tree](#qom-composition-tree)
+    * [child](#child)
+    * [link](#link)
+  * [alias](#alias)
+  * [GlobalProperty](#globalproperty)
+  * [struct Property](#struct-property)
+* [qdev](#qdev)
+  * [realize](#realize)
+  * [qtree](#qtree)
+* [QOM in action](#qom-in-action)
+  * [cpu type](#cpu-type)
+  * [qdev realize](#qdev-realize)
+* [misc](#misc)
 
 <!-- vim-markdown-toc -->
 因为 QEMU 整个项目是 C 语言写的，但是 QEMU 处理的对象例如主板，CPU, 总线，外设实际上存在很多继承的关系。
@@ -481,10 +481,11 @@ alias 可以根据让两个名称找到同一个 property
     object_property_add_alias(obj, "sse4-2", obj, "sse4.2", &error_abort);
 ```
 
-在比如 pc_machine_initfn 中
+在比如 pc_machine_initfn 中:
 ```c
 object_property_add_alias(OBJECT(pcms), "pcspk-audiodev", OBJECT(pcms->pcspk), "audiodev");
 ```
+
 
 ### GlobalProperty
 一种通过 -global 选项来在启动的时候修改 object property 的方式，几乎没有人使用吧!

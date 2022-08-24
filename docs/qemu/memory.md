@@ -136,7 +136,7 @@ address-space: memory                     │   │    │
 ## 为什么 QEMU 将 memory region 设计的如此复杂
 - TODO 详细的解释一下
 
-* PCI 让 memory region 变得可以随意移动
+* PCI 机制中 memory region 变得可以随意移动
 * PCI bridge window
 * IOMMU
 * PAM / SMM
@@ -195,8 +195,7 @@ flatviews_reset 会将之前生成的 flag_views 全部删除掉, 然后重新�
 实际上, AddressSpace::root 持有的 MemoryRegion 并不一定就是顶层 MemoryRegion
 是需要通过 memory_region_get_flatview_root 来获取的，比如 e1000 的顶层 MemoryRegion 就不是 bus master container
 而是 system，这样就可以让多个 AddressSpace 虽然持有的 AddressSpace::root 不同，但是可以公用相同的 Flatview 了，
-```c
-/*
+```txt
 address-space: e1000
   0000000000000000-ffffffffffffffff (prio 0, i/o): bus master container
     0000000000000000-ffffffffffffffff (prio 0, i/o): alias bus master @system 0000000000000000-ffffffffffffffff

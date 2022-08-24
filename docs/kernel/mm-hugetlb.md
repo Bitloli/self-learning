@@ -46,9 +46,22 @@ struct hugetlbfs_inode_info {
 - [ ] 我是没有想到，居然 2021 才支持的: https://lwn.net/Articles/872070/
   - https://stackoverflow.com/questions/27997934/mremap2-with-hugetlb-to-change-virtual-address : 直接可以通过 hugetlbfs 来实现
 
-
 - VM_MAYSHARE 是什么时候创建的
   - do_mmap 的时候，参数 MMAP_SHARE
+
+- hugetlbfs_get_inode 中会创建  resv_map
+
+- hugetlb_reserve_pages 的两个调用源头:
+  - hugetlb_file_setup
+  - hugetlbfs_file_mmap
+
+- [ ] 可以动态修改 mmap 的属性吗? 将 shared 修改为 private
+
+- hugetlb_reserve_pages
+  - hugetlb_acct_memory ：来检查 reservation 是否能够通过限制，例如 cpuset , numa 等
+
+
+- [ ] 预留机制和 cpuset 似乎是互相冲突的，详情参考 `hugetlb_acct_memory`
 
 ## hugetlb 是如何影响文件系统的
 - 不能作为 page cache 的？
@@ -156,15 +169,17 @@ struct hstate {
 - surplus_huge_pages : 当前实际上使用的 page
   - 两者的关系可以从 alloc_surplus_huge_page 轻松的看到
 
-## [ ] hstate_is_gigantic
+## hstate_is_gigantic
 - 为什么到处都是这个东西的判断?
-
 - alloc_surplus_huge_page : 如果是 gigantic ，那么直接失败，因为 surplus 的需要从 buddy 中申请
-
 
 ## [ ] transpaent huge page 的代码量为什么少，到底是为了处理什么问题，让 hugetlb 如此复杂
 
 ## [ ] demote 如何工作的
+
+## [ ] 大页应该更加小心的处理 memory poison 才对吧，毕竟更加容易出现错误
+
+## [ ] folio 是如何影响 hugetlb 的
 
 ## [ ] alloc_buddy_huge_page_with_mpol 为什么正好在  dequeue_huge_page_vma 分配不出来的时候进行
 
@@ -178,9 +193,9 @@ dequeue_huge_page_vma 中还是有 memory policy 的代码的啊
 ## cgroup 是如何影响的
 - hugetlb_cgroup_charge_cgroup 和 hugetlb_cgroup_commit_charge_rsvd 在 alloc_huge_page 的时候被检查
 
-## [ ] cpuset 是如何影响的
+## cpuset 是如何影响的
 - dequeue_huge_page_nodemask 中会检查 cpuset_zone_allowed
-- [ ] hugetlb_acct_memory : 这个功能是啥，暂时不知道
+- hugetlb_reserve_pages 中，会调用 hugetlb_acct_memory ->  allowed_mems_nr 的，在预留的时候会检查 cpuset / cgroup 的限制的
 
 ## TODO
 - [ ] https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
@@ -481,8 +496,6 @@ de40, mm=0xffff888300246c00) at mm/hugetlb.c:5622
 
 reservation 应该是创建的时候就存在的，但是为什么要设计出来 commit 之类的操作
 
-- [ ] huge page 可以从
-
 ## pool
 
 通过触发 /proc/sys/vm/nr_hugepages 来控制 pool 中的 pages 的数量
@@ -546,6 +559,15 @@ try=3, flags=flags@entry=262178, pgoff=<optimized out>, pgoff@entry=0, populate=
 #12 0xffffffffffffffff in ?? ()
 #13 0x0000000000000000 in ?? ()
 ```
+
+这个 backtrace 这个结果:
+```c
+  void *ptr = mmap(NULL, 8 * TwoMega, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+```
+但是，的确是有逻辑的，hugetlb 的 mapping 总是带有文件，所以，总是会掉用到
+`hugepage_subpool_get_pages` 上。
+
 
 ## alloc_huge_page 中间干了什么
 
@@ -638,6 +660,10 @@ try=3, flags=flags@entry=262178, pgoff=<optimized out>, pgoff@entry=0, populate=
 
 ## [ ] unmap_ref_private
 
+## mremap 带来的挑战
+
+mremap 可以修改映射的虚拟地址和大小，其粒度是 page 的，也就是可以将一部分 vma 的一部分修改位置。
+
 ## vma_resv_map
 
 ```c
@@ -647,7 +673,6 @@ try=3, flags=flags@entry=262178, pgoff=<optimized out>, pgoff@entry=0, populate=
   - 是的
 - 不是在 mmap 的时候也是创建了文件吗? hugetlb_file_setup
     - 是的，即使是匿名映射，也是会关联文件的，因为是为了 : hugetlb_vm_ops
-    - [ ] 如果总是映射一个文件，那么 mremap 还可以操作吗? 还是可以增大 memory 的大小吗?
 
 ```txt
 #0  hugetlbfs_file_mmap (file=0xffff8882213f7f00, vma=0xffff88822579b900) at include/linux/fs.h:1333
@@ -664,6 +689,7 @@ try=3, flags=flags@entry=262178, pgoff=<optimized out>, pgoff@entry=0, populate=
 #11 0x0000000000000000 in ?? ()
 ```
 
+- [ ] 这个注释没有看懂
 ```c
 /*
  * These helpers are used to track how many pages are reserved for
@@ -690,6 +716,46 @@ static unsigned long get_vma_private_data(struct vm_area_struct *vma)
 }
 ```
 
+- hugetlb_reserve_pages
+```c
+    /*
+     *
+     * Shared mappings base their reservation on the number of pages that
+     * are already allocated on behalf of the file. Private mappings need
+     * to reserve the full area even if read-only as mprotect() may be
+     * called to make the mapping read-write. Assume !vma is a shm mapping
+     */
+    if (!vma || vma->vm_flags & VM_MAYSHARE) {
+        /*
+         * resv_map can not be NULL as hugetlb_reserve_pages is only
+         * called for inodes for which resv_maps were created (see
+         * hugetlbfs_get_inode).
+         */
+        resv_map = inode_resv_map(inode);
+
+        chg = region_chg(resv_map, from, to, &regions_needed);
+
+    } else {
+        /* Private mapping. */
+        resv_map = resv_map_alloc();
+        if (!resv_map)
+            return false;
+
+        chg = to - from;
+
+        set_vma_resv_map(vma, resv_map);
+        set_vma_resv_flags(vma, HPAGE_RESV_OWNER);
+    }
+```
+- priave 的直接整个 map，而 shared 的需要考虑其他人的感受，所以只能 charge 一个部分。
+  - 对于 file-map 的来说，这个必然的，但是对于 anon 的来说，这种处理也是可以接受的
+
+- hugetlbfs_file_mmap 为什么会调用 hugetlb_reserve_pages，既然已经将 pages 直接分配了，为什么还是需要调用 reserve
+  - hugetlb 的普通 mmap 也是会调用的
+
+- [ ] shm 暂时不做讨论
+
+## vma_has_reserves : 可以理解这个吗
 
 ## huge_add_to_page_cache
 
@@ -904,12 +970,56 @@ entry=3236757504, data_page=data_page@entry=0xffff88830a771000) at fs/namespace.
 #9  0x0000000000000000 in ?? ()
 ```
 
+## [ ] 如何处理 rmap 的情况，需要单独处理吗
+
 ## resv_map 面对文件的伸缩，如何处理
 - [x] file : 直接预留，根本无需 reserve 的
 - [ ] shared 的
 - [ ] private 的
 
+在 remap.c 中的确是处理过
 
+- hugetlb_reserve_pages : 如果不是 shared 的，那么此时才创建 resv_map
+
+- [ ] 这段注释我无法看懂 ?
+```c
+/*
+ * These helpers are used to track how many pages are reserved for
+ * faults in a MAP_PRIVATE mapping. Only the process that called mmap()
+ * is guaranteed to have their future faults succeed.
+ *
+ * With the exception of reset_vma_resv_huge_pages() which is called at fork(),
+ * the reserve counters are updated with the hugetlb_lock held. It is safe
+ * to reset the VMA at fork() time as it is not in use yet and there is no
+ * chance of the global counters getting corrupted as a result of the values.
+ *
+ * The private mapping reservation is represented in a subtly different
+ * manner to a shared mapping.  A shared mapping has a region map associated
+ * with the underlying file, this region map represents the backing file
+ * pages which have ever had a reservation assigned which this persists even
+ * after the page is instantiated.  A private mapping has a region map
+ * associated with the original mmap which is attached to all VMAs which
+ * reference it, this region map represents those offsets which have consumed
+ * reservation ie. where pages have been instantiated.
+ */
+static unsigned long get_vma_private_data(struct vm_area_struct *vma)
+{
+    return (unsigned long)vma->vm_private_data;
+}
+```
+
+## zero page
+
+hugetlb_reserve_pages 中有一个注释
+```c
+    /*
+     * Shared mappings base their reservation on the number of pages that
+     * are already allocated on behalf of the file. Private mappings need
+     * to reserve the full area even if read-only as mprotect() may be
+     * called to make the mapping read-write. Assume !vma is a shm mapping
+     */
+```
+所以，无论是 fallcoate 还是 anon 映射，都是有 reserve 的。
 
 ## syscontrol
 ```c
@@ -955,20 +1065,8 @@ static inline bool is_file_hugepages(struct file *file)
 }
 ```
 
-## core two : hugetlb_fault
-
-
-```c
-/*
- * Hugetlb_cow() should be called with page lock of the original hugepage held.
- * Called with hugetlb_instantiation_mutex held and pte_page locked so we
- * cannot race with other handlers or page migration.
- * Keep the pte_same checks anyway to make transition from the mutex easier.
- */
-static vm_fault_t hugetlb_cow(struct mm_struct *mm, struct vm_area_struct *vma,
-               unsigned long address, pte_t *ptep,
-               struct page *pagecache_page, spinlock_t *ptl)
-```
+## `hugetlbfs_setattr` 的操作比想象的复杂
+- 似乎只是看到了 memory 的大小，同时没有看到
 
 ## 和 vm 打交道的关键的外部接口
 - unmap_single_vma : 将其中的 pagetable 拆掉

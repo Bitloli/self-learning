@@ -1,39 +1,43 @@
-## rmap
-[TO BE CONTINUE](https://www.cnblogs.com/LoyenWang/p/12164683.html)
-4. 匿名页的反向映射
-- 相关数据结构体介绍
-- vma和av首次建立rmap大厦
-- fork时为子进程构建rmap大厦
-- 缺页异常时page关联av
-- 反向映射查找匿名页pte
-- 匿名页rmap情景分析
-5. 文件页的反向映射
-- 相关数据结构体介绍
-- 文件打开关联address_space
-- vma添加到文件页的rmap的红黑树
-- 缺页异常读取文件页
-- 反向映射查找文件pte
-- 文件页rmap情景分析
-6. ksm和ksm页反向映射
-- 相关数据结构体介绍
-- ksm机制剖析（上）
-- ksm机制剖析（下）
-- 反向映射查找ksm页pte
-- ksm实践
+# rmap
 
-1. 当发生 cow 的时候，将新创建出来的 `page->mapping` 指向 子进程的 anon_vma 
+- 一个 vma 共享，除了 fork 存在其他的方法吗?
+- 如何修改一个 vma 的属性 int prot, int flags
+- memfd 是不是创建出来了可以共享的 anonymous 映射，而再次之前，这是做不到的 ?
+
+
+[TO BE CONTINUE](https://www.cnblogs.com/LoyenWang/p/12164683.html)
+
+4. 匿名页的反向映射
+  - 相关数据结构体介绍
+  - vma和av首次建立rmap大厦
+  - fork时为子进程构建rmap大厦
+  - 缺页异常时page关联av
+  - 反向映射查找匿名页pte
+  - 匿名页rmap情景分析
+5. 文件页的反向映射
+  - 相关数据结构体介绍
+  - 文件打开关联address_space
+  - vma添加到文件页的rmap的红黑树
+  - 缺页异常读取文件页
+  - 反向映射查找文件pte
+  - 文件页rmap情景分析
+6. ksm和ksm页反向映射
+  - 相关数据结构体介绍
+  - ksm机制剖析（上）
+  - ksm机制剖析（下）
+  - 反向映射查找ksm页pte
+  - ksm实践
+
+1. 当发生 cow 的时候，将新创建出来的 `page->mapping` 指向 子进程的 anon_vma
 2. avc 挂载到 `vma->anon_vma_chain` 这个链表上，同时在 av 的 `anon_vma->rb_root` 上
   1. 当发生 rmap 遍历，利用 `page->mapping` 找到 anon_vma, 然找到  `anon_vma->rb_root` 来在红黑树中间查找到 avc
-  
 3. avc 是 vma 用来挂载到 av 上的钩子
 2. va 绑定在 vma 上
 4. 进程每创建一个子进程，父进程的 AV 的红黑树中会增加每一个起“桥梁”作用的AVC，以此连接到子进程的VMA
 5. 第 n 个层次的 child 需要创建创建 n 个 avc, 分别将 avc 放到自己和自己的 n - 1 个祖先中间
-6. 将 avc 挂载到 av 上，表示该 avc 
+6. 将 avc 挂载到 av 上，表示该 avc
 
-
-
-# rmap.c
+## rmap.c
 
 1. 在page初始化的时候，只要谁来使用 page ，将 vma 挂到链表上 !
   1. 那么岂不是，当存在 1000 个 fork 同一个 1000 page 的物理页面，存在 100000 个链表节点
@@ -56,7 +60,7 @@
 7. anon_vma_clone 的作用是什么: 因为我的 parent 持有一堆 av，那么我需要继承这些 av，所以就创建 avc 建立当前 vma 和 这些 av 的联系。
 
 8. 我们能不能不要 anon_vma_chain ? 利用 avc， 我们想要实现的效果是什么 ?
-    1. vma 可以找到 管理其 page 的所有的 anon_vma 
+    1. vma 可以找到 管理其 page 的所有的 anon_vma
     2. anon_vma 想知道其管理的所有page 被映射的所有的 vma
     3. 当然，取消掉 avc, 在 av 和 vma 中间插入链表
 
@@ -69,14 +73,14 @@
 
 8. 找一下 mmap.c 中间 merge 和 split 的操作过程是什么样子的 ?
 
-9. 不仅仅可以递归的fork ，而且可以同一个 process 可以 fork 出来大量的内容出来。 
+9. 不仅仅可以递归的fork ，而且可以同一个 process 可以 fork 出来大量的内容出来。
     1. 为什么 av 可以不关联 vma (是不是因为其并没有创建)
     2. reuse 不是通常看到的内容，否则根本无法解释 no alive 的含义。
         1. 在常规情况下(A fork B , B fork C, C 无法 reuse A B 的内容)，只会出现其中的
 
 10. page_add_file_rmap 和 page_add_anon_rmap 两个函数结果加以阅读一下。
 
-    
+
 8. vma 被截断了怎么办:
     1. vm_pgoff 在 anon 中间的含义，初代的认为是 0 ，之后的所有的位置进行相对调整，例如当前端缩短了之后，那么提升 vm_pgoff 的数值
     2. vma 可以变化，但是 `page->index` 并不会发生改变
@@ -89,7 +93,7 @@
 
 2. unlink_anon_vmas && anon_vma_chain_link 功能猜测和总结
 
-## principal 
+## principal
 1. radix tree 根本不是用来实现反向映射的，反向映射使用的内容是 : interval_tree
     1. interval_tree 的作用是 : 对于file based 的，因为文件上挂载了所有的与之相关的 vmc
 2. page cache 其实和 rmap 是没有关联的东西。
@@ -98,7 +102,7 @@
 3. file based 和 anon 的 rmap 的不相同的
 
 1. 利用 `vma->anon_vma_chain` `avc->same_vma`, vma 可以挂载多个 avc, 这些 avc 再分别挂载到自己的 av 和 逐级 parent 的 av 上
-2. `anon_vma->rb_root` 上挂载 avc ，利用 `avc->vma` 作为作为区间的范围。 
+2. `anon_vma->rb_root` 上挂载 avc ，利用 `avc->vma` 作为作为区间的范围。
     1. avc 中间持有指向 vma 和 av 的指针
     2. av 和 vma 都会管理一堆 avc ?
     3. 一个 av 会管理多个 vma，都是挂载其红黑树上
@@ -151,7 +155,7 @@ int page_mkclean(struct page *page) // todo clean 什么东西 ?
  *
  * If unmap is successful, return true. Otherwise, false.
  */
-bool try_to_unmap(struct page *page, enum ttu_flags flags) 
+bool try_to_unmap(struct page *page, enum ttu_flags flags)
 
 // 和 munmap 的关系:
 // 1. 经过unmap_region 到达此处
@@ -163,7 +167,7 @@ void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *vma,
 ```
 
 
-4. try_to_munlock : 检查映射到的 page 是被 mlock，试图 munlock 
+4. try_to_munlock : 检查映射到的 page 是被 mlock，试图 munlock
 
 ```c
 /**
@@ -210,7 +214,7 @@ void try_to_munlock(struct page *page)
 			pgoff_t index;		/* Our offset within mapping. */
       // 1. 计算得到在虚拟地址，进而得到pte
       // 2. page cache : index 表示 在文件中间的偏移
-      // 3. page cache : 
+      // 3. page cache :
 			/**
 			 * @private: Mapping-private opaque data.
 			 * Usually used for buffer_heads if PagePrivate.
@@ -226,7 +230,7 @@ void try_to_munlock(struct page *page)
 static void rmap_walk_file(struct page *page, struct rmap_walk_control *rwc,
 		bool locked)
 	vma_interval_tree_foreach(vma, &mapping->i_mmap,// 当 page cache 管理的页面同时被 map 过，那么将内容放到此处，否则将会是一个 i_mmap 将会是一个 null
-			pgoff_start, pgoff_end) { // XXX interval_tree 的遍历的，利用的是 
+			pgoff_start, pgoff_end) { // XXX interval_tree 的遍历的，利用的是
       // todo anon_vma_interval_tree_foreach 的和这里对称的部分是什么 ?
 ```
 
@@ -270,7 +274,7 @@ static void __remove_shared_vm_struct(struct vm_area_struct *vma,
 
 ## rmap.c 的分析
 
-1. unlink_anon_vmas 的作用: 
+1. unlink_anon_vmas 的作用:
     1. 将 vma 关联的所有 av 删除该 vma 的记录，然后释放用于链接的 avc
     2. 存在一些关于 lock 的小技巧
 
@@ -315,9 +319,9 @@ void page_add_anon_rmap(struct page *page,
 ```c
 /**
  * __page_set_anon_rmap - set up new anonymous rmap
- * @page:	Page to add to rmap	
+ * @page:	Page to add to rmap
  * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping	
+ * @address:	User virtual address of the mapping
  * @exclusive:	the page is exclusively owned by the current process
  */
 static void __page_set_anon_rmap(struct page *page,
@@ -433,7 +437,7 @@ page_lock_anon_vma_read 读取page->mapping 中的 anon_vma ，with some lock !
 
       // todo PageAnon 为什么可以不是 PageSwapBacked 的，除非 SwapBacked 就是表示在 swap 中间存在
 			/* MADV_FREE page check */
-			if (!PageSwapBacked(page)) { 
+			if (!PageSwapBacked(page)) {
 				if (!PageDirty(page)) {  // todo 猜测此处是那种 VM_SHARED 的那种造成的
 					/* Invalidate as we cleared the pte */
 					mmu_notifier_invalidate_range(mm,
@@ -529,7 +533,7 @@ vma_address(struct page *page, struct vm_area_struct *vma)
  * __page_set_anon_rmap - set up new anonymous rmap
  * @page:	Page or Hugepage to add to rmap
  * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping	
+ * @address:	User virtual address of the mapping
  * @exclusive:	the page is exclusively owned by the current process
  */
 static void __page_set_anon_rmap(struct page *page,
@@ -558,4 +562,3 @@ static void __page_set_anon_rmap(struct page *page,
 	page->index = linear_page_index(vma, address);
 }
 ```
-

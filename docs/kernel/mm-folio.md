@@ -16,4 +16,4 @@
 - PG_anon_exclusive 6c287605fd56466e645693eff3ae7c08fba56e0
 - migrate_device 是做啥的，最近拆分出来的
 
-以 folio 为例子:
+- [ ] 能不能测试一下 folio 的效果，什么时候，将多个 page 聚合为一个

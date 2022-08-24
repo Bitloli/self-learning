@@ -4,6 +4,7 @@ set -ex
 use_nvme_as_root=false
 use_default_kernel=false
 use_numa=true
+use_ovmf=false
 
 abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json
@@ -59,6 +60,18 @@ if [[ -n ${seabios+x} ]]; then
 else
   arg_seabios=""
 fi
+
+if [[ $use_ovmf == true ]]; then
+  # @todo nixos 上暂时没有搞清楚 OVMF 的安装，暂时使用这种方法了
+  ovmf=$workstation/OVMF.fd
+  if [[ ! -f "$ovmf" ]]; then
+    wget https://github.com/clearlinux/common/blob/master/OVMF.fd -O "$ovmf"
+  fi
+  arg_seabios="-drive file=$ovmf,if=pflash,format=raw,unit=0,readonly=on"
+  arg_seabios="$arg_seabios -drive file=/tmp/OVMF_VARS.secboot.fd,if=pflash,format=raw,unit=1"
+  # arg_seabios="-bios /tmp/OVMF.fd"
+fi
+
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"
 arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_img2},format=raw,if=none,id=nvme2"
 arg_network="-netdev user,id=n1,ipv6=off -device e1000e,netdev=n1"

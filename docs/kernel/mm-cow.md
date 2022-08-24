@@ -1,5 +1,5 @@
-
 - https://stackoverflow.com/questions/9519648/what-is-the-difference-between-map-shared-and-map-private-in-the-mmap-function
+  - MAP_SHARED 和 MAP_PRIVATE 并不是这个 mmap 是否被共享，一定是可以共享的，只是共享之后，其修改是否共享给其他
 
 #### cow
 - [ ] 如果可以理解 dirty cow，应该 COW 就没有问题吧 https://dirtycow.ninja/
