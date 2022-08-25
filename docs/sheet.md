@@ -30,3 +30,7 @@
 ## systemd
 - systemctl --user list-timers --all
 - systemctl list-timers --all
+
+## find
+- find /tmp -size 0 -print -delete : 删除大小为 0 的文件
+  - https://stackoverflow.com/questions/5475905/linux-delete-file-with-size-0
