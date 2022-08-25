@@ -144,3 +144,38 @@ DirectMap4k:       36680 kB
 DirectMap2M:     3108864 kB
 DirectMap1G:    11534336 kB
 ```
+
+
+- sudo cat /proc/pagetypeinfo
+- 分析 page
+
+```txt
+Page block order: 9
+Pages per block:  512
+
+Free pages count per migrate type at order       0      1      2      3      4      5      6      7      8      9     10
+Node    0, zone      DMA, type    Unmovable      0      0      0      0      0      0      0      0      1      0      0
+Node    0, zone      DMA, type      Movable      0      0      0      0      0      0      0      0      0      1      3
+Node    0, zone      DMA, type  Reclaimable      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone      DMA, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone      DMA, type          CMA      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone      DMA, type      Isolate      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone    DMA32, type    Unmovable     62    106    153    134    119     72     44     15      5      0      0
+Node    0, zone    DMA32, type      Movable    417    197     98     86     84     90     64     65     71     90    137
+Node    0, zone    DMA32, type  Reclaimable     41     57     62     61     64     59     48     35     27      0      0
+Node    0, zone    DMA32, type   HighAtomic      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone    DMA32, type          CMA      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone    DMA32, type      Isolate      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone   Normal, type    Unmovable     53    105    830    360     80     48     52     30     18     14     16
+Node    0, zone   Normal, type      Movable >100000  93493  41359  17188   5937   3527   2269   1339    842   1269   1170
+Node    0, zone   Normal, type  Reclaimable     88     86    457      3    198    466    360    245    106      1      0
+Node    0, zone   Normal, type   HighAtomic      0      0     16     15      6      3      1      0      0      0      0
+Node    0, zone   Normal, type          CMA      0      0      0      0      0      0      0      0      0      0      0
+Node    0, zone   Normal, type      Isolate      0      0      0      0      0      0      0      0      0      0      0
+
+Number of blocks type     Unmovable      Movable  Reclaimable   HighAtomic          CMA      Isolate
+Node 0, zone      DMA            1            7            0            0            0            0
+Node 0, zone    DMA32           25         1466           37            0            0            0
+Node 0, zone   Normal          298        10165          288            1            0            0
+```
+- [ ] 为什么 Movable 中有那么多 order=10 的页

@@ -66,6 +66,7 @@ ret_from_fork+34
 #define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 ```
 
+- 理解所有的 `GFP_DMA`
 
 ## 写一个内核依赖图
 > 先收集起来

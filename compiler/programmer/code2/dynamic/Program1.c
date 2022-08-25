@@ -1,6 +1,6 @@
 #include "Lib.h"
 
-int main(){
+int main() {
   foobar(1);
   return 0;
 }
