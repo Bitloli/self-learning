@@ -22,19 +22,19 @@ https://lwn.net/Articles/164802/
 
 > When acquiring a mutex, there are three possible paths that can be
 > taken, depending on the state of the lock:
-> 
+>
 > (i) fastpath: tries to atomically acquire the lock by cmpxchg()ing the owner with
 >  the current task. This only works in the uncontended case (cmpxchg() checks
 >  against 0UL, so all 3 state bits above have to be 0). If the lock is
 >  contended it goes to the next possible path.
-> 
+>
 > (ii) midpath: aka optimistic spinning, tries to spin for acquisition
 >  while the lock owner is running and there are no other tasks ready
 >  to run that have *higher priority (need_resched)*. The rationale is
 >  that if the lock owner is running, it is likely to release the lock
 >  soon. The mutex spinners are queued up using MCS lock so that only
 >  one spinner can compete for the mutex.
-> 
+>
 >  The MCS lock (proposed by Mellor-Crummey and Scott) is a simple spinlock
 >  with the desirable properties of being fair and with each cpu trying
 >  to acquire the lock spinning on a local variable. It avoids expensive
@@ -46,7 +46,7 @@ https://lwn.net/Articles/164802/
 >  avoid situations where MCS spinners that need to reschedule would continue
 >  waiting to spin on mutex owner, only to go directly to slowpath upon
 >  obtaining the MCS lock.**
-> 
+>
 > (iii) slowpath: last resort, if the lock is still unable to be acquired,
 >  the task is added to the wait-queue and sleeps until woken up by the
 >  unlock path. Under normal circumstances it blocks as TASK_UNINTERRUPTIBLE.
@@ -57,63 +57,63 @@ https://lwn.net/Articles/164802/
 
 
 
-> Statically define the mutex::
-> 
->    DEFINE_MUTEX(name);
-> 
-> Dynamically initialize the mutex::
-> 
->    mutex_init(mutex);
-> 
-> Acquire the mutex, uninterruptible::
-> 
-> ```c
->    void mutex_lock(struct mutex *lock);
->    void mutex_lock_nested(struct mutex *lock, unsigned int subclass);
->    int  mutex_trylock(struct mutex *lock);
-> ```
-> 
-> Acquire the mutex, interruptible::
-> 
-> ```c
->    int mutex_lock_interruptible_nested(struct mutex *lock,
-> 				       unsigned int subclass);
->    int mutex_lock_interruptible(struct mutex *lock);
-> ```
-> 
-> Acquire the mutex, interruptible, if dec to 0::
-> 
-> ```c
->    int atomic_dec_and_mutex_lock(atomic_t *cnt, struct mutex *lock);
-> ```
-> 
-> Unlock the mutex::
-> 
-> ```c
->    void mutex_unlock(struct mutex *lock);
-> ```
-> 
-> Test if the mutex is taken::
-> 
-> ```c
->    int mutex_is_locked(struct mutex *lock);
-> ```
-> 
-> - Disadvantages : 
-> Unlike its original design and purpose, 'struct mutex' is among the largest
-> locks in the kernel. E.g: on x86-64 it is 32 bytes, where 'struct semaphore'
-> is 24 bytes and rw_semaphore is 40 bytes. Larger structure sizes mean more CPU
-> cache and memory footprint.
-> 
-> - When to use mutexes:
-> Unless the strict semantics of mutexes are unsuitable and/or the critical
-> region prevents the lock from being shared, always prefer them to any other
-> locking primitive.
+Statically define the mutex::
+
+   DEFINE_MUTEX(name);
+
+Dynamically initialize the mutex::
+
+   mutex_init(mutex);
+
+Acquire the mutex, uninterruptible::
+
+```c
+   void mutex_lock(struct mutex *lock);
+   void mutex_lock_nested(struct mutex *lock, unsigned int subclass);
+   int  mutex_trylock(struct mutex *lock);
+```
+
+Acquire the mutex, interruptible::
+
+```c
+   int mutex_lock_interruptible_nested(struct mutex *lock,
+				       unsigned int subclass);
+   int mutex_lock_interruptible(struct mutex *lock);
+```
+
+Acquire the mutex, interruptible, if dec to 0::
+
+```c
+   int atomic_dec_and_mutex_lock(atomic_t *cnt, struct mutex *lock);
+```
+
+Unlock the mutex::
+
+```c
+   void mutex_unlock(struct mutex *lock);
+```
+
+Test if the mutex is taken::
+
+```c
+   int mutex_is_locked(struct mutex *lock);
+```
+
+- Disadvantages :
+Unlike its original design and purpose, 'struct mutex' is among the largest
+locks in the kernel. E.g: on x86-64 it is 32 bytes, where 'struct semaphore'
+is 24 bytes and rw_semaphore is 40 bytes. Larger structure sizes mean more CPU
+cache and memory footprint.
+
+- When to use mutexes:
+Unless the strict semantics of mutexes are unsuitable and/or the critical
+region prevents the lock from being shared, always prefer them to any other
+locking primitive.
 
 
 ## owner 实现 CMS
 1. CMS 为什么可以用一个 task_struct 指针的取值实现 ?
-    1. 因为 mutex 不能在 interrupt context 中间使用，所以 mutex 使用的时候总是存在 owner 
+    1. 因为 mutex 不能在 interrupt context 中间使用，所以 mutex 使用的时候总是存在 owner
     2. 那么，CMS 所需要的队列怎么构成 ?
 
 2. 当一个 task 睡眠，那么他可能被通知吗 ?
@@ -125,7 +125,7 @@ https://lwn.net/Articles/164802/
 
 处理死锁的，文档非常详细。
 
-## core struct 
+## core struct
 ```c
 /*
  * Simple, straightforward mutexes with strict semantics:
@@ -172,7 +172,7 @@ struct mutex {
 ```
 2. mutexes may not be used in hardware or software interrupt contexts such as tasklets and timers : 应该是因为 mutex 没有irqsave
 
-1. 有几条不能理解的规则 
+1. 有几条不能理解的规则
   - recursive locking is not permitted  : recursive owner 多次上锁吗 ?
   - task may not exit with mutex held : task exit 的含义是 ? exit sycall 吗 ? 如何保证 ? 利用 owner ?
   - mutexes may not be used in hardware or software interrupt contexts such as tasklets and timers : ???
@@ -180,7 +180,7 @@ struct mutex {
 ## API : lock
 1. 为什么非要区分 interruptible ?
 2. nested 的含义 : 用于debug ，具体不知
-3. trylock 
+3. trylock
 
 
 ```c
@@ -274,7 +274,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
     2. signal_pending_state
 ```
 
-1. signal 就是普通的 kernel/signal.c 而不是 
+1. signal 就是普通的 kernel/signal.c 而不是
 
 
 
@@ -328,4 +328,3 @@ EXPORT_SYMBOL(atomic_dec_and_mutex_lock);
 ```
 
 1. 过于直白
-

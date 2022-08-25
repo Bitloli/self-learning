@@ -1,7 +1,7 @@
-# kernel/locking/lockdep.c 
+# kernel/locking/lockdep.c
 
 > @todo 文档足够详细，2000 行代码对应 3000 行注释，应该没有任何问题。
- 
+
 ## Principal
 this code maps all the lock dependencies as they occur in a live kernel
 and will warn about the following classes of locking bugs:
@@ -65,4 +65,3 @@ struct held_lock {
 	unsigned int pin_count;
 };
 ```
-

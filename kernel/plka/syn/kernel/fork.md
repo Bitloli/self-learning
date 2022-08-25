@@ -22,7 +22,7 @@
 - fork
 - set_tid_address
 
-## children 和 sibling 
+## children 和 sibling
 ```c
 struct task_struct {
   // ...
@@ -129,7 +129,7 @@ long _do_fork(struct kernel_clone_args *args)
 	if (clone_flags & CLONE_PARENT_SETTID)
 		put_user(nr, args->parent_tid);
 
-	if (clone_flags & CLONE_VFORK) { // todo vfork 
+	if (clone_flags & CLONE_VFORK) { // todo vfork
 		p->vfork_done = &vfork;
 		init_completion(&vfork);
 		get_task_struct(p);
@@ -152,9 +152,7 @@ long _do_fork(struct kernel_clone_args *args)
 ```
 
 
-## signal 
-1. 
-
+## signal
 
 ## mm : mmput mm_alloc
 1. mm_init

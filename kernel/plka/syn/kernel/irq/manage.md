@@ -2,7 +2,7 @@
 
 ## affinity
 
-## thread 
+## thread
 
 ## percpu
 
@@ -240,4 +240,3 @@ struct irq_desc {
 	const char		*name;
 } ____cacheline_internodealigned_in_smp;
 ```
-

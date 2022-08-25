@@ -2,7 +2,7 @@
 
 ## KeyNote
 1. swapbacked 似乎用于表示 : 这个 page 是 anon vma 中间的，所有 anon vma 中间 page 都是需要走这一个(tmpfs 暂时不知道怎么回事)，
-    page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 __SetPageSwapBacked 
+    page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 __SetPageSwapBacked
 2. 相对比的是 : PG_swapcache 表示当前 page 在 swap cache 中间，也即是当前的 page 在 radix tree 中间的
     1. PageSwapCache 函数 : 也可以说明，必须首先是 anon vma 中间的page ，然后才可以是 swap cache 的内容
     2. PageAnon 和 PageSwapBacked 有什么区别吗 ?
@@ -10,13 +10,9 @@
 ## 问题
 1. do_wp_page 的作用是什么
     1. anon 和 file 都被处理，其需要处理什么位置的 ?
-
 2. 检查一下使用 pte_same 的位置，是不是为了处理 page table 上锁的情况 ?
-
 3. pte_mkdirty pte_mkyoung
-
 4. pte_lockptr
-
 
 ## page table 的操作
 ```c
@@ -153,7 +149,7 @@ static vm_fault_t handle_pte_fault(struct vm_fault *vmf)
 		vmf->pte = NULL;
 	} else {
 		/* See comment in pte_alloc_one_map() */
-		if (pmd_devmap_trans_unstable(vmf->pmd)) // todo 
+		if (pmd_devmap_trans_unstable(vmf->pmd)) // todo
 			return 0;
 		/*
 		 * A regular pmd is established and it can't morph into a huge
@@ -198,7 +194,7 @@ static vm_fault_t handle_pte_fault(struct vm_fault *vmf)
 	if (unlikely(!pte_same(*vmf->pte, entry)))
 		goto unlock;
 	if (vmf->flags & FAULT_FLAG_WRITE) {
-		if (!pte_write(entry)) // 测试 entry 上的 flag, 查看是否可以写，如果不能写，那么就是 cow 
+		if (!pte_write(entry)) // 测试 entry 上的 flag, 查看是否可以写，如果不能写，那么就是 cow
 			return do_wp_page(vmf);
 		entry = pte_mkdirty(entry); // 可以，那就通知一下
 	}
@@ -225,7 +221,7 @@ unlock:
 ```
 
 
-## do_swap_page 
+## do_swap_page
 1. 为什么需要调用 do_wp_page ?
 
 ```c
@@ -283,13 +279,13 @@ vm_fault_t do_swap_page(struct vm_fault *vmf)
 							vmf->address);
 			if (page) {
 				__SetPageLocked(page);  // todo 为什么需要这一个标志
-				__SetPageSwapBacked(page); // 因为 skip swap cache，所以仅仅设置 SwapBacked 
-				set_page_private(page, entry.val); 
+				__SetPageSwapBacked(page); // 因为 skip swap cache，所以仅仅设置 SwapBacked
+				set_page_private(page, entry.val);
 				lru_cache_add_anon(page); // 的确是无人幸免，比如加入到 lru cache 中间
 				swap_readpage(page, true);
 			}
 		} else {
-			page = swapin_readahead(entry, GFP_HIGHUSER_MOVABLE, // 这里会自动将 
+			page = swapin_readahead(entry, GFP_HIGHUSER_MOVABLE, // 这里会自动将
 						vmf); // swapin_readahead 将上面的操作也搞过一边，只是自带 readahead 而已
 			swapcache = page;
 		}
@@ -388,7 +384,7 @@ vm_fault_t do_swap_page(struct vm_fault *vmf)
 	} else {
     // todo 独享的时候，其实也不是很懂为什么会出现独享
 		do_page_add_anon_rmap(page, vma, vmf->address, exclusive); // do_swap_page 特供的, todo 存在什么特别之处
-		activate_page(page); 
+		activate_page(page);
 	}
 
 	swap_free(entry); // 加载了一个 page 进来，todo 当初写入的时候，计数的初始化，应该在 unmap 之类的地方吧!
@@ -446,7 +442,7 @@ out_release:
 3. 猜测实现:
     1. 复制 pte : 整个 page walk
     2. 去掉 flag
-    3. 分配新的page , 拷贝原来的 page 
+    3. 分配新的page , 拷贝原来的 page
     4. rmap
 
 4. 实际上:
@@ -577,7 +573,7 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	 *
 	 * Here we only have down_read(mmap_sem).
 	 */
-	if (pte_alloc(vma->vm_mm, vmf->pmd)) // 用于分配 page table 
+	if (pte_alloc(vma->vm_mm, vmf->pmd)) // 用于分配 page table
 		return VM_FAULT_OOM;
 
 	/* See the comment in pte_alloc_one_map() */
@@ -601,7 +597,7 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 			pte_unmap_unlock(vmf->pte, vmf->ptl);
 			return handle_userfault(vmf, VM_UFFD_MISSING);
 		}
-		goto setpte; // XXX 任务完成 
+		goto setpte; // XXX 任务完成
 	}
 
 	/* Allocate our own private page. */
@@ -644,7 +640,7 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	}
 
 	inc_mm_counter_fast(vma->vm_mm, MM_ANONPAGES);
-	page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 __SetPageSwapBacked 
+	page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 __SetPageSwapBacked
 	mem_cgroup_commit_charge(page, memcg, false, false);
 	lru_cache_add_active_or_unevictable(page, vma);
 setpte:
@@ -733,7 +729,7 @@ static vm_fault_t do_fault(struct vm_fault *vmf)
 }
 ```
 
-1. 获取 page 
+1. 获取 page
 
 ```c
 /*
@@ -842,7 +838,7 @@ vm_fault_t finish_fault(struct vm_fault *vmf)
 3. cow 会分配两次page frame ，一次在 page cache 中间，一次自己使，(正确)
 
 实际: 全部调用
-1. `__do_fault` : 到 page cache 中间获取 page 
+1. `__do_fault` : 到 page cache 中间获取 page
 2. finish_fault : page 和 pte 挂钩工作
 
 #### (3) do_read_fault
@@ -1042,7 +1038,7 @@ static vm_fault_t fault_dirty_shared_page(struct vm_fault *vmf)
 	bool dirtied;
 	bool page_mkwrite = vma->vm_ops && vma->vm_ops->page_mkwrite; // todo 检查 page_mkwrite 的作用是什么 ?
 
-	dirtied = set_page_dirty(page); // todo 
+	dirtied = set_page_dirty(page); // todo
 	VM_BUG_ON_PAGE(PageAnon(page), page);
 	/*
 	 * Take a local copy of the address_space - page.mapping may be zeroed
@@ -1079,4 +1075,3 @@ static vm_fault_t fault_dirty_shared_page(struct vm_fault *vmf)
 	return 0;
 }
 ```
-

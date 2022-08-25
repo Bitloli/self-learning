@@ -20,8 +20,6 @@ A futex consists of a kernelspace wait queue that is attached to an atomic integ
 
 Man futex(2)
 
-A futex is a 32-bit value—referred to below as a futex word—whose address is supplied to the `futex()` system call. 
-All futex operations are governed by this value.  In order to share a futex between processes, the futex is placed in a region of shared memory, created using (for example) mmap(2) or shmat(2). 
+A futex is a 32-bit value—referred to below as a futex word—whose address is supplied to the `futex()` system call.
+All futex operations are governed by this value.  In order to share a futex between processes, the futex is placed in a region of shared memory, created using (for example) mmap(2) or shmat(2).
 (Thus, the futex word may have different virtual addresses in different processes, but these addresses all refer to the same location in physical memory.)  In a multithreaded program, it is sufficient to place the futex word in a global variable shared by all threads.
-
-
