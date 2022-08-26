@@ -1,4 +1,4 @@
-# fs
+# ramfs
 
 ## virtual fs
 各种 fs 的区别内核文档[^1]，这个 blog 已经分析过一次[^2]，我就不重复了，下面是我的总结。
@@ -21,6 +21,7 @@
 - 为什么使用 -kernel bzImage 的时候，可以随意切换内核，而在 Guest 机器中修改 grub 指定内核，则会出现 initramfs 不配套的问题。
 
 - https://wiki.ubuntu.com/Initramfs
+  - 提供 mkinitramfs 和 unmkinitramfs 的功能
 
 [^1]: http://junyelee.blogspot.com/2020/03/ramfs-rootfs-and-initramfs.html
 [^2]: https://docs.kernel.org/filesystems/ramfs-rootfs-initramfs.html

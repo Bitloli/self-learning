@@ -18,6 +18,9 @@
 ## KVM Forum
 - youtube : https://www.youtube.com/channel/UCRCSQmAOh7yzgheq-emy1xA
 
+这是正确的资源入口吗?
+- https://events.linuxfoundation.org/archive/2020/kvm-forum/
+
 ## CCF 会议
 - https://ccfddl.github.io/
 

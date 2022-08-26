@@ -2,7 +2,7 @@
 set -ex
 
 use_nvme_as_root=false
-use_default_kernel=false
+use_default_kernel=true
 use_numa=true
 use_ovmf=false
 
@@ -22,7 +22,7 @@ abs_loc=$(dirname "$(realpath "$0")")
 
 kernel=${kernel_dir}/arch/x86/boot/bzImage
 
-distribution=centos
+distribution=ubuntu-server-22.04
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2
 ext4_img1=${workstation}/img1.ext4
@@ -131,9 +131,7 @@ sure() {
 }
 
 if [ ! -f "$iso" ]; then
-  # wget https://mirrors.tuna.tsinghua.edu.cn/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-DVD-2009.iso -O "$iso"
-  # wget https://releases.ubuntu.com/22.04/ubuntu-22.04-live-server-amd64.iso -O "$iso"
-  # wget https://dl-cdn.alpinelinux.org/alpine/v3.15/releases/x86_64/alpine-standard-3.15.0-x86_64.iso -O "$iso"
+  echo "please download ${distribution}"
   exit 0
 fi
 
@@ -171,7 +169,6 @@ fi
 
 if [[ $use_default_kernel = true ]]; then
   arg_monitor="-vnc :0,password -monitor stdio"
-  arg_monitor="-nographic"
   qemu-system-x86_64 \
     -cpu host $arg_img \
     -enable-kvm \

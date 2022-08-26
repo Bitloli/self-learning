@@ -450,6 +450,12 @@ https://github.com/anderspitman/awesome-tunneling
 ## rds
 - [What are RDS or reliable datagram sockets](https://stackoverflow.com/questions/27980309/what-are-rds-or-reliable-datagram-sockets) 对应 net/rds 目录
 
+## RxRPC
+
+应该用的不多:
+- [kernel doc](https://www.kernel.org/doc/html/latest/networking/rxrpc.html)
+- [ubuntu man](https://manpages.ubuntu.com/manpages/kinetic/man7/rxrpc.7.html)
+
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/
 [^6]: [An Introduction to Computer Networks](http://intronetworks.cs.luc.edu/current2/html/)

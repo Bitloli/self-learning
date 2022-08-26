@@ -212,6 +212,8 @@ struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid,
 ```
 
 - `__alloc_pages`: 分配 `struct alloc_context`
+  - prepare_alloc_pages : 组装出来 `alloc_context`
+    - gfp_migratetype : 将 gfp_t 中的两个 bit 提取出来
   - get_page_from_freelist : 选择 zone 和 migrate type
     - rmqueue
       - rmqueue_pcplist : size=1 有特殊通道
@@ -230,3 +232,42 @@ struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid,
       - free_unref_page ：释放为 pcp pages
       - `__free_pages_ok` ：释放普通的
         - `__free_one_page` ：常规的伙伴系统
+
+
+## [ ] 深入理解 gfp.h
+
+- current_gfp_context : 会根据 current 来修改分配的规则
+
+
+- [ ] 这些 flags 都是做啥的哇
+```c
+#define FGP_ACCESSED		0x00000001
+#define FGP_LOCK		0x00000002
+#define FGP_CREAT		0x00000004
+#define FGP_WRITE		0x00000008
+#define FGP_NOFS		0x00000010
+#define FGP_NOWAIT		0x00000020
+#define FGP_FOR_MMAP		0x00000040
+#define FGP_HEAD		0x00000080
+#define FGP_ENTRY		0x00000100
+#define FGP_STABLE		0x00000200
+```
+
+- [ ] 按照道理来说，find_get_page 是去获取一个 page cache 的，page cache 总是 MOVABLE 的，但是传递给 pagecache_get_page 的参数是 0
+```c
+/**
+ * find_get_page - find and get a page reference
+ * @mapping: the address_space to search
+ * @offset: the page index
+ *
+ * Looks up the page cache slot at @mapping & @offset.  If there is a
+ * page cache page, it is returned with an increased refcount.
+ *
+ * Otherwise, %NULL is returned.
+ */
+static inline struct page *find_get_page(struct address_space *mapping,
+					pgoff_t offset)
+{
+	return pagecache_get_page(mapping, offset, 0, 0);
+}
+```

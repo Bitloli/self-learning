@@ -9,3 +9,4 @@
 - 95607ad99b5a4e3e69e025621165753718a6ea98 : 一系列 memory 模块的修复patch
 - 41a55567b9e31cb852670684404654ec4fd0d8d6 : CONFIG enable 是什么意思
 - c40e8341e3b3bb27e3a65b06b5b454626234c4f0 : 一系列的 schduler 的修复
+- 0c4a95417ee4b1013ddf115fb6dbe36a2503a598 : 连续的修复了很多 data race 的问题，感觉是通过什么工具找出来

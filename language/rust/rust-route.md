@@ -1,4 +1,6 @@
-## Resource
+# Resource
+- https://github.com/TheAlgorithms/Rust : 这就是入口了，使用这个去做 leetcode
+  - https://github.com/EbTech/rust-algorithms : 看完之后，去刷题
 
 https://rtpg.co/2020/12/11/dbg-in-python.html
 http://dtrace.org/blogs/bmc/2020/10/11/rust-after-the-honeymoon/
@@ -17,8 +19,6 @@ https://blog.m-ou.se/writing-python-inside-rust-1/ : 相同的框架，为什么
 
 https://zhuanlan.zhihu.com/p/146472398?utm_source=wechat_session&utm_medium=social&utm_oi=602974433556828160&utm_content=first : 学习路线，其实体有意思的
 
-https://github.com/EbTech/rust-algorithms : 看完之后，去刷题
-https://github.com/TheAlgorithms/Rust : 很多部分都是没有完成的
 
 https://github.com/ctjhoa/rust-learning : 各种教程汇总
 
