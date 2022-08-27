@@ -13,9 +13,11 @@
 
 - https://github.com/pingcap/awesome-database-learning
 
-- https://news.ycombinator.com/item?id=32250426
-  - sqlite 的源码分析
-  - https://liyafu.com/2022-07-31-sqlite-untold-story/ : sqlite 背后的趣事
+## sqlite
+- https://www.sqlite.org/docs.html : official doc
+- https://news.ycombinator.com/item?id=32250426 : sqlite 的源码分析
+- https://fly.io/blog/sqlite-internals-wal/ : How SQLite Scales Read Concurrency
+- https://liyafu.com/2022-07-31-sqlite-untold-story/ : sqlite 背后的趣事
 
 ## 两本教科书
 - database system concepts

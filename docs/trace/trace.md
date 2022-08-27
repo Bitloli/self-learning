@@ -137,6 +137,10 @@ cmake --build . --parallel
 
 ![](https://raw.githubusercontent.com/wiki/opcm/pcm/pcm.x.jpg)
 
+- [ ] https://github.com/cyring/CoreFreq
+- [ ] https://github.com/intel/msr-tools
+- [ ] https://github.com/tycho/cpuid
+
 ### [flamescope](https://github.com/Netflix/flamescope)
 可以用于查看一个范围空间中的 flamegraph
 

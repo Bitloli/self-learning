@@ -23,6 +23,7 @@ Kind of tricky to read without preliminary knowledge about GenSim.
 - [System/Networking](https://github.com/Romero027/sysnet-reading-list)
 - [计算机系统会议论文](https://www.zhihu.com/column/c_1424714267832967169)
 - [存储（分布式、存储引擎等）领域论文阅读笔记索引](https://github.com/lichuang/storage-paper-reading-cn)
+- [虚拟化，共有云](https://github.com/liujunming/paper_reading_notes/issues)
 
 ## Cloud / Virtualization
 - [Alita: Comprehensive Performance Isolation through Bias Resource Management](https://mp.weixin.qq.com/s/S0lvODk2fe91AxWyMACgEQ)

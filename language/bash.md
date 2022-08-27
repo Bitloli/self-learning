@@ -1,16 +1,12 @@
 编写可靠 bash 脚本的一些技巧 - 腾讯技术工程的文章 - 知乎
-https://zhuanlan.zhihu.com/p/123989641
-
-https://gist.github.com/premek/6e70446cfc913d3c929d7cdbfe896fef
-
-https://redandblack.io/blog/2020/bash-prompt-with-updating-time/ : 在bash 中间加入时间 prompt 的功能
-https://wangdoc.com/bash/index.html : 简单的教程
-https://blog.balthazar-rouberol.com/shell-productivity-tips-and-tricks.html : 高效和 shell 交互
-
-https://www.dolthub.com/blog/2020-03-23-testing-dolt-bats/ : 使用 bash 做集成测试
-
-https://github.com/mydzor/bash2048/blob/master/bash2048.sh : 300行的2048
-https://notes.pythonic.life/3-Linux/Bash/bash%E7%9A%84%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7.html : some trick / snippets of bash
+- https://zhuanlan.zhihu.com/p/123989641
+- https://gist.github.com/premek/6e70446cfc913d3c929d7cdbfe896fef
+- https://redandblack.io/blog/2020/bash-prompt-with-updating-time/ : 在bash 中间加入时间 prompt 的功能
+- https://wangdoc.com/bash/index.html : 简单的教程
+- https://blog.balthazar-rouberol.com/shell-productivity-tips-and-tricks.html : 高效和 shell 交互
+- https://www.dolthub.com/blog/2020-03-23-testing-dolt-bats/ : 使用 bash 做集成测试
+- https://github.com/mydzor/bash2048/blob/master/bash2048.sh : 300行的2048
+- https://notes.pythonic.life/3-Linux/Bash/bash%E7%9A%84%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7.html : some trick / snippets of bash
 
 > 且称之为三大圣经
 sh

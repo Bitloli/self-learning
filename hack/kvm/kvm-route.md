@@ -3,6 +3,8 @@
   - [ ] 一个虚拟机可能创建多个 vcpu 出来，如何保证这个虚拟机的 thread 可以在多个 vcpu 之间切换
   - [ ] 不同虚拟机的 vcpu 如何实现隔离
 
+- [ ] https://liujunming.top/2022/08/20/Notes-about-KVM-steal-time/ : kvm steal ，一直的问题，顺便整理 timer
+
 ## 项目
 - [ ] https://github.com/openvswitch/ovs : open vSwitch 和 virtio 是什么关系？
 - [ ] https://github.com/intel/haxm : 对于 Windows 和 Mac 存在良好的支持，但是 Linux 上根本无法编译的，感觉类似于 KVM 的东西

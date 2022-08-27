@@ -199,3 +199,6 @@ static const struct vfio_iommu_driver_ops vfio_iommu_driver_ops_type1 = {
 - `vfio_group_fops_unl_ioctl`
 	- `vfio_group_set_container` ： 两个参数 group 和 `containter_fd`，其中 `containter_fd` 是用户传递的
 		- `vfio_iommu_type1_attach_group`
+
+## 其他
+- https://github.com/gnif/vendor-reset

@@ -17,8 +17,13 @@ struct oom_control {
 
 2. reaper 是做啥的?
 
-参考 `oom_kill_process` 中，将那些**已经被杀死**进程持有的内存直接释放掉。
+在 `oom_kill_process` 中，将那些**已经被杀死**进程持有的内存直接释放掉[^1]。
 
+## TODO
+- https://github.com/rfjakob/earlyoom : 了解这个工具的原理
+
+
+[^1]: https://lwn.net/Articles/666024/
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"
         data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MjA0MDg="

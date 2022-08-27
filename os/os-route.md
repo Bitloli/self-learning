@@ -17,18 +17,9 @@ Linux 内核相关的有趣资源，欢迎补充。
 
 <!-- https://github.com/ikwzm/udmabuf : user dma driver -->
 
-<!-- 两个 CPU perf 工具，都是仅仅针对于 intel 的那一侧的: -->
-<!-- https://github.com/cyring/CoreFreq -->
-<!-- https://github.com/intel/msr-tools -->
-<!-- https://github.com/tycho/cpuid -->
-
-<!-- 有一个性能计数器: -->
-<!-- https://github.com/opcm/pcm -->
-
-## 计划
-g. [Essential Linux Device Drivers](https://book.douban.com/subject/3088263/)
-
-http://www.linuxfromscratch.org/lfs/view/10.0-rc1/prologue/foreword.html
+<!-- ## 计划 -->
+<!-- - [Essential Linux Device Drivers](https://book.douban.com/subject/3088263/) -->
+<!-- - http://www.linuxfromscratch.org/lfs/view/10.0-rc1/prologue/foreword.html -->
 
 ## 文章合集
 - [「Linux 核心設計」系列講座](https://hackmd.io/@sysprog/linux-kernel-internal) :star: :star: :star: :star: :star:
@@ -42,6 +33,7 @@ http://www.linuxfromscratch.org/lfs/view/10.0-rc1/prologue/foreword.html
 - [泰晓科技](http://tinylab.org/categories/) :star: :star:
 - [dsahern's blog](https://people.kernel.org/dsahern/) :star:
   - [The CPU Cost of Networking on a Linux Host](https://news.ycombinator.com/item?id=23189372)
+- https://richardweiyang-2.gitbook.io/kernel-exploring
 - https://devarea.com/labs/#.Xm3c_XUzYUE
 - https://github.com/novelinux/linux-4.x.y
 - https://terenceli.github.io/archive.html
@@ -149,6 +141,9 @@ http://www.linuxfromscratch.org/lfs/view/10.0-rc1/prologue/foreword.html
 - https://github.com/dwelch67/raspberrypi : 要啥树莓派，qemu 学习 arm 指令集
 - https://news.ycombinator.com/item?id=22564665 : good fellow helps, all kinds of resources
 - [太素](https://github.com/belowthetree/TisuOS) : RISCV kernel
+
+## 微内核
+- [la-sel4](https://github.com/tyyteam/la-seL4) : 龙芯对于 sel4 的移植
 
 ## reference
 - [https://sysctl-explorer.net/](https://sysctl-explorer.net/)
