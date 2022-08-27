@@ -9,7 +9,7 @@ tags: tech
 
 ## FAQ
 1. install
-  don't install yarn with `apt install yarn`, use `apt install cmdtest` `npm install --global yarn` 
+  don't install yarn with `apt install yarn`, use `apt install cmdtest` `npm install --global yarn`
 
-2. Every time you edit the doc, press the refresh button in the browser is not enough, you should 
+2. Every time you edit the doc, press the refresh button in the browser is not enough, you should
 run `yarn doc:dev`

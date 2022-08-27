@@ -1,5 +1,5 @@
 ## minimal's coc
-1. 
+1.
 ```
 loongson ➜  .vim cat coc-settings.json
 {
