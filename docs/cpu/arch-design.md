@@ -10,6 +10,7 @@
 
 这些要求让躺在 linux/arch 和 QEMU/target 下架构，除了 X86，ARM 和 RISC，大多死得悄无声息。
 
+
 ## 需要实现的内容
 
 ### SOC
@@ -19,10 +20,20 @@
 - QEMU
 - LibC
 
+### 硬件虚拟化加速
+能够支持 hyerpv, kvm, zen 等
+
 ### 编译器
+需要以下的编译器的支持:
 - LLVM / GCC
 - JVM , LuaJit 和 .NET
 - Rust / Golang
+
+需要有:
+- abi 定义
+- elf 支持
+
+### 高性能计算
 
 ### Linux 内核
 让 MacOS 或者 Windows 这种大公司持有的闭源操作系统支持你的新架构，可能性实在是太小了。
@@ -44,7 +55,7 @@
 - 锁
 - trace
   - krpoeb / uprobe
-  - pmc
+  - pmc : 要求 CPU 有硬件计数器
 - kdump
 - mmio
 - kgdb
@@ -60,11 +71,24 @@
 - 各种使用汇编写的库
 
 ### Firmware
-- 主要是 edk2 的移植
+- edk2
+- acpica
 
 ## 架构设计需要考虑的点
+- 指令的长度: 一般 4 字节。
+- 指令是否对齐，不对齐会让译码很难做，但是对齐之后，加载一个 8 字节的指令需要多条指令。
+- 如何避免指令的相关性。
+- 那些是当前负载中经常出现的指令。
 
-### 物理
+### memory model
+
+### cache coherence
+- [ ] 如果 dma 修改了 memory ，如何同步到 cache 中去
+
+### 外设
+- 使用 memory mapped io 还是单独的 io 指令
+
+### 物理版图
 
 ### 编译器
 - 各种 built-in
@@ -74,3 +98,9 @@
 - 加解密指令
 
 ### 二进制翻译
+
+### 操作系统
+- swap: 如何确定一个页面是否访问，到底是在 page table entry 上放一个 flags，还是使用 page fault 来实现。
+
+## 参考资料
+- [riscv non isa](https://github.com/riscv-non-isa)

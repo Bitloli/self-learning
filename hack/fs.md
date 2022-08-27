@@ -628,6 +628,8 @@ aio_complete 会调用 eventfd_signal，这是实现 epoll 机制的核心。
 > 2. aio 不能使用 page cache, 那么对于 metadata 的读取， aio 可以实现异步吗 ? (我猜测，应该所有的文件系统都是不支持的吧!)
 
 #### io uring
+- https://blog.vmsplice.net/2022/06/comparing-virtio-nvme-and-iouring-queue.html
+
 - 基于 io-uring 的 ubd： https://lwn.net/Articles/900690/
 
 - [迟先生 : io_uring 的接口与实现](https://www.skyzh.dev/posts/articles/2021-06-14-deep-dive-io-uring/)
@@ -667,9 +669,6 @@ TODO please continue the documentation
 
 
 - [ ] [liburing](https://github.com/axboe/liburing)
-
-
-
 
 read write 会直到事情做完
 epoll : 当有的工作做好之后，通知，其实是一个 thread 可以监控一大群的 socket，任何一个 ready 之后就开始工作

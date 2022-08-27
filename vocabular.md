@@ -21,7 +21,13 @@
 - preen
 - promiscuous
 - de facto
-
+- demote
+- embryo
+- scrub
+- peril
+- honorable
+- eternity
+- obituary
 
 ## 超过的
 - cuckoo

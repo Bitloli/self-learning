@@ -21,6 +21,9 @@
 这是正确的资源入口吗?
 - https://events.linuxfoundation.org/archive/2020/kvm-forum/
 
+可以将这种分散的合并起来吗?
+- https://people.redhat.com/~aarcange/slides/2019-KVM-monolithic.pdf
+
 ## CCF 会议
 - https://ccfddl.github.io/
 
@@ -39,3 +42,8 @@
 
 ## Linux Storage, Filesystem, Memory-Management, and BPF Summit
 - [2022](https://lwn.net/Articles/893733/)
+
+## gallery
+- https://github.com/facundoolano/software-papers : 各个领域的经典论文
+
+## hotchip

@@ -4,7 +4,7 @@
 1. what's the relation with ipc/shm.c
     1. shm.c rely on shmem.c to create files and mmap on it
 2. `shmem_fs_type` may mount multiple times
-```
+```plain
 tmpfs           7.8G  103M  7.7G   2% /dev/shm
 tmpfs           7.8G     0  7.8G   0% /sys/fs/cgroup
 tmpfs           7.8G  4.3M  7.8G   1% /tmp
@@ -14,7 +14,7 @@ tmpfs           7.8G  4.3M  7.8G   1% /tmp
 4. how we implemented the posix shared memory ?
     1. it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html
 
-```
+```plain
 tmpfs has the following uses:
 
 1) There is always a kernel internal mount which you will not see at
@@ -411,7 +411,7 @@ static int shmem_unlink(struct inode *dir, struct dentry *dentry)
 ```
 
 
-## shmem_unuse : 意识到这个东西从来不简单啊!
+## shmem_unuse : 意识到这个东西从来不简单啊
 ```c
 /*
  * Read all the shared memory data that resides in the swap
@@ -491,7 +491,7 @@ struct file *shmem_kernel_file_setup(const char *name, loff_t size, unsigned lon
 ```
 1. @name is interesting, here is the exmaple !
 
-```
+```plain
 ➜  svshm git:(master) ✗ cat /proc/20898/maps
 55ae48dce000-55ae48dd0000 r--p 00000000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out
 55ae48dd0000-55ae48dd1000 r-xp 00002000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out

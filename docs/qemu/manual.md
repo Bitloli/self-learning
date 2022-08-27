@@ -99,6 +99,27 @@ network 的事情参考这个部分：
 
 Ubuntu 需要首先安装，利用 iso 制作镜像，然后使用该镜像。
 
+### Centos 8
+- 注意安装的时候不要将盘搞成了 LVM 格式，否则 QEMU 的 -kernel 参数难以成功
+- Centos 8 因为切换内核，无法使用网络
+
+```txt
+[martins3@localhost network-scripts]$ ls
+ifcfg-ens3
+[martins3@localhost network-scripts]$ ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: enp0s5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:12:34:56 brd ff:ff:ff:ff:ff:ff
+3: sit0@NONE: <NOARP> mtu 1480 qdisc noop state DOWN group default qlen 1000
+    link/sit 0.0.0.0 brd 0.0.0.0
+[martins3@localhost network-scripts]$
+```
+
 ### Windows
 - [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/windows.sh)
 
@@ -112,7 +133,7 @@ Ubuntu 需要首先安装，利用 iso 制作镜像，然后使用该镜像。
 ```
 将 Host 8080 端口重定向到 Guest 的 80 端口
 
-<!-- TMP_TODO 的 - [ ]  -netdev user,id=net0,hostfwd=tcp::5556-:22,smb=/home/xieby1/ -->
+<!-- TMP_TODO 的 - [ ]  -netdev user,id=net0,hostfwd=tcp::5556-:22 -->
 
 ### Guest 科学上网
 有时候 Guest 中需要安装某些东西，没有代理几乎没有成功的可能性。在 Host 打开 Qv2ray 或者 Clash，设置为可以代理整个局域网，

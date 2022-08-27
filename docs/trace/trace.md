@@ -9,6 +9,8 @@
 - libbpf-tools/execsnoop.c : 基于 libbpf [^13]，overhead 更加小
 - tools/execsnoop.py : 编译 BCC 程序来实现的
 
+- https://www.scylladb.com/2021/09/28/hunting-a-numa-performance-bug/ : 一个具体的案例
+
 ## 问题
 - [ ] 所以 lttng 相对于 bpf 有什么优势吗?
 - [ ] perf 工具比我想想的要强大，应该好好的重新分析一下

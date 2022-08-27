@@ -10,3 +10,6 @@
 - 41a55567b9e31cb852670684404654ec4fd0d8d6 : CONFIG enable 是什么意思
 - c40e8341e3b3bb27e3a65b06b5b454626234c4f0 : 一系列的 schduler 的修复
 - 0c4a95417ee4b1013ddf115fb6dbe36a2503a598 : 连续的修复了很多 data race 的问题，感觉是通过什么工具找出来
+- c40e8341e3b3bb27e3a65b06b5b454626234c4f0 : cgroup 和 scheduler 的修复
+- d92725256b4f22d084b813b37ddc394da79aacab : avoid unnecessary page fault retires on shared memory types
+- 581711c46612c1fd7f98960f9ad53f04fdb89853 : io uring 中的网络问题

@@ -1,5 +1,6 @@
 # memory model
 - 简短有力的分析: https://zhuanlan.zhihu.com/p/41872203
+- https://mp.weixin.qq.com/s/s6AvLiVVkoMX4dIGpqmXYA
 
 ## 问题
 - [ ] 能不能稳定的复现，或者制作出来这些 memory model 的效果
@@ -114,7 +115,8 @@ https://www.linuxjournal.com/article/8212
 
 - 浅谈多核系统的缓存一致性协议与非均一缓存访问 : https://zhuanlan.zhihu.com/p/162099300
 
-## `__setup_APIC_LVTT`
+## 具体案例
+### `__setup_APIC_LVTT`
 ```c
 		/*
 		 * See Intel SDM: TSC-Deadline Mode chapter. In xAPIC mode,
@@ -124,6 +126,8 @@ https://www.linuxjournal.com/article/8212
 		asm volatile("mfence" : : : "memory");
 		return;
 ```
+###  wait_on_bit
+kernel 8238b4579866b7c1bb99883cfe102a43db5506ff
 
 ## io uring 的使用似乎是需要实现用户态和系统态的同步，使用 memory barrier 的
 
@@ -167,8 +171,5 @@ The last part of the article describes the programmer-centric view of relaxed me
 > Is Sequential and Consistency are controversial words ?
 
 ---
-
-# Notes
-
 
 [^1]: https://zhuanlan.zhihu.com/p/191660613

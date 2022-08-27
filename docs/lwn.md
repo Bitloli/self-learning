@@ -22,3 +22,6 @@ https://lwn.net/Articles/898157/
 - [Fun with NULL pointers, part 1](https://lwn.net/Articles/342330/)
 - [Replacing x86 firmware with Linux and Go](https://lwn.net/Articles/738649/)
 - [Writing an ACPI driver - an introduction](https://lwn.net/Articles/367630/)
+
+## TODO
+- https://lwn.net/Articles/899420/ : ubuntu bug 导致容器的问题，其中分析四种 fs

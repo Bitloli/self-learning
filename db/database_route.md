@@ -15,6 +15,7 @@
 
 - https://news.ycombinator.com/item?id=32250426
   - sqlite 的源码分析
+  - https://liyafu.com/2022-07-31-sqlite-untold-story/ : sqlite 背后的趣事
 
 ## 两本教科书
 - database system concepts

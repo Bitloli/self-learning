@@ -22,6 +22,9 @@ https://www.kawabangga.com/posts/4515 中间提到 nc -l  9999 的操作可以�
 ## wireshark
 主要参考[这里](https://gaia.cs.umass.edu/kurose_ross/wireshark.php)
 
+- [ ] https://www.kawabangga.com/posts/4794 : 写的真好啊  [ddf]
+  - 之前是没有想到 wireshark 还可以宏观的处理网络问题
+
 ## ip
 
 ## ifconfig

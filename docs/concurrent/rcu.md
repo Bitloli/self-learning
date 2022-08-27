@@ -1,5 +1,7 @@
 # RCU
 
+- https://www.zhihu.com/question/27943222/answer/2174857178
+
 - [ ] 思考一下，RCU 在用户态和内核态中实现的差异
 - [ ] 将 QEMU 中对于 RCU 的使用移动到这里
 - [ ] https://liburcu.org/ : 提供了三个很好的资源
@@ -7,6 +9,7 @@
 - https://hackmd.io/@sysprog/linux-rcu?type=view
 - `__d_lookup_rcu`
   - 实际上，rcu 的组件比想想的更加多
+
 
 ## What is Rcu
 

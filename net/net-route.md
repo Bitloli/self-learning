@@ -421,7 +421,6 @@ enum sock_flags {
 ## [ ] 分析一下 /proc/net
 ## [ ] 分析目录 /proc/sys/net
 
-
 ## firewall
 
 nixos 默认是打开防火墙的：
@@ -455,6 +454,10 @@ https://github.com/anderspitman/awesome-tunneling
 应该用的不多:
 - [kernel doc](https://www.kernel.org/doc/html/latest/networking/rxrpc.html)
 - [ubuntu man](https://manpages.ubuntu.com/manpages/kinetic/man7/rxrpc.7.html)
+
+## lldp
+- [wiki](https://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol)
+- [官网](https://lldpd.github.io/)
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

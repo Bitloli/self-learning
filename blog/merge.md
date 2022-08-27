@@ -653,8 +653,6 @@ c++ 心里苦啊!
 
 ## [Man watch](https://unix.stackexchange.com/questions/8699/is-there-a-utility-that-interprets-proc-interrupts-data-in-time)
 
-## [Another Linux distribution](https://clearlinux.org/)
-
 ## [elf](https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/)
 
 ## [pic](https://i.redd.it/ly3a3nrltqg41.jpg)

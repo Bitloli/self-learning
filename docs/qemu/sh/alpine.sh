@@ -23,6 +23,8 @@ abs_loc=$(dirname "$(realpath "$0")")
 kernel=${kernel_dir}/arch/x86/boot/bzImage
 
 distribution=ubuntu-server-22.04
+distribution=centos7
+distribution=CentOS-Stream-8-x86_64
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2
 ext4_img1=${workstation}/img1.ext4
@@ -34,7 +36,7 @@ LAUNCH_GDB=false
 
 # 必选参数
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
-root=/dev/vdb2
+root=/dev/vdb3
 
 if [[ $use_nvme_as_root = true ]]; then
   arg_img="-device nvme,drive=nvme3,serial=foo -drive file=${disk_img},format=qcow2,if=none,id=nvme3"
@@ -79,8 +81,6 @@ arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
 arg_monitor="-serial mon:stdio -display none"
 arg_initrd=""
-arg_qmp=""
-arg_tmp=""
 arg_trace="--trace 'memory_region_ops_\*'"
 # -soundhw pcspk
 
@@ -132,6 +132,7 @@ sure() {
 
 if [ ! -f "$iso" ]; then
   echo "please download ${distribution}"
+  # wget http://mirrors.ustc.edu.cn/centos/8-stream/isos/x86_64/CentOS-Stream-8-x86_64-latest-boot.iso
   exit 0
 fi
 
@@ -167,16 +168,6 @@ if [ ! -f "${disk_img}" ]; then
   exit 0
 fi
 
-if [[ $use_default_kernel = true ]]; then
-  arg_monitor="-vnc :0,password -monitor stdio"
-  qemu-system-x86_64 \
-    -cpu host $arg_img \
-    -enable-kvm \
-    -m 2G \
-    -smp 2 $arg_monitor
-  exit 0
-fi
-
 if [ $LAUNCH_GDB = true ]; then
   echo "debug kernel"
   cd "${kernel_dir}" || exit 1
@@ -184,12 +175,23 @@ if [ $LAUNCH_GDB = true ]; then
   exit 0
 fi
 
+if [[ $use_default_kernel = true ]]; then
+  arg_monitor="-vnc :0,password=on -monitor stdio"
+  arg_kernel=""
+  qemu="qemu-system-x86_64" # 自己的编译的 QEMU 不支持加密，无法使用 vnc
+
+  # @todo 应该是无需如此复杂的
+  qemu-system-x86_64 \
+    -cpu host $arg_img \
+    -enable-kvm \
+    -m 2G \
+    -smp 2 $arg_monitor $debug_kernel
+  exit 0
+fi
+
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
-  ${arg_machine} ${arg_monitor} ${arg_qmp} ${arg_initrd} \
-  ${arg_tmp}"
+  ${arg_machine} ${arg_monitor} ${arg_initrd} \
+  ${arg_qmp}"
 echo "$cmd"
 eval "$cmd"
-
-# mount -t 9p -o trans=virtio,version=9p2000.L host0 /mnt/9p
-# 内核参数 : pci=nomsi

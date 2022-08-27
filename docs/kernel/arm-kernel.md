@@ -1,3 +1,8 @@
+# ARM 内核相关的
+## TODO
+- [ ] linux/arch/arm64/kernel/fpsimd.c : 有 2000 多行，但是在 kernel 下一共就是 2w 行，如果理解一下 boom 中 SIMD 的设计，也许对于这个问题有更加深刻的理解吧
+
+## Note
 Take advantage of raspberry, qemu and [visual](https://salmanarif.bitbucket.io/visual/index.html)
 
 https://people.kernel.org/linusw/how-the-arm32-kernel-starts : 启动
