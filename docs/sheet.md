@@ -19,6 +19,7 @@
 - yum install epel-release
   - 为了安装 sshfs
   - https://support.moonpoint.com/os/unix/linux/centos/epel_repository.php
+  - 但是在 Centos 8 中，这个方法没有用: yum --enablerepo=powertools install fuse-sshfs
 
 - Centos 8 安装 neovim
 ```sh
