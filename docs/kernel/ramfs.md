@@ -10,14 +10,22 @@
 ## virtual fs
 各种 fs 的区别内核文档[^1]，这个 blog 已经分析过一次[^2]，我就不重复了，下面是我的总结。
 
+ramdisk 使用 ram 模拟 disk，这种方式已经被抛弃了。
+
 | fs        | explanation                                                                       |
 |-----------|-----------------------------------------------------------------------------------|
-| ramdisk   | 使用 ram 模拟 disk                                                                |
 | ramfs     | ramdisk 的改进，大小可以伸缩，无需 page cache 缓存                                |
 | tmpfs     | 基于 ramfs 的 virtual fs, fs 一般的存储介质是 disk / ssd，tmpfs 的存储介质是内存  |
-| rootfs    | 系统启动的时候的临时 fs, 用于挂载 real root fs                                    |
-| initrd    | kernel 启动的时候，可以指定 rootfs 中存储的内容，从而在 mount real root fs 之前搞 |
+
+rootfs 是 系统启动的时候的临时 fs ，rootfs 的实现为 ramfs 或者 tmpfs, 用于挂载 real root fs
+
+kernel 启动的时候，可以指定 rootfs 中存储的内容，从而在 mount real root fs 之前搞
+
+| 内容|  差别|
+| initrd    | 老版本  |
 | initramfs | initrd 的改进版本                                                                 |
+
+- 内核应该一开始就是运行在 initramfs 上的:
 
 ## 这里空说，实际上难以感受在说啥
 将 hack/qemu/bare-metal/ 下的内容整理一下吧！
@@ -26,12 +34,56 @@
 - docker 构建 rootfs
 
 ## 问题
-- 如何制作 initramfs ?
+- [x] 如何制作 initramfs ?
   - 制作 initramfs 的原理是什么?
 - 为什么使用 -kernel bzImage 的时候，可以随意切换内核，而在 Guest 机器中修改 grub 指定内核，则会出现 initramfs 不配套的问题。
 
 - https://wiki.ubuntu.com/Initramfs
   - 提供 mkinitramfs 和 unmkinitramfs 的功能
+
+## 为什么 ramfs 还是被使用了
+```txt
+[  162.016999]  <TASK>
+[  162.016999]  dump_stack_lvl+0x34/0x48
+[  162.016999]  ramfs_create+0x16/0x32
+[  162.016999]  path_openat+0xda8/0xfc0
+[  162.016999]  ? write_buffer+0x36/0x36
+[  162.016999]  do_filp_open+0xad/0x150
+[  162.016999]  ? init_stat+0x2e/0x7a
+[  162.016999]  ? preempt_count_add+0x48/0xa0
+[  162.016999]  file_open_name+0xec/0x1b0
+[  162.016999]  filp_open+0x27/0x50
+[  162.016999]  do_name+0xbf/0x282
+[  162.016999]  write_buffer+0x22/0x36
+[  162.016999]  flush_buffer+0x26/0x82
+[  162.016999]  ? initrd_load+0x3e/0x3e
+[  162.016999]  __gunzip+0x28a/0x313
+[  162.016999]  ? bunzip2+0x3ae/0x3ae
+[  162.016999]  gunzip+0xe/0x15
+[  162.016999]  ? initrd_load+0x3e/0x3e
+[  162.016999]  unpack_to_rootfs+0x155/0x28d
+[  162.016999]  ? initrd_load+0x3e/0x3e
+[  162.016999]  do_populate_rootfs+0x54/0x106
+[  162.016999]  async_run_entry_fn+0x18/0xa0
+[  162.016999]  process_one_work+0x1d4/0x3a0
+[  162.016999]  worker_thread+0x48/0x3c0
+[  162.016999]  ? rescuer_thread+0x380/0x380
+[  162.016999]  kthread+0xe0/0x110
+[  162.016999]  ? kthread_complete_and_exit+0x20/0x20
+[  162.016999]  ret_from_fork+0x1f/0x30
+[  162.016999]  </TASK>
+```
+
+
+```c
+struct file_system_type rootfs_fs_type = {
+    .name       = "rootfs",
+    .init_fs_context = rootfs_init_fs_context,
+    .kill_sb    = kill_litter_super,
+};
+```
+
+观测一下 ramfs 和 shmem 的选择过程:
 
 ## 简单分析 init/initramfs 中的代码
 

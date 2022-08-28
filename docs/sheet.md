@@ -20,6 +20,12 @@
   - 为了安装 sshfs
   - https://support.moonpoint.com/os/unix/linux/centos/epel_repository.php
 
+- Centos 8 安装 neovim
+```sh
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+yum install -y neovim python3-neovim
+```
+
 ## tar
 - tar czf name_of_archive_file.tar.gz name_of_directory_to_tar
   - https://unix.stackexchange.com/questions/46969/compress-a-folder-with-tar

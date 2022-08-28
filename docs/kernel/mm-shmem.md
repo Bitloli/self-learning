@@ -1,57 +1,59 @@
 # shmem
+- [ ] 为什么实现的这么复杂
+1. what's the relation with ipc/shm.c
+    1. shm.c rely on shmem.c to create files and mmap on it, 这是真的吗?
+2. CONFIG_TMPFS 没有了，如果提供给 shm 使用
+
+## shmem_inode_operations 和 shmem_dir_inode_operations 是什么关系
+
+shmem_inode_operations 应该是给 file 使用的，所以创建文件之类的操作都是没有的:
+```txt
+#0  shmem_create (mnt_userns=0xffffffff82a61920 <init_user_ns>, dir=0xffff8881212a8390, dentry=0xffff888122a2c780, mode=33206, excl=false) at mm/shmem.c:2952
+#1  0xffffffff8135a878 in lookup_open (op=0xffffc900017bbedc, op=0xffffc900017bbedc, got_write=true, file=0xffff8881262d0300, nd=0xffffc900017bbdc0) at fs/namei.c:3413
+#2  open_last_lookups (op=0xffffc900017bbedc, file=0xffff8881262d0300, nd=0xffffc900017bbdc0) at fs/namei.c:3481
+#3  path_openat (nd=nd@entry=0xffffc900017bbdc0, op=op@entry=0xffffc900017bbedc, flags=flags@entry=65) at fs/namei.c:3688
+#4  0xffffffff8135b9ed in do_filp_open (dfd=dfd@entry=-100, pathname=pathname@entry=0xffff888100f3c000, op=op@entry=0xffffc900017bbedc) at fs/namei.c:3718
+#5  0xffffffff813455b5 in do_sys_openat2 (dfd=-100, filename=<optimized out>, how=how@entry=0xffffc900017bbf18) at fs/open.c:1311
+#6  0xffffffff81345aae in do_sys_open (mode=<optimized out>, flags=<optimized out>, filename=<optimized out>, dfd=<optimized out>) at fs/open.c:1327
+#7  __do_sys_openat (mode=<optimized out>, flags=<optimized out>, filename=<optimized out>, dfd=<optimized out>) at fs/open.c:1343
+#8  __se_sys_openat (mode=<optimized out>, flags=<optimized out>, filename=<optimized out>, dfd=<optimized out>) at fs/open.c:1338
+#9  __x64_sys_openat (regs=<optimized out>) at fs/open.c:1338
+#10 0xffffffff81edbcf8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc900017bbf58) at arch/x86/entry/common.c:50
+```
+
+```txt
+#0  shmem_mkdir (mnt_userns=0xffffffff82a61920 <init_user_ns>, dir=0xffff8881212a8390, dentry=0xffff888121a36000, mode=511) at mm/shmem.c:2942
+#1  0xffffffff81356eec in vfs_mkdir (mnt_userns=0xffffffff82a61920 <init_user_ns>, dir=0xffff8881212a8390, dentry=dentry@entry=0xffff888121a36000, mode=<optimized out>, mode@entry=511) at fs/namei.c:4013
+#2  0xffffffff8135bcf1 in do_mkdirat (dfd=dfd@entry=-100, name=0xffff88822120d000, mode=mode@entry=511) at fs/namei.c:4038
+#3  0xffffffff8135bee3 in __do_sys_mkdir (mode=<optimized out>, pathname=<optimized out>) at fs/namei.c:4058
+#4  __se_sys_mkdir (mode=<optimized out>, pathname=<optimized out>) at fs/namei.c:4056
+#5  __x64_sys_mkdir (regs=<optimized out>) at fs/namei.c:4056
+#6  0xffffffff81edbcf8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc900017cbf58) at arch/x86/entry/common.c:50
+#7  do_syscall_64 (regs=0xffffc900017cbf58, nr=<optimized out>) at arch/x86/entry/common.c:80
+```
+因为 tmpfs 的 inode 信息都是不能写回的，所以必然需要
+
+## [ ] shmem_is_huge 是如何使用上的
 
 ## KeyNote
-1. what's the relation with ipc/shm.c
-    1. shm.c rely on shmem.c to create files and mmap on it
-2. `shmem_fs_type` may mount multiple times
+
+- `shmem_fs_type` may mount multiple times
 ```plain
 tmpfs           7.8G  103M  7.7G   2% /dev/shm
 tmpfs           7.8G     0  7.8G   0% /sys/fs/cgroup
 tmpfs           7.8G  4.3M  7.8G   1% /tmp
 ```
-3. /tmp is mount by mount(8),  /dev/shm/ is mount by mount(8) too !
-    1. `shmem_init` mount the
-4. how we implemented the posix shared memory ?
-    1. it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html
 
-```plain
-tmpfs has the following uses:
+- /tmp 和 /dev/shm 的区别:
+  - /tmp 是 FHS 定义的，实际上，很多 distribution 中，/tmp 和 /dev/shm 是同一个 mount 类型，应该是没有区别的。
+  - https://superuser.com/questions/45342/when-should-i-use-dev-shm-and-when-should-i-use-tmp
 
-1) There is always a kernel internal mount which you will not see at
-   all. This is used for shared anonymous mappings and SYSV shared
-   memory.
+- posix 的 shm_open 是通过 /dev/shm 实现的
+    - it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html
 
-   This mount does not depend on CONFIG_TMPFS. If CONFIG_TMPFS is not
-   set, the user visible part of tmpfs is not build. But the internal
-   mechanisms are always present.
-
-2) glibc 2.2 and above expects tmpfs to be mounted at /dev/shm for
-   POSIX shared memory (shm_open, shm_unlink). Adding the following
-   line to /etc/fstab should take care of this:
-
-	tmpfs	/dev/shm	tmpfs	defaults	0 0
-
-   Remember to create the directory that you intend to mount tmpfs on
-   if necessary.
-
-   This mount is _not_ needed for SYSV shared memory. The internal
-   mount is used for that. (In the 2.3 kernel versions it was
-   necessary to mount the predecessor of tmpfs (shm fs) to use SYSV
-   shared memory)
-
-3) Some people (including me) find it very convenient to mount it
-   e.g. on /tmp and /var/tmp and have a big swap partition. And now
-   loop mounts of tmpfs files do work, so mkinitrd shipped by most
-   distributions should succeed with a tmpfs /tmp.
-
-4) And probably a lot more I do not know about :-)
-```
-
-
-## todo
-1. swap 机制到底如何勾连起来的
-2. tmpfs 实现的原理
-3. shmem_unuse 机制
+## [ ] swap 机制到底如何勾连起来的
+## [ ] 是如何利用 shmem 实现 tmpfs 的
+## [ ] shmem_unuse 机制
 
 ## doc & ref
 
@@ -169,48 +171,6 @@ static loff_t shmem_file_llseek(struct file *file, loff_t offset, int whence) //
     2. shmem_seek_hole_data : whence != SEEK_DATA && whence != SEEK_HOLE // todo 感觉可以 man 到 SEEK_HOLE 和 SEEK_DATA
 ```
 
-## struct inode_operations shmem_inode_operations
-1. 为什么 inode_operations 只有几个 attr 相关的内容:
-
-```c
-static const struct inode_operations shmem_inode_operations = {
-	.getattr	= shmem_getattr, // todo attr 首先阅读一下文档吧 !
-	.setattr	= shmem_setattr,
-#ifdef CONFIG_TMPFS_XATTR
-	.listxattr	= shmem_listxattr,
-	.set_acl	= simple_set_acl,
-#endif
-};
-```
-
-## struct inode_operations shmem_dir_inode_operations
-
-```c
-static const struct inode_operations shmem_dir_inode_operations = {
-#ifdef CONFIG_TMPFS // todo 也就是说，当没有temfs 就没有目录了
-	.create		= shmem_create,  // todo 这些函数函数可以分析一下
-	.lookup		= simple_lookup,
-	.link		= shmem_link,
-	.unlink		= shmem_unlink,
-	.symlink	= shmem_symlink,
-	.mkdir		= shmem_mkdir,
-	.rmdir		= shmem_rmdir,
-	.mknod		= shmem_mknod,
-	.rename		= shmem_rename2,
-	.tmpfile	= shmem_tmpfile, // todo 万万没有想到，会有 tmp 这个函数
-#endif
-
-#ifdef CONFIG_TMPFS_XATTR
-	.listxattr	= shmem_listxattr,
-#endif
-#ifdef CONFIG_TMPFS_POSIX_ACL
-	.setattr	= shmem_setattr,
-	.set_acl	= simple_set_acl,
-#endif
-};
-```
-
-
 ## struct inode_operations shmem_special_inode_operations
 ```c
 static const struct inode_operations shmem_special_inode_operations = { // todo 为什么 shmem 可以和 special node 关联起来
@@ -283,8 +243,6 @@ int shmem_unuse(swp_entry_t swap, struct page *page) // 居然被 swapfile try_t
 // 充满了各种蛇皮 cgroup 相关的检查
 
 ```
-
-
 
 ## shmem_getpage
 1. shmem_fault is a simple warpper of shmem_getpage_gfp
@@ -490,29 +448,3 @@ struct file *shmem_kernel_file_setup(const char *name, loff_t size, unsigned lon
 }
 ```
 1. @name is interesting, here is the exmaple !
-
-```plain
-➜  svshm git:(master) ✗ cat /proc/20898/maps
-55ae48dce000-55ae48dd0000 r--p 00000000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out
-55ae48dd0000-55ae48dd1000 r-xp 00002000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out
-55ae48dd1000-55ae48dd2000 r--p 00003000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out
-55ae48dd2000-55ae48dd3000 r--p 00003000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out
-55ae48dd3000-55ae48dd4000 rw-p 00004000 103:05 6556276                   /home/shen/Core/tlpi-dist/svshm/svshm_xfr_writer.out
-7ff044cfd000-7ff044d22000 r--p 00000000 103:05 2670807                   /usr/lib/libc-2.31.so
-7ff044d22000-7ff044e6e000 r-xp 00025000 103:05 2670807                   /usr/lib/libc-2.31.so
-7ff044e6e000-7ff044eb9000 r--p 00171000 103:05 2670807                   /usr/lib/libc-2.31.so
-7ff044eb9000-7ff044ebc000 r--p 001bb000 103:05 2670807                   /usr/lib/libc-2.31.so
-7ff044ebc000-7ff044ebf000 rw-p 001be000 103:05 2670807                   /usr/lib/libc-2.31.so
-7ff044ebf000-7ff044ec5000 rw-p 00000000 00:00 0
-7ff044f0f000-7ff044f11000 r--p 00000000 103:05 2654500                   /usr/lib/ld-2.31.so
-7ff044f11000-7ff044f31000 r-xp 00002000 103:05 2654500                   /usr/lib/ld-2.31.so
-7ff044f31000-7ff044f39000 r--p 00022000 103:05 2654500                   /usr/lib/ld-2.31.so
-7ff044f39000-7ff044f3a000 rw-s 00000000 00:01 65536                      /SYSV00001234 (deleted)
-7ff044f3a000-7ff044f3b000 r--p 0002a000 103:05 2654500                   /usr/lib/ld-2.31.so
-7ff044f3b000-7ff044f3c000 rw-p 0002b000 103:05 2654500                   /usr/lib/ld-2.31.so
-7ff044f3c000-7ff044f3d000 rw-p 00000000 00:00 0
-7ffcfae37000-7ffcfae59000 rw-p 00000000 00:00 0                          [stack]
-7ffcfaf1d000-7ffcfaf20000 r--p 00000000 00:00 0                          [vvar]
-7ffcfaf20000-7ffcfaf21000 r-xp 00000000 00:00 0                          [vdso]
-ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
-```

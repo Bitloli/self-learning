@@ -8,14 +8,14 @@
 
 2. 插入语 同位语
 
-3. 
+3.
 
 
 
 # question
 1. P323 定语从句什么时候可以省略which / that / whom 之类的
 2. 表语是什么? 表示状态的句子 定语是什么 ? 修饰名词 代词的词，短语，从句
-3. 
+3.
 
 
 英语语法:
@@ -23,7 +23,7 @@
 2. 句子类型
 3. 特殊操作: 倒转 虚拟语气 省略
 
-时态: 
+时态:
 
 
 
@@ -42,7 +42,7 @@ This way of framing the question probably guarantees failure.
 
 # question
 Suppositions and suspicions about relationships among abstract notions — shape, number, geometry, space — emerging through a fog of chalk dust, preferably of the silky Hagoromo chalk`,` originally from Japan`,` now made in South Korea.
-> 逗号的使用原则是什么？ 
+> 逗号的使用原则是什么？
 
 Despite technological advances`,` and the creation of computers, this is how the masters choose to work.
 > 逗号的使用原则是什么？
@@ -50,7 +50,7 @@ Despite technological advances`,` and the creation of computers, this is how the
 In their love of blackboards and chalk, mathematicians are among the last holdouts.
 > 如何翻译  ? 倒转句 ?
 
-It smells better than whiteboard markers and is easier to clean up, **mathematicians say**. 
+It smells better than whiteboard markers and is easier to clean up, **mathematicians say**.
 > 什么语法 ?
 
 The title of Ms. Wynne’s book comes from the message often left on blackboards for the cleaners who might come in after hours and wipe away the artifacts of genius: “Do not erase.”

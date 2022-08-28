@@ -15,3 +15,5 @@
 好像，他的内核是没有逐个 commit 的，只是存在版本的发布和对应的包:
 
 - https://stackoverflow.com/questions/41314978/can-we-git-clone-the-redhat-kernel-source-code-and-see-the-changes-made-by-them
+
+- https://github.com/linux-audit/audit-userspace : audit 模块的测试，那么是否存在所有的测试整理一下，免得很尴尬。

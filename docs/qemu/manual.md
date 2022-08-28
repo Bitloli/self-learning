@@ -1,5 +1,12 @@
 # QEMU 的基本使用方法
-QEMU 的功能这里大致介绍一下
+
+总体来说，QEMU 直接使用还是非常复杂的，如果只是想要使用虚拟化功能，可以使用如下两个软件，其将 QEMU 进行了封装:
+- https://github.com/quickemu-project/quickemu
+- https://mac.getutm.app/
+
+但是，如果想要学习 Linux 内核或者 QEMU 本身，熟悉 QEMU 的命令行使用还是必须的。
+
+这里大致介绍一下如何使用 QEMU 。
 
 ## 如何编译 QEMU
 QEMU 支持的选项很多，通过下面的命令来查看：
@@ -119,6 +126,9 @@ ifcfg-ens3
     link/sit 0.0.0.0 brd 0.0.0.0
 [martins3@localhost network-scripts]$
 ```
+
+参考[这个文档](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/sec-configuring_ip_networking_with_ifcg_files)，解决方法是在 /etc/sysconfig/network-scripts/ 创建一个
+ifcfg-enp0s5，其内容和原来的相同，只是替换其中的 interface 的名称。但是为什么切换内核会导致网卡的名称改变，可以深入调查一下。
 
 ### Windows
 - [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/windows.sh)

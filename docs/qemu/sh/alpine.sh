@@ -2,7 +2,7 @@
 set -ex
 
 use_nvme_as_root=false
-use_default_kernel=true
+replace_kernel=true
 use_numa=true
 use_ovmf=false
 
@@ -80,7 +80,7 @@ arg_network="-netdev user,id=n1,ipv6=off -device e1000e,netdev=n1"
 arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
 arg_monitor="-serial mon:stdio -display none"
-arg_initrd=""
+arg_initrd="-initrd /home/martins3/initramfs-6.0.0-rc2-00159-g4c612826bec1-dirty.img"
 arg_trace="--trace 'memory_region_ops_\*'"
 # -soundhw pcspk
 
@@ -175,9 +175,9 @@ if [ $LAUNCH_GDB = true ]; then
   exit 0
 fi
 
-if [[ $use_default_kernel = true ]]; then
+if [[ -z ${replace_kernel+x} ]]; then
   arg_monitor="-vnc :0,password=on -monitor stdio"
-  arg_kernel=""
+  arg_monitor="-nographic"
   qemu="qemu-system-x86_64" # 自己的编译的 QEMU 不支持加密，无法使用 vnc
 
   # @todo 应该是无需如此复杂的

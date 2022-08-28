@@ -13,3 +13,7 @@
 - c40e8341e3b3bb27e3a65b06b5b454626234c4f0 : cgroup 和 scheduler 的修复
 - d92725256b4f22d084b813b37ddc394da79aacab : avoid unnecessary page fault retires on shared memory types
 - 581711c46612c1fd7f98960f9ad53f04fdb89853 : io uring 中的网络问题
+- drivers/thermal/thermal_core.c 是做啥的，和 scheduler 什么关系 ?
+  - drivers/cpufreq/cpufreq.c
+  - drivers/acpi/processor_thermal.c
+- d6ffe6067a54972564552ea45d320fb98db1ac5e : memory model，一生之敌

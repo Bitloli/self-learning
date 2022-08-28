@@ -11,4 +11,3 @@ There are many rules, special cases, and implementation alternatives that all co
 
 Our once approachable and hackable kernel has, over time, become more complex and difficult to understand.
 What was once "approachable" is now "difficult to understand". If these words were used to describe a life-partner, we might be looking to choose between a divorce settlement or counseling, though often it is a healthy dose of understanding that is really needed.
-

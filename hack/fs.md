@@ -86,6 +86,7 @@
 * [cache](#cache)
 * [用户态](#用户态)
 * [https://www.zhihu.com/question/21536660](#httpswwwzhihucomquestion21536660)
+* [ext4_fiemap && do_vfs_ioctl 是做啥的](#ext4_fiemap-do_vfs_ioctl-是做啥的)
 
 <!-- vim-markdown-toc -->
 
@@ -2140,6 +2141,8 @@ https://www.kernel.org/doc/html/latest/filesystems/caching/index.html
   - Using the JuiceFS to store data, the data itself will be persisted in object storage (e.g. Amazon S3), and the metadata corresponding to the data can be persisted in various database engines such as Redis, MySQL, and SQLite according to the needs of the scene.
 
 ## https://www.zhihu.com/question/21536660
+
+## ext4_fiemap && do_vfs_ioctl 是做啥的
 
 [^1]: [kernel doc : Overview of the Linux Virtual File System](https://www.kernel.org/doc/html/latest/filesystems/vfs.html)
 [^2]: [github : aio](https://github.com/littledan/linux-aio)

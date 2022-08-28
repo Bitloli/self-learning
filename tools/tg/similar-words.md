@@ -23,7 +23,7 @@ peroration
 模仿作品:
 pastiche
 travesty
-parody 
+parody
 
 讽刺作品:
 
@@ -321,4 +321,3 @@ stalk
 articulation
 articulate
 cartilage
-
