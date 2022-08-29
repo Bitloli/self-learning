@@ -19,16 +19,16 @@
 
 - hugetlbfs_fallocate : 根本看不懂这个哇
 ```c
-		cond_resched();
+        cond_resched();
 
-		/*
-		 * fallocate(2) manpage permits EINTR; we may have been
-		 * interrupted because we are using up too much memory.
-		 */
-		if (signal_pending(current)) {
-			error = -EINTR;
-			break;
-		}
+        /*
+         * fallocate(2) manpage permits EINTR; we may have been
+         * interrupted because we are using up too much memory.
+         */
+        if (signal_pending(current)) {
+            error = -EINTR;
+            break;
+        }
 ```
 
 - 我发现了一个这个问题 backtrace, 那么有什么办法通过 bpftrace 知道谁在使用 io_uring 吗?
@@ -60,13 +60,15 @@ ret_from_fork+34
  * address_space which maps the page from disk; whereas "page_mapped"
  * refers to user virtual address space into which the page is mapped.
  */
-#define PAGE_MAPPING_ANON	0x1
-#define PAGE_MAPPING_MOVABLE	0x2
-#define PAGE_MAPPING_KSM	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
-#define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
+#define PAGE_MAPPING_ANON   0x1
+#define PAGE_MAPPING_MOVABLE    0x2
+#define PAGE_MAPPING_KSM    (PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
+#define PAGE_MAPPING_FLAGS  (PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 ```
 
-- make menuconfig 下的所有选项都是应该分析一下的。
+- make menuconfig 下的所有 memory 选项都是应该分析一下的。
+- zap_page_range 为什么会去调用 lru_add_drain，我的一生之敌啊
+
 
 ## 写一个内核依赖图
 > 先收集起来

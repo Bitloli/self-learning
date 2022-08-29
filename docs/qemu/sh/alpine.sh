@@ -49,6 +49,7 @@ arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_mem_cpu="-m 12G -cpu host -smp 8"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
+arg_mem_balloon="-device virtio-balloon"
 if [[ $use_numa == true ]]; then
   # @todo qemu-system-x86_64: -numa node,mem=6G,cpus=0-3,nodeid=0: Parameter -numa node,mem is not supported by this machine type
   memdev="-object memory-backend-ram,size=4G,id=m0 -object memory-backend-ram,size=4G,id=m1"
@@ -191,7 +192,7 @@ fi
 
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
-  ${arg_machine} ${arg_monitor} ${arg_initrd} \
+  ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} \
   ${arg_qmp}"
 echo "$cmd"
 eval "$cmd"

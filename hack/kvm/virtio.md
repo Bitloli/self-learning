@@ -7,19 +7,6 @@
 - [ ] 打开 console , 不然 kvm 中的 mini-img 中的串口无法使用
   - 如果不打开 block device driver 的，直接无法启动
 
-为了共享 folder :
-```
-CONFIG_NET_9P=y
-CONFIG_NET_9P_VIRTIO=y
-CONFIG_NET_9P_DEBUG=y
-CONFIG_9P_FS=y
-CONFIG_9P_FS_POSIX_ACL=y
-CONFIG_9P_FS_SECURITY=y
-```
-9P 的手动打开方法
-1. Networking Support =>  Plan 9 Resource Sharing Support (9P2000)
-2. File systems  =>  Network File Systems => Plan 9 Resource Sharing Support (9P2000)
-
 VHOST 打开方法
 1. Device Drivers  =>  VHOST drivers => Host kernel accelerator for virtio net
 ```
@@ -32,6 +19,7 @@ CONFIG_VHOST_NET=y
 
 VIRTIO_SCSI 打开:
 Device Driver ==> SCSI device support ==> SCSI low-level drivers ==> virtio-scsi support
+
 
 ## 核心的结构体
 - virtio_config_ops ：类似，将关键的结构体找到
@@ -141,6 +129,8 @@ struct virtio_pci_device {
   struct virtio_device vdev;
   struct pci_dev *pci_dev;
 ```
+
+- [ ] virtio_pci_config_ops 和 virtio_blk 是什么关系 ?
 
 ```c
 static const struct virtio_config_ops virtio_pci_config_ops = {

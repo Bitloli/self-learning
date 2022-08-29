@@ -17,3 +17,4 @@
   - drivers/cpufreq/cpufreq.c
   - drivers/acpi/processor_thermal.c
 - d6ffe6067a54972564552ea45d320fb98db1ac5e : memory model，一生之敌
+- b467192ec7070d2d6d14ab5e6774a8afdcc9e89d : a serila kernel memory fix

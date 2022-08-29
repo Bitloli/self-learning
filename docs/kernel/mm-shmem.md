@@ -1,23 +1,18 @@
 # shmem
-1. what's the relation with ipc/shm.c
-    1. shm.c rely on shmem.c to create files and mmap on it
-
 ## KeyNote
-
+- what's the relation with ipc/shm.c
+    - shm.c rely on shmem.c to create files and mmap on it
 - `shmem_fs_type` may mount multiple times
 ```plain
 tmpfs           7.8G  103M  7.7G   2% /dev/shm
 tmpfs           7.8G     0  7.8G   0% /sys/fs/cgroup
 tmpfs           7.8G  4.3M  7.8G   1% /tmp
 ```
-
 - /tmp 和 /dev/shm 的区别:
   - /tmp 是 FHS 定义的，实际上，很多 distribution 中，/tmp 和 /dev/shm 是同一个 mount 类型，应该是没有区别的。
   - https://superuser.com/questions/45342/when-should-i-use-dev-shm-and-when-should-i-use-tmp
-
 - posix 的 shm_open 是通过 /dev/shm 实现的
     - it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html
-
 - shmem_unuse 当 swapoff 的时候，将 tmpfs 中的内容放回去
 
 ## inode operations
