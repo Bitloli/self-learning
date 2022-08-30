@@ -1,5 +1,7 @@
 # 通过阅读构建词汇
 
+![](https://openmoji.org/data/color/svg/1FAD2.svg)
+
 - circumspect
 - kludgy
 - ditch
@@ -17,7 +19,6 @@
 - waterproof
 - graft
 - espionage
-- insidious
 - preen
 - promiscuous
 - de facto
@@ -28,7 +29,12 @@
 - honorable
 - eternity
 - obituary
+- proactive
+
 
 ## 超过的
 - cuckoo
 - judiciously
+
+## 重新忘记的
+- insidious

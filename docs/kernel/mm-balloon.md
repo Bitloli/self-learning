@@ -63,6 +63,9 @@ Num     Type           Disp Enb Address            What
 
 - 使用 memory hotplug 来实现，我这是万万没有想到的。
 
+## [ ] qemu 的 stat 功能分析一下
+- https://qemu.readthedocs.io/en/latest/interop/virtio-balloon-stats.html
+
 ## 具体代码上的分析
 - free_page_hint_status
 

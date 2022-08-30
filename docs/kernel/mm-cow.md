@@ -5,7 +5,6 @@
 - [ ] 如果可以理解 dirty cow，应该 COW 就没有问题吧 https://dirtycow.ninja/
   - [ ] https://chao-tic.github.io/blog/2017/05/24/dirty-cow : and this one
 - [ ] 理解一下文件系统的 cow 的实现 e.g., btrfs
-
 - [ ] check the code related with copying page table when cow
 - 1. do_wp_page 和 do_cow_page 是什么关系 ?
     1. do_cow_page : 和 mmap 的第一次创建有关系
@@ -320,7 +319,7 @@ remote 的含义指的是访问其他进程的地址空间。
 
 但是，问题是，第二次访问的时候，去掉了 ``FOLL_WRITE`` ，那么只是按照只读的方法访问的，如果恰好的将新产生 cow page 去掉，那么访问到是用于映射 root 权限文件的物理页面，这次，不会发生创建一个新的页面，并且进行复制。
 
-似乎，到此值剩下一个问题: 如果去掉 cow page ? 注意，我们还有第二个线程 madviseThread
+似乎，到此时剩下一个问题: 如果去掉 cow page ? 注意，我们还有第二个线程 madviseThread
 
 .. note::
   POSIX_MADV_DONTNEED

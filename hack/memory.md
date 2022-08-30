@@ -1664,19 +1664,6 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ```
 
-## madvise && fadvise
-madvise 告知内核该范围的内存如何访问
-fadvise 告知内核该范围的文件如何访问，内核从而可以调节 readahead 的参数，或者清理掉该范围的page cache
-
-问题:
-1. madvice 如何影响 hugepage 的
-2. 还有在文件系统中间对称的 fadvise
-
-
-fadvise 很简单，阅读
-1. Man fadvise(2)
-2. fadvise.c 的源代码
-
 ## highmem
 1. 为什么内核虚拟地址需要映射所有的物理地址 ?
 猜测: a. gup 很容易实现，利用 kmap 可以很容易访问所有的。

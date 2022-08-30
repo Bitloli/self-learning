@@ -118,6 +118,26 @@ operations can be used to wake any processes or threads waiting for a particular
 - [ ]  memcg 如何操作 slab (本来认为 slab 作为内核的部分，不会被 memcg 控制)
 - [ ]  ticket spinlock
 
+## 记录一下遇到的问题
+
+```c
+static struct page *page_idle_get_page(unsigned long pfn)
+{
+    struct page *page = pfn_to_online_page(pfn);
+
+    if (!page || !PageLRU(page) ||
+        !get_page_unless_zero(page))
+        return NULL;
+
+    if (unlikely(!PageLRU(page))) {
+    // 这一段的内容是啥意思，在上面的检查中，这不是必然 not
+    // 如果是从 lock 的角度考虑，还是存在问题的啊，就算这个地方通过，那么也没有上锁，下面直接过去了，怎么办?
+        put_page(page);
+        page = NULL;
+    }
+    return page;
+}
+```
 
 [^1]: https://lwn.net/Articles/262464/
 [^2]: https://eli.thegreenplace.net/2018/basics-of-futexes/

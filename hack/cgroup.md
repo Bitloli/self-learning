@@ -1328,6 +1328,9 @@ static struct cgroup *cset_cgroup_from_root(struct css_set *cset,
 static void css_free_rwork_fn(struct work_struct *work)
 ```
 
+- [ ] cgroup 是可以控制一个进程的 swap 的水平的
+  - 可以测试一下，即使是整个内存非常充沛，但是因为 cgroup 的原因，还是会出现 swap 的情况
+  - https://unix.stackexchange.com/questions/697448/what-is-the-replacement-of-memory-swappiness-file-in-cgroups-v2
 
 ## reference
 [^1]: v1 https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/index.html

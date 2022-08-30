@@ -17,3 +17,24 @@
 - https://stackoverflow.com/questions/41314978/can-we-git-clone-the-redhat-kernel-source-code-and-see-the-changes-made-by-them
 
 - https://github.com/linux-audit/audit-userspace : audit 模块的测试，那么是否存在所有的测试整理一下，免得很尴尬。
+
+# kernel patch
+
+## 配置
+在 .gitconf 上的设置:
+```plain
+[sendemail]
+  smtpencryption = tls
+  smtpserver = smtp.gmail.com
+  smtpuser = hubachelor@gmail.com
+  smtppass = ***********
+  smtpserverport = 587
+```
+在 gmail 上的设置 https://myaccount.google.com/lesssecureapps, 否则 git sendemail 无法使用
+
+## 使用
+git commit --amend
+proxychains4 git send-email 0001-change-mmap-flags-from-PROT_EXEC-to-PROT_READ.patch --to ltp@lists.linux.it
+
+[^1]: http://houjingyi233.com/2019/07/15/%E7%BB%99linux%E5%86%85%E6%A0%B8%E6%8F%90%E4%BA%A4%E4%BB%A3%E7%A0%81/
+[^2]: https://zhuanlan.zhihu.com/p/138315470

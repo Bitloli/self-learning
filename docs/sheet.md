@@ -41,3 +41,8 @@ yum install -y neovim python3-neovim
 ## find
 - find /tmp -size 0 -print -delete : 删除大小为 0 的文件
   - https://stackoverflow.com/questions/5475905/linux-delete-file-with-size-0
+
+## ps
+- ps --ppid 2 -p 2 -o uname,pid,ppid,cmd,cls
+  - 列举出来所有的内核线程
+  - https://unix.stackexchange.com/questions/411159/linux-is-it-possible-to-see-only-kernel-space-threads-process

@@ -5,9 +5,9 @@
 | slub.c               | 911   | 991     | 3974 |                                                                                                                                                              |
 | hugetlb.c            | 640   | 1130    | 3158 | superpage 相关的内容吧 @todo                                                                                                                                 |
 | memory.c             | 548   | 1136    | 3100 | pagefault 以及辅助函数，类似于 pagetable 各种操控函数 @todo 分析的清楚 pgfault 那么这个问题就没有什么意义了                                                  |
-| shmem.c              | 478   | 558     | 3012 | @todo shmem 的复杂度现在其实难以估计，到底cow机制还是ipc相关的处理，还是各种节省内存的方法 ?                                                                 |
+| shmem.c              | 478   | 558     | 3012 | 用于支持 tmpfs 和 sysv shm 的实现                                                                 |
 | slab.c               | 669   | 834     | 2974 | 暂时不用关注的内容，认为已经过时了。                                                                                                                         |
-| swapfile.c           | 464   | 632     | 2682 | 应该是处理当 swap 的base是file而不是partion 的情况!                                                                                                          |
+| swapfile.c           | 464   | 632     | 2682 | 应该是处理当 swap 的 base 是file而不是partion 的情况!                                                                                                          |
 | mmap.c               | 467   | 910     | 2332 | mmap 实现                                                                                                                                                    |
 | vmscan.c             | 547   | 1364    | 2304 | 扫描确定需要回收页面，也就是 page reclaim 机制                                                                                                               |
 | huge_memory.c        | 354   | 458     | 2118 | transparent hugetlb                                                                                                                                          |
@@ -81,7 +81,7 @@
 | percpu-km.c          | 22    | 30      | 67   |                                                                                                                                                              |
 | percpu.c             | 353   | 957     | 1478 | percpu allocator 就是实现percpu的                                                                                                                            |
 | mincore.c            | 27    | 69      | 177  | syscall determine whether pages are resident in memory                                                                                                       |
-| page_idle.c          | 29    | 33      | 176  | @todo                                                                                                                                                        |
+| page_idle.c          | 29    | 33      | 176  | Idle Page Tracking : https://www.kernel.org/doc/html/latest/admin-guide/mm/idle_page_tracking.html                                                           |
 | page_vma_mapped.c    | 23    | 64      | 168  | `page_vma_mapped_walk` Returns true if the page is mapped in the vma 唯一被使用非static 函数，我感觉没有拆分成为新的static的必要                             |
 | usercopy.c           | 43    | 98      | 165  | 各种检查函数用于支持 user 和 kernel 之间的拷贝                                                                                                               |
 | cleancache.c         | 30    | 125     | 162  | https://www.kernel.org/doc/html/latest/vm/cleancache.html 还是和page cache 有关的内容                                                                        |
