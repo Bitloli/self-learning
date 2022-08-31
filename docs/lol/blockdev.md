@@ -447,6 +447,29 @@ const struct file_operations def_blk_fops = {
 #29 0x0000000000000000 in ?? ()
 ```
 
+进行 io 的过程:
+```txt
+#0  bdev_read_page (bdev=bdev@entry=0xffff888220cfbc00, sector=0, page=page@entry=0xffffea0008a4d500) at block/bdev.c:325
+#1  0xffffffff81394e5a in do_mpage_readpage (args=args@entry=0xffffc900017bfb18) at fs/mpage.c:273
+#2  0xffffffff813950a5 in mpage_readahead (rac=0xffffc900017bfcd0, get_block=<optimized out>) at fs/mpage.c:361
+#3  0xffffffff8128a334 in read_pages (rac=rac@entry=0xffffc900017bfcd0) at mm/readahead.c:158
+#4  0xffffffff8128a6b0 in page_cache_ra_unbounded (ractl=0xffffc900017bfcd0, nr_to_read=128, lookahead_size=<optimized out>) at mm/readahead.c:263
+#5  0xffffffff8128b0a5 in page_cache_sync_ra (ractl=0x0 <fixed_percpu_data>, ractl@entry=0xffffc900017bfcd0, req_count=req_count@entry=32) at mm/readahead.c:699
+#6  0xffffffff8127e7f6 in page_cache_sync_readahead (req_count=32, index=0, file=0xffff888221bb8900, ra=0xffff888221bb8998, mapping=0xffff888220cfc100) at include/linux/pagemap.h:1215
+#7  filemap_get_pages (iocb=iocb@entry=0xffffc900017bfe98, iter=iter@entry=0xffffc900017bfe70, fbatch=fbatch@entry=0xffffc900017bfd78) at mm/filemap.c:2566
+#8  0xffffffff8127ee14 in filemap_read (iocb=iocb@entry=0xffffc900017bfe98, iter=iter@entry=0xffffc900017bfe70, already_read=already_read@entry=0) at mm/filemap.c:2660
+#9  0xffffffff815fda6b in blkdev_read_iter (iocb=0xffffc900017bfe98, to=0xffffc900017bfe70) at block/fops.c:598
+#10 0xffffffff81348aec in call_read_iter (iter=0x0 <fixed_percpu_data>, kio=0xffff888220cfbc00, file=0xffff888221bb8900) at include/linux/fs.h:2181
+#11 new_sync_read (ppos=0xffffc900017bff08, len=131072, buf=0x7f9a0c8db000 <error: Cannot access memory at address 0x7f9a0c8db000>, filp=0xffff888221bb8900) at fs/read_write.c:389
+#12 vfs_read (file=file@entry=0xffff888221bb8900, buf=buf@entry=0x7f9a0c8db000 <error: Cannot access memory at address 0x7f9a0c8db000>, count=count@entry=131072, pos=pos@entry=0xffffc900017bff08) at fs/read_write.c:470
+#13 0xffffffff813492ba in ksys_read (fd=<optimized out>, buf=0x7f9a0c8db000 <error: Cannot access memory at address 0x7f9a0c8db000>, count=131072) at fs/read_write.c:607
+#14 0xffffffff81edbcf8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc900017bff58) at arch/x86/entry/common.c:50
+#15 do_syscall_64 (regs=0xffffc900017bff58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#16 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+从上面的过程中，可以看到直接读写裸盘的时候，也是存在 page cahce 的，而 page cache 总是关联 inode 作为来构建映射的，
+所以，需要一个 super_operations 来创建 inode 的。
+
 ## lvm
 - https://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)
 

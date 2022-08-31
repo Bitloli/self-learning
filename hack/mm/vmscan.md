@@ -1,6 +1,8 @@
 # page reclaim
 
-- [ ] 当内存出现压力的时候，是不是有限清理 clean page cache, 最后清理 anonymous page cache 的写回操作。
+## keynote
+- `lru_add_drain` transfer all pages from the per-CPU LRU caches to the global lists
+
 
 ## TODO
 - [ ] 奔跑吧 P315 workingset.c refault 这个主题
@@ -10,6 +12,7 @@
 - [ ] 所以 shmem 的内存是如何被回收的
     - [ ] 将 shmem 的内存当做 swap cache ?
     - [ ] super_operations::nr_cached_objects 用于处理 transparent_hugepage
+- [ ] 当内存出现压力的时候，是不是有限清理 clean page cache, 最后清理 anonymous page cache 的写回操作。
 
 
 1. 理清楚一个调用路线图

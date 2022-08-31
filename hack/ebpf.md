@@ -280,6 +280,9 @@ https://github.com/iovisor/bcc/tree/master/libbpf-tools
 应该是从这里开始:
 https://github.com/libbpf/libbpf
 
+## paper
+- 使用 eBPF 来加速存储栈
+- https://www.usenix.org/conference/osdi22/presentation/zhong
 
 [^1]: [Outlook : future of eBPF](https://docs.google.com/presentation/d/1AcB4x7JCWET0ysDr0gsX-EIdQSTyBtmi6OAW7bE0jm0/preview?slide=id.g704abb5039_2_106)
 [^2]: [A thorough introduction to eBPF](https://lwn.net/Articles/740157/)

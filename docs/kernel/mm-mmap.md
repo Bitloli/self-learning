@@ -33,3 +33,6 @@ const struct vm_operations_struct hugetlb_vm_ops = {
 	.pagesize = hugetlb_vm_op_pagesize,
 };
 ```
+
+## TODO
+- [ ] VM_LOCKED|VM_PFNMAP|VM_HUGETLB 这种 flags 的整理

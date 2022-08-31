@@ -1,6 +1,6 @@
 # Radix Tree
-[multiple order](https://lwn.net/Articles/175432/)
-[basic version](https://lwn.net/Articles/688130/)
+- [multiple order](https://lwn.net/Articles/175432/)
+- [basic version](https://lwn.net/Articles/688130/)
 
 There are situations where failure to insert an item into a radix tree can be a significant problem. To help avoid such situations, a pair of specialized functions are provided:
 

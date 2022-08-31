@@ -137,7 +137,7 @@ all supported architectures and can be **emulated with little effort.**
 
 
 In contrast to the general algorithms, the LRU implementation of the kernel is based on two linked
-lists that are referred to as the active and the inactive list (**separate lists exist for each memory zone in the system**). 
+lists that are referred to as the active and the inactive list (**separate lists exist for each memory zone in the system**).
 > @todo 所以如何维持各个 page 之间的关系 ?
 
 #### 18.2.4 Handling Page Faults
@@ -161,7 +161,7 @@ As kernel
 caches are generally not particularly huge, the kernel begins to shrink them only as a last resort
 
 Functions written to shrink caches are referred to as shrinkers in the kernel and can be registered dynamically. When memory is scarce, the kernel invokes all registered shrinkers to obtain fresh memory
-> 不到万不得已，不要释放cache，似乎利用的是 struct shrinker 
+> 不到万不得已，不要释放cache，似乎利用的是 struct shrinker
 
 ## 18.3 Managing Swap Areas
 Linux is relatively flexible in its support for swap areas
@@ -389,7 +389,7 @@ block always means that the swap area’s capacity is reduced by one page.
 4. To identify the swap area as such to the kernel (after all, it could simply be a normal partition
 with filesystem data which, of course, may not be inadvertently overwritten if the administrator
 uses an invalid swap area), the `SWAPSPACE2` label is set to the end of the first page.
-5. The number of available pages is also stored in the header of the swap area. 
+5. The number of available pages is also stored in the header of the swap area.
 This figure is calculated by subtracting the number of defective pages from the total number of available pages. 1 must also be subtracted from this number since the first page is used for state information and
 for the list of defective blocks.
 
@@ -410,7 +410,7 @@ Although `sys_swapon` is one of the kernel’s longer functions, it is not parti
 the following actions.
 1. In a first step, the kernel searches for a free element in the `swap_info` array. Initial values are
 then assigned to the entry. If a block device partition provides the swap area, the associated
-`block_device` instance is claimed with `bd_claim`. 
+`block_device` instance is claimed with `bd_claim`.
 
 ```c
 static struct swap_info_struct *alloc_swap_info(void) // 查找工作
@@ -457,7 +457,7 @@ The swap cache is an agent between the **page selection policy** and **the mecha
 between memory and swap areas**. These **two parts** interact via the swap cache. *Input in one part triggers
 corresponding actions in the other. Notice that the policy routines can, nevertheless, directly interact with
 the writeback routines for pages that need not be swapped out, but can be synchronized*
-> 两次使用radix tree的原因: ramp -> swap in , swap cache -> swap out 
+> 两次使用radix tree的原因: ramp -> swap in , swap cache -> swap out
 > @todo 能不能将清晰化上图中间的各个部分清晰表示出来
 > @todo 对于不需要 swap out 的页面，为什么还是需要swap out 机制管理 ?
 
@@ -465,7 +465,7 @@ the writeback routines for pages that need not be swapped out, but can be synchr
 
 
 **Which data are kept in the swap cache ?** *As the swap cache is simply another page cache built using
-the structures discussed in Chapter 3*, the answer is simple — **memory pages**.  
+the structures discussed in Chapter 3*, the answer is simple — **memory pages**.
 Instead, the swap cache is used for the following, depending
 on the ‘‘direction’’ of the swapping request (read or write):
 1. When pages are swapped out, the selection logic first selects a suitable seldom-used page frame.
@@ -628,7 +628,7 @@ bool page_mapped(struct page *page) // 检查方法很简单，判断 page->_map
 
 
 #### 18.4.3 Adding New Pages
-Adding new pages to the swap cache is a very **simple** matter because the appropriate page cache mechanisms are used. 
+Adding new pages to the swap cache is a very **simple** matter because the appropriate page cache mechanisms are used.
 The standard methods reduce the requisite effort to invoking the `add_to_page_cache`
 function described in *Chapter 16*.
 This function inserts the data structure of a given page into the corresponding *lists* and *trees* of the `swapper_space` address space.
@@ -689,7 +689,7 @@ static int refill_swap_slots_cache(struct swap_slots_cache *cache) // 在新版�
 }
 
 
-int get_swap_pages(int n_goal, 
+int get_swap_pages(int n_goal,
   swp_entry_t swp_entries[], int entry_size) // 本函数的分析和书上的 scan_swap_map 类似，主要调用下面两个函数
 
 
@@ -722,7 +722,7 @@ expect of `add_to_page_cache`, the page is inserted in the radix tree set up by 
  * @page: page we want to move to swap
  *
  * Allocate swap space for the page and add the page to the
- * swap cache.  Caller needs to hold the page lock. 
+ * swap cache.  Caller needs to hold the page lock.
  */
 int add_to_swap(struct page *page, struct list_head *list)
 ```
@@ -1022,16 +1022,9 @@ from a file or mapping.
 Usually a page is first regarded as inactive and has to earn its merits to be considered active. However, a
 selected number of procedures have a high opinion of their pages and invoke `lru_cache_add_active` to
 place pages directly on the zone’s active list:
-1. `read_swap_cache_async` from mm/swap_state.c; this reads pages from the swap cache. 
+1. `read_swap_cache_async` from mm/swap_state.c; this reads pages from the swap cache.
 2. The page fault handlers `__do_fault`, `do_anonymous_page`, `do_wp_page`, and `do_no_page`; these
 are implemented in mm/memory.c.
-
-Understanding what is required to be promoted from an inactive to an active page is the subject of the
-next section. This is directly related to operations that move pages from the active to the inactive list and
-vice versa. Before these operations can be performed, it is necessary that the kernel transfer all pages
-from the per-CPU LRU caches to the global lists; otherwise, pages could be missed by the page-moving
-logics. The auxiliary function `lru_add_drain` is provided for this purpose.
-> lru_add_drain 将 per cpu 缓存的 page 全部加入到 list 中间
 
 #### 18.6.3 Determining Page Activity
 > 为了确定什么page需要被换出来
@@ -1069,7 +1062,7 @@ less activity, then two calls of `page_referenced` are required without interven
 
 > 所以，其使用的机制是，周期性的使用 page_referenced 访问 page，表示时间间隔，感觉正确的调用路线是
 > shrink_page_list -> page_check_references -> page_referenced @todo 但是逻辑上并没有那么简单，而且，为什么需要rmap 也是目前不可理解的
-> 
+>
 > @todo mark_page_accessed 的调用者是那么回事，但是，并不知道为什么其中的，是如何处理 anon page 的，当 anon 首次访问的时候
 > 有待相信的分析，anon 肯定是被管理的。
 
@@ -1136,7 +1129,7 @@ parts of the kernel:
 * The NUMA section and the memory zones it contains that are to be processed.
 * The number of pages to be swapped out.
 * The maximum number of pages that may be examined to find out if they are suitable for swapping out before the operation is aborted.
-* The priority assigned to the attempt to free pages. 
+* The priority assigned to the attempt to free pages.
 
 * ***Controlling Scanning***
 
@@ -1268,7 +1261,7 @@ struct zone_reclaim_stat {
 
 After having introduced the required auxiliary data structures,
 let’s discuss how zone shrinking is initiated. `shrink_zone` expects an instance of scan_control as a parameter. This instance must be filled
-with the appropriate values by the caller. 
+with the appropriate values by the caller.
 
 Initially, the function is concerned with determining how many
 active and inactive pages are to be scanned; it does this by referring to the current state of the processed
@@ -1285,7 +1278,7 @@ static inline spinlock_t *zone_lru_lock(struct zone *zone)
 	return &zone->zone_pgdat->lru_lock;
 }
 ```
-> 对于这个 lock 的 contention 
+> 对于这个 lock 的 contention
 
 One optimization is to place all pages that are about to be analyzed in shrink_active_list and
 `shrink_inactive_list` on a local list, drop the lock, and proceed with the pages on the local list. Since
@@ -1427,8 +1420,8 @@ scanned or the required number of pages has been written back. Both numbers are 
 Within the loop, the `isolate_lru_pages` function, as discussed in Section 18.6.5, is invoked to remove a
 bundle of pages from the back of the list of inactive pages so that the most inactive pages are swapped
 out by preference. The kernel essentially passes the finished list to shrink_page_list, which initiates
-writing back the pages on the list. 
-> isolate_lru_pages 
+writing back the pages on the list.
+> isolate_lru_pages
 
 
 * **Performing Page Reclaim**
@@ -1446,7 +1439,7 @@ In each loop iteration, a page is selected from the page list (the list is proce
 First of all, the kernel must decide if the page must be kept. This can happen for the following reasons:
 - The page is locked by some other part of the kernel. If this is the case, the page is not reclaimed;
 otherwise, it is locked by the current path and will be reclaimed.
-- The second condition is more complicated. The following code snippet shows the conditions 
+- The second condition is more complicated. The following code snippet shows the conditions
 under which a page is not reclaimed, but returned to the active LRU list:
 
 > @todo 还是看不下去啊!
@@ -1518,7 +1511,7 @@ the swap data structure is decremented by 1. If the slot is no longer needed, th
 lowest_bit or highest_bit fields of the swap_info instance provided the swap page is at one of its
 two ends.
 > 1116
-> @todo 先让跳转到18.6.3 
+> @todo 先让跳转到18.6.3
 
 
 
@@ -1744,7 +1737,7 @@ static bool kswapd_shrink_node(pg_data_t *pgdat,
 ```
 
 #### 18.9.2 Swap-out in the Event of Acute Memory Shortage
-The `try_to_free_pages` routine is invoked for rapid, unscheduled memory reclaim. 
+The `try_to_free_pages` routine is invoked for rapid, unscheduled memory reclaim.
 
 ```c
 /*
@@ -1780,7 +1773,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 ## 18.10 Shrinking Other Caches
 In addition to the page cache, the kernel manages other caches that are generally based on the slab.
 
-Kernel subsystems that use their own caches of this type are able to register shrinker functions dynamically with the kernel; 
+Kernel subsystems that use their own caches of this type are able to register shrinker functions dynamically with the kernel;
 these are called when memory is low to free some memory space already in use.
 
 > @todo 难道前面说的东西都是处理page cache 的 ?
@@ -1851,7 +1844,7 @@ struct super_operations {
 				    struct shrink_control *);
 }
 // @todo 这两个函数 和 shrinker 中间的两个函数很类似, 通过符号查找发现，在当前的配置中间，这两个函数指针根本没有初始化
-// @question nr_cached_objects 在调用的时候尚且检查过，但是 free_cached_objects 调用之前没有检查，难道不会造成deref 空指针异常吗 ? 
+// @question nr_cached_objects 在调用的时候尚且检查过，但是 free_cached_objects 调用之前没有检查，难道不会造成deref 空指针异常吗 ?
 // 我们需要使用qemu 调试了，也许是浪费时间
 
 static unsigned long super_cache_scan(struct shrinker *shrink, // 赋值给scan object，其中完成的内容是
@@ -2032,7 +2025,7 @@ int __radix_tree_create(struct radix_tree_root *root, unsigned long index,
 
 7. 想知道cluster 实现的机制吗 ?
 ```c
-  // @todo 
+  // @todo
 	entry = get_swap_page(page);
 ```
 8. add_to_swap 为什么是 page 被swap out 的时候调用而不是 swap in 的时候调用 ?
@@ -2045,4 +2038,4 @@ int __radix_tree_create(struct radix_tree_root *root, unsigned long index,
 generated pages, the system swap areas act as the backing stores. The swap areas for pages mapped
 from files are the corresponding sections in the underlying filesystems 找到这一个东西的证据在哪里 ?
 
-15. 
+15.

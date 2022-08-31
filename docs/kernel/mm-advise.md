@@ -12,6 +12,7 @@ fadvise 很简单，阅读
 
 - [ ] 似乎很多位置都是这个类似的这种结构
 
+
 ```c
 static long madvise_cold(struct vm_area_struct *vma,
 			struct vm_area_struct **prev,
@@ -31,4 +32,59 @@ static long madvise_cold(struct vm_area_struct *vma,
 
 	return 0;
 }
+```
+
+```c
+static inline bool can_madv_lru_vma(struct vm_area_struct *vma)
+{
+	return !(vma->vm_flags & (VM_LOCKED|VM_PFNMAP|VM_HUGETLB));
+}
+```
+
+- [ ] 为什么这三种都不可以来作为?
+- [ ] VM_LOCKED ?
+- [ ] VM_PFNMAP ?
+
+
+```diff
+History:        #0
+Commit:         1a4e58cce84ee88129d5d49c064bd2852b481357
+Author:         Minchan Kim <minchan@kernel.org>
+Committer:      Linus Torvalds <torvalds@linux-foundation.org>
+Author Date:    Thu 26 Sep 2019 07:49:15 AM CST
+Committer Date: Thu 26 Sep 2019 08:51:41 AM CST
+
+mm: introduce MADV_PAGEOUT
+
+When a process expects no accesses to a certain memory range for a long
+time, it could hint kernel that the pages can be reclaimed instantly but
+data should be preserved for future use.  This could reduce workingset
+eviction so it ends up increasing performance.
+
+This patch introduces the new MADV_PAGEOUT hint to madvise(2) syscall.
+MADV_PAGEOUT can be used by a process to mark a memory range as not
+expected to be used for a long time so that kernel reclaims *any LRU*
+pages instantly.  The hint can help kernel in deciding which pages to
+evict proactively.
+
+A note: It doesn't apply SWAP_CLUSTER_MAX LRU page isolation limit
+intentionally because it's automatically bounded by PMD size.  If PMD
+size(e.g., 256) makes some trouble, we could fix it later by limit it to
+SWAP_CLUSTER_MAX[1].
+
+- man-page material
+
+MADV_PAGEOUT (since Linux x.x)
+
+Do not expect access in the near future so pages in the specified
+regions could be reclaimed instantly regardless of memory pressure.
+Thus, access in the range after successful operation could cause
+major page fault but never lose the up-to-date contents unlike
+MADV_DONTNEED. Pages belonging to a shared mapping are only processed
+if a write access is allowed for the calling process.
+
+MADV_PAGEOUT cannot be applied to locked pages, Huge TLB pages, or
+VM_PFNMAP pages.
+
+[1] https://lore.kernel.org/lkml/20190710194719.GS29695@dhcp22.suse.cz/
 ```

@@ -206,73 +206,26 @@ out:
 1. 这是fs 和 dev 进行 io 的唯一的接口吗 ?
 2. submit_bio 和 generic_make_request 的关系是什么 ? 两者都是类似接口，但是 submit_bio 做出部分检查，最后调用 generic_make_request
 
-```c
-/**
- * submit_bio - submit a bio to the block device layer for I/O
- * @bio: The &struct bio which describes the I/O
- *
- * submit_bio() is very similar in purpose to generic_make_request(), and
- * uses that function to do most of the work. Both are fairly rough
- * interfaces; @bio must be presetup and ready for I/O.
- *
- */
-blk_qc_t submit_bio(struct bio *bio)
-{
-	bool workingset_read = false;
-	unsigned long pflags;
-	blk_qc_t ret;
 
-	if (blkcg_punt_bio_submit(bio))
-		return BLK_QC_T_NONE;
-
-	/*
-	 * If it's a regular read/write or a barrier with data attached,
-	 * go through the normal accounting stuff before submission.
-	 */
-	if (bio_has_data(bio)) {
-		unsigned int count;
-
-		if (unlikely(bio_op(bio) == REQ_OP_WRITE_SAME))
-			count = queue_logical_block_size(bio->bi_disk->queue) >> 9;
-		else
-			count = bio_sectors(bio);
-
-		if (op_is_write(bio_op(bio))) {
-			count_vm_events(PGPGOUT, count);
-		} else {
-			if (bio_flagged(bio, BIO_WORKINGSET))
-				workingset_read = true;
-			task_io_account_read(bio->bi_iter.bi_size);
-			count_vm_events(PGPGIN, count);
-		}
-
-		if (unlikely(block_dump)) {
-			char b[BDEVNAME_SIZE];
-			printk(KERN_DEBUG "%s(%d): %s block %Lu on %s (%u sectors)\n",
-			current->comm, task_pid_nr(current),
-				op_is_write(bio_op(bio)) ? "WRITE" : "READ",
-				(unsigned long long)bio->bi_iter.bi_sector,
-				bio_devname(bio, b), count);
-		}
-	}
-
-	/*
-	 * If we're reading data that is part of the userspace
-	 * workingset, count submission time as memory stall. When the
-	 * device is congested, or the submitting cgroup IO-throttled,
-	 * submission can be a significant part of overall IO time.
-	 */
-	if (workingset_read)
-		psi_memstall_enter(&pflags);
-
-	ret = generic_make_request(bio);
-
-	if (workingset_read)
-		psi_memstall_leave(&pflags);
-
-	return ret;
-}
-EXPORT_SYMBOL(submit_bio);
+iomap 直接来调用 submit_bio，有趣:
+```txt
+#0  submit_bio (bio=0xffff88822baa1f00) at block/blk-cgroup.h:398
+#1  0xffffffff813bc63d in iomap_readahead (rac=<optimized out>, ops=0xffffffff8246d090 <xfs_read_iomap_ops>) at fs/iomap/buffered-io.c:422
+#2  0xffffffff8128a334 in read_pages (rac=rac@entry=0xffffc900020afad0) at mm/readahead.c:158
+#3  0xffffffff8128a6b0 in page_cache_ra_unbounded (ractl=ractl@entry=0xffffc900020afad0, nr_to_read=35, lookahead_size=<optimized out>) at mm/readahead.c:263
+#4  0xffffffff8128ac39 in do_page_cache_ra (lookahead_size=<optimized out>, nr_to_read=<optimized out>, ractl=0xffffc900020afad0) at mm/readahead.c:293
+#5  0xffffffff8127fc77 in do_sync_mmap_readahead (vmf=0xffffc900020afb98) at mm/filemap.c:3028
+#6  filemap_fault (vmf=0xffffc900020afb98) at mm/filemap.c:3120
+#7  0xffffffff812bacaf in __do_fault (vmf=vmf@entry=0xffffc900020afb98) at mm/memory.c:4173
+#8  0xffffffff812bf1bf in do_cow_fault (vmf=0xffffc900020afb98) at mm/memory.c:4548
+#9  do_fault (vmf=vmf@entry=0xffffc900020afb98) at mm/memory.c:4649
+#10 0xffffffff812c3ba0 in handle_pte_fault (vmf=0xffffc900020afb98) at mm/memory.c:4911
+#11 __handle_mm_fault (vma=vma@entry=0xffff8882235f1000, address=address@entry=93979750306376, flags=flags@entry=533) at mm/memory.c:5053
+#12 0xffffffff812c4440 in handle_mm_fault (vma=0xffff8882235f1000, address=address@entry=93979750306376, flags=flags@entry=533, regs=regs@entry=0xffffc900020afcf8) at mm/memory.c:5151
+#13 0xffffffff810f2983 in do_user_addr_fault (regs=regs@entry=0xffffc900020afcf8, error_code=error_code@entry=2, address=address@entry=93979750306376) at arch/x86/mm/fault.c:1397
+#14 0xffffffff81edffa2 in handle_page_fault (address=93979750306376, error_code=2, regs=0xffffc900020afcf8) at arch/x86/mm/fault.c:1488
+#15 exc_page_fault (regs=0xffffc900020afcf8, error_code=2) at arch/x86/mm/fault.c:1544
+#16 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
 ```
 
 ## account

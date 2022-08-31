@@ -21,7 +21,7 @@ todo:
 > only a pointer, but also information on whether a page belongs to an anonymous memory area
 > that is not associated with an address space. **If the bit with numeric value 1 is set in mapping, the
 > pointer does not point to an instance of address_space** but to another data structure (anon_vma)
-> that is important in the implementation of reverse mapping for anonymous pages; 
+> that is important in the implementation of reverse mapping for anonymous pages;
 > this structure is discussed in Section 4.11.2. Double use of the pointer is possible because address_space
 > instances are always aligned with sizeof(long); the least significant bit of a pointer to this
 > instance is therefore 0 on all machines supported by Linux.
@@ -78,31 +78,31 @@ static int ext2_writepage(struct page *page, struct writeback_control *wbc) {
 
 
 ```c
-	/*
-	 * For areas with an address space and backing store,
-	 * linkage into the address_space->i_mmap interval tree.
-	 */
-	struct {
-		struct rb_node rb;
-		unsigned long rb_subtree_last;
-	} shared;
+    /*
+     * For areas with an address space and backing store,
+     * linkage into the address_space->i_mmap interval tree.
+     */
+    struct {
+        struct rb_node rb;
+        unsigned long rb_subtree_last;
+    } shared;
 
-	/*
-	 * A file's MAP_PRIVATE vma can be in both i_mmap tree and anon_vma
-	 * list, after a COW of one of the file pages.	A MAP_SHARED vma
-	 * can only be in the i_mmap tree.  An anonymous MAP_PRIVATE, stack
-	 * or brk vma (with NULL file) can only be in an anon_vma list.
+    /*
+     * A file's MAP_PRIVATE vma can be in both i_mmap tree and anon_vma
+     * list, after a COW of one of the file pages.  A MAP_SHARED vma
+     * can only be in the i_mmap tree.  An anonymous MAP_PRIVATE, stack
+     * or brk vma (with NULL file) can only be in an anon_vma list.
    * @todo 这J8 英语说的是什么东西 ? 到底含有多少种类FLAGS, 分别表示什么含义 ?
-	 */
-	struct list_head anon_vma_chain; /* Serialized by mmap_sem &
-					  * page_table_lock */
-	struct anon_vma *anon_vma;	/* Serialized by page_table_lock */
+     */
+    struct list_head anon_vma_chain; /* Serialized by mmap_sem &
+                      * page_table_lock */
+    struct anon_vma *anon_vma;  /* Serialized by page_table_lock */
 ```
 > mm_area_struct 中间的内容，注释说: 对于含有backing store 的 area, 那么放到i_mmap
 
 i_mmap 在 address_space 中间定义
 ```c
-	struct rb_root_cached	i_mmap;		/* tree of private and shared mappings */
+    struct rb_root_cached   i_mmap;     /* tree of private and shared mappings */
 ```
 @todo i_mmap 的具体使用规则也是不清楚的
 
@@ -110,11 +110,11 @@ doc:
 1. 观察page 的定义，page 中间的定义支持各种类型，
 其中，包括:  *page cache and anonymous pages*
 > 1. 从buddy 系统中间分配的page 含有确定的类型吗, 除了上面的两个类型还有什么类型
-> 2. ucore 如何管理page cache 
+> 2. ucore 如何管理page cache
 > 3. 其他类型的page 都没有含有address_space, 是不是意味着这些page 永远不会被刷新出去，只是被内核使用的
 
 在16章才是对于address_space的终极描述:
-1. host  page_tree 的作用: 
+1. host  page_tree 的作用:
 The link with the areas managed by an address space is established by means of a pointer to
 an inode instance (of type struct inode) to specify the backing store and a root radix tree
 (page_tree) with a list of all physical memory pages in the address space.(@question 这是说明一个backstore (disk ssd partition)对应一个文档，还是说仅仅对应一个file)
@@ -130,7 +130,7 @@ an inode instance (of type struct inode) to specify the backing store and a root
 * **filep**
 1. filep 出现的位置在什么层次 ?
 2. filep 包含的内容是什么 ?
-3. filep 的出现就是为了支持process可以访问同一个文件，谁持有文件，也就是持有inode, 在inode 中间包含进程需要的信息，比如引用计数不就可以了吗, 
+3. filep 的出现就是为了支持process可以访问同一个文件，谁持有文件，也就是持有inode, 在inode 中间包含进程需要的信息，比如引用计数不就可以了吗,
 为什么需要单独独立出来信息 ?
 4. 其中的andress_space 的作用是什么 ？
 5. file_operations 什么时候赋值 ?
@@ -178,34 +178,34 @@ https://askubuntu.com/questions/846163/does-swap-space-have-a-filesystem?newreg=
  * bootbits...
  */
 union swap_header {
-	struct {
-		char reserved[PAGE_SIZE - 10];
-		char magic[10];			/* SWAP-SPACE or SWAPSPACE2 */
-	} magic;
-	struct {
-		char		bootbits[1024];	/* Space for disklabel etc. */
-		__u32		version;
-		__u32		last_page;
-		__u32		nr_badpages;
-		unsigned char	sws_uuid[16];
-		unsigned char	sws_volume[16];
-		__u32		padding[117];
-		__u32		badpages[1];
-	} info;
+    struct {
+        char reserved[PAGE_SIZE - 10];
+        char magic[10];         /* SWAP-SPACE or SWAPSPACE2 */
+    } magic;
+    struct {
+        char        bootbits[1024]; /* Space for disklabel etc. */
+        __u32       version;
+        __u32       last_page;
+        __u32       nr_badpages;
+        unsigned char   sws_uuid[16];
+        unsigned char   sws_volume[16];
+        __u32       padding[117];
+        __u32       badpages[1];
+    } info;
 };
 ```
 
 分析 swapon 的片段 :
 
 ```c
-	page = read_mapping_page(mapping, 0, swap_file); // 龟龟，address_space的内容无处不在，再一次，通过 address_space 读取磁盘中间的内容，最后读取工作进入到filemap 中间
-	if (IS_ERR(page)) {
-		error = PTR_ERR(page);
-		goto bad_swap;
-	}
-	swap_header = kmap(page);  // 不是重点
+    page = read_mapping_page(mapping, 0, swap_file); // 龟龟，address_space的内容无处不在，再一次，通过 address_space 读取磁盘中间的内容，最后读取工作进入到filemap 中间
+    if (IS_ERR(page)) {
+        error = PTR_ERR(page);
+        goto bad_swap;
+    }
+    swap_header = kmap(page);  // 不是重点
 
-	maxpages = read_swap_header(p, swap_header, inode);  // 分析读取到的 swap_header，返回持有的最大的page
+    maxpages = read_swap_header(p, swap_header, inode);  // 分析读取到的 swap_header，返回持有的最大的page
 ```
 
 @todo 所以关于描述每一个页的信息保存在什么地方 ? bitmap ?
@@ -223,7 +223,7 @@ sector_t
  */
 static inline unsigned swp_type(swp_entry_t entry)
 {
-	return (entry.val >> SWP_TYPE_SHIFT(entry));
+    return (entry.val >> SWP_TYPE_SHIFT(entry));
 }
 
 /*
@@ -232,7 +232,7 @@ static inline unsigned swp_type(swp_entry_t entry)
  */
 static inline pgoff_t swp_offset(swp_entry_t entry)
 {
-	return entry.val & SWP_OFFSET_MASK(entry);
+    return entry.val & SWP_OFFSET_MASK(entry);
 }
 ```
 > wow
@@ -252,9 +252,9 @@ static inline pgoff_t swp_offset(swp_entry_t entry)
  */
 sector_t map_swap_page(struct page *page, struct block_device **bdev)
 {
-	swp_entry_t entry;
-	entry.val = page_private(page);
-	return map_swap_entry(entry, bdev);
+    swp_entry_t entry;
+    entry.val = page_private(page);
+    return map_swap_entry(entry, bdev);
 }
 ```
 1. 可以在物理页面中间存储该页面在swap中间的偏移量，显然是不可能放到 pte 中间的，中间最多放一个flag位表示被换到swap中间了，理解错误的地方
@@ -272,16 +272,16 @@ sector_t map_swap_page(struct page *page, struct block_device **bdev)
  */
 static __always_inline enum lru_list page_lru(struct page *page)
 {
-	enum lru_list lru;
+    enum lru_list lru;
 
-	if (PageUnevictable(page))
-		lru = LRU_UNEVICTABLE;
-	else {
-		lru = page_lru_base_type(page);
-		if (PageActive(page))
-			lru += LRU_ACTIVE; // 正好的设计
-	}
-	return lru;
+    if (PageUnevictable(page))
+        lru = LRU_UNEVICTABLE;
+    else {
+        lru = page_lru_base_type(page);
+        if (PageActive(page))
+            lru += LRU_ACTIVE; // 正好的设计
+    }
+    return lru;
 }
 
 
@@ -299,24 +299,24 @@ static __always_inline enum lru_list page_lru(struct page *page)
 #define LRU_FILE 2
 
 enum lru_list {
-	LRU_INACTIVE_ANON = LRU_BASE,
-	LRU_ACTIVE_ANON = LRU_BASE + LRU_ACTIVE,　 // @todo anon 什么时候添加进来的
-	LRU_INACTIVE_FILE = LRU_BASE + LRU_FILE,
-	LRU_ACTIVE_FILE = LRU_BASE + LRU_FILE + LRU_ACTIVE,
-	LRU_UNEVICTABLE,
-	NR_LRU_LISTS
+    LRU_INACTIVE_ANON = LRU_BASE,
+    LRU_ACTIVE_ANON = LRU_BASE + LRU_ACTIVE,　 // @todo anon 什么时候添加进来的
+    LRU_INACTIVE_FILE = LRU_BASE + LRU_FILE,
+    LRU_ACTIVE_FILE = LRU_BASE + LRU_FILE + LRU_ACTIVE,
+    LRU_UNEVICTABLE,
+    NR_LRU_LISTS
 };
 
 
 struct lruvec {
-	struct list_head		lists[NR_LRU_LISTS];
-	struct zone_reclaim_stat	reclaim_stat;
-	/* Evictions & activations on the inactive file list */
-	atomic_long_t			inactive_age;
-	/* Refaults at the time of last reclaim cycle */
-	unsigned long			refaults;
+    struct list_head        lists[NR_LRU_LISTS];
+    struct zone_reclaim_stat    reclaim_stat;
+    /* Evictions & activations on the inactive file list */
+    atomic_long_t           inactive_age;
+    /* Refaults at the time of last reclaim cycle */
+    unsigned long           refaults;
 #ifdef CONFIG_MEMCG
-	struct pglist_data *pgdat;
+    struct pglist_data *pgdat;
 #endif
 };
 
@@ -346,38 +346,38 @@ struct lruvec {
  * per cpu pagevec.
  */
 void lru_cache_add_active_or_unevictable(struct page *page,
-					 struct vm_area_struct *vma)
+                     struct vm_area_struct *vma)
 {
-	VM_BUG_ON_PAGE(PageLRU(page), page); // @todo 无法找到证据说明，调用此函数该 page 一定具有 Page
+    VM_BUG_ON_PAGE(PageLRU(page), page); // @todo 无法找到证据说明，调用此函数该 page 一定具有 Page
 
-	if (likely((vma->vm_flags & (VM_LOCKED | VM_SPECIAL)) != VM_LOCKED))
-		SetPageActive(page);
-	else if (!TestSetPageMlocked(page)) { // 只要是VM_LOCKED 的，那么就一定是mlock的，对于新添加的page, 进行stat
-		/*
-		 * We use the irq-unsafe __mod_zone_page_stat because this
-		 * counter is not modified from interrupt context, and the pte
-		 * lock is held(spinlock), which implies preemption disabled.
-		 */
-		__mod_zone_page_state(page_zone(page), NR_MLOCK,  // 总是同时出现
-				    hpage_nr_pages(page)); 
-		count_vm_event(UNEVICTABLE_PGMLOCKED);
-	}
-	lru_cache_add(page);
+    if (likely((vma->vm_flags & (VM_LOCKED | VM_SPECIAL)) != VM_LOCKED))
+        SetPageActive(page);
+    else if (!TestSetPageMlocked(page)) { // 只要是VM_LOCKED 的，那么就一定是mlock的，对于新添加的page, 进行stat
+        /*
+         * We use the irq-unsafe __mod_zone_page_stat because this
+         * counter is not modified from interrupt context, and the pte
+         * lock is held(spinlock), which implies preemption disabled.
+         */
+        __mod_zone_page_state(page_zone(page), NR_MLOCK,  // 总是同时出现
+                    hpage_nr_pages(page));
+        count_vm_event(UNEVICTABLE_PGMLOCKED);
+    }
+    lru_cache_add(page);
 }
 
-#define VM_BUG_ON_PAGE(cond, page)					\
-	do {								\
-		if (unlikely(cond)) {					\
-			dump_page(page, "VM_BUG_ON_PAGE(" __stringify(cond)")");\
-			BUG();						\
-		}							\
-	} while (0)
+#define VM_BUG_ON_PAGE(cond, page)                  \
+    do {                                \
+        if (unlikely(cond)) {                   \
+            dump_page(page, "VM_BUG_ON_PAGE(" __stringify(cond)")");\
+            BUG();                      \
+        }                           \
+    } while (0)
 
-  
-// Mlocked 
+
+// Mlocked
 PAGEFLAG(Mlocked, mlocked, PF_NO_TAIL)
-	__CLEARPAGEFLAG(Mlocked, mlocked, PF_NO_TAIL)
-	TESTSCFLAG(Mlocked, mlocked, PF_NO_TAIL)
+    __CLEARPAGEFLAG(Mlocked, mlocked, PF_NO_TAIL)
+    TESTSCFLAG(Mlocked, mlocked, PF_NO_TAIL)
 
 /*
  * Various page->flags bits:
@@ -442,7 +442,7 @@ enum vm_event_item  // 神奇的操作
 
 static inline void count_vm_event(enum vm_event_item item)
 {
-	this_cpu_inc(vm_event_states.event[item]);
+    this_cpu_inc(vm_event_states.event[item]);
 }
 
 
@@ -460,7 +460,7 @@ EXPORT_PER_CPU_SYMBOL(vm_event_states);
  */
 
 struct vm_event_state {
-	unsigned long event[NR_VM_EVENT_ITEMS];
+    unsigned long event[NR_VM_EVENT_ITEMS];
 };
 
 // @todo 谁使用，这些消息，暂时不在乎
@@ -472,46 +472,46 @@ struct vm_event_state {
  * particular counter cannot be updated from interrupt context.
  */
 void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
-			   long delta)
+               long delta)
 {
-	struct per_cpu_pageset __percpu *pcp = zone->pageset;
-	s8 __percpu *p = pcp->vm_stat_diff + item;
-	long x;
-	long t;
+    struct per_cpu_pageset __percpu *pcp = zone->pageset;
+    s8 __percpu *p = pcp->vm_stat_diff + item;
+    long x;
+    long t;
 
-	x = delta + __this_cpu_read(*p);
+    x = delta + __this_cpu_read(*p);
 
-	t = __this_cpu_read(pcp->stat_threshold);
+    t = __this_cpu_read(pcp->stat_threshold);
 
-	if (unlikely(x > t || x < -t)) {
-		zone_page_state_add(x, zone, item);
-		x = 0;
-	}
-	__this_cpu_write(*p, x);
+    if (unlikely(x > t || x < -t)) {
+        zone_page_state_add(x, zone, item);
+        x = 0;
+    }
+    __this_cpu_write(*p, x);
 }
 EXPORT_SYMBOL(__mod_zone_page_state);
 
 
 enum zone_stat_item {　 // 这些统计的内容完全为了swap 机制设置的
-	/* First 128 byte cacheline (assuming 64 bit words) */
-	NR_FREE_PAGES,
-	NR_ZONE_LRU_BASE, /* Used only for compaction and reclaim retry */
-	NR_ZONE_INACTIVE_ANON = NR_ZONE_LRU_BASE,
-	NR_ZONE_ACTIVE_ANON,
-	NR_ZONE_INACTIVE_FILE,
-	NR_ZONE_ACTIVE_FILE,
-	NR_ZONE_UNEVICTABLE,
-	NR_ZONE_WRITE_PENDING,	/* Count of dirty, writeback and unstable pages */
-	NR_MLOCK,		/* mlock()ed pages found and moved off LRU */
-	NR_PAGETABLE,		/* used for pagetables */
-	NR_KERNEL_STACK_KB,	/* measured in KiB */
-	/* Second 128 byte cacheline */
-	NR_BOUNCE,
+    /* First 128 byte cacheline (assuming 64 bit words) */
+    NR_FREE_PAGES,
+    NR_ZONE_LRU_BASE, /* Used only for compaction and reclaim retry */
+    NR_ZONE_INACTIVE_ANON = NR_ZONE_LRU_BASE,
+    NR_ZONE_ACTIVE_ANON,
+    NR_ZONE_INACTIVE_FILE,
+    NR_ZONE_ACTIVE_FILE,
+    NR_ZONE_UNEVICTABLE,
+    NR_ZONE_WRITE_PENDING,  /* Count of dirty, writeback and unstable pages */
+    NR_MLOCK,       /* mlock()ed pages found and moved off LRU */
+    NR_PAGETABLE,       /* used for pagetables */
+    NR_KERNEL_STACK_KB, /* measured in KiB */
+    /* Second 128 byte cacheline */
+    NR_BOUNCE,
 #if IS_ENABLED(CONFIG_ZSMALLOC)
-	NR_ZSPAGES,		/* allocated in zsmalloc */
+    NR_ZSPAGES,     /* allocated in zsmalloc */
 #endif
-	NR_FREE_CMA_PAGES,
-	NR_VM_ZONE_STAT_ITEMS
+    NR_FREE_CMA_PAGES,
+    NR_VM_ZONE_STAT_ITEMS
 };
 
 
@@ -519,23 +519,23 @@ enum zone_stat_item {　 // 这些统计的内容完全为了swap 机制设置�
 // 居然一个page 可以检查出来其对应的zone 所在的位置:
 static inline struct zone *page_zone(const struct page *page)
 {
-	return &NODE_DATA(page_to_nid(page))->node_zones[page_zonenum(page)];
+    return &NODE_DATA(page_to_nid(page))->node_zones[page_zonenum(page)];
 }
 
 
-#define NODE_DATA(nid)		(node_data[nid])
-struct pglist_data *node_data[MAX_NUMNODES] __read_mostly; 
+#define NODE_DATA(nid)      (node_data[nid])
+struct pglist_data *node_data[MAX_NUMNODES] __read_mostly;
 
 
 static inline int page_to_nid(const struct page *page)
 {
-	struct page *p = (struct page *)page;
+    struct page *p = (struct page *)page;
 
-	return (PF_POISONED_CHECK(p)->flags >> NODES_PGSHIFT) & NODES_MASK;
+    return (PF_POISONED_CHECK(p)->flags >> NODES_PGSHIFT) & NODES_MASK;
 }
 
 // @todo poison flag 是搞什么的 ?
-#define NODES_PGSHIFT		(NODES_PGOFF * (NODES_WIDTH != 0))
+#define NODES_PGSHIFT       (NODES_PGOFF * (NODES_WIDTH != 0))
 
 
 
@@ -565,32 +565,32 @@ static inline int page_to_nid(const struct page *page)
  * particular counter cannot be updated from interrupt context.
  */
 void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
-			   long delta)
+               long delta)
 {
-	struct per_cpu_pageset __percpu *pcp = zone->pageset;
-	s8 __percpu *p = pcp->vm_stat_diff + item;
-	long x;
-	long t;
+    struct per_cpu_pageset __percpu *pcp = zone->pageset;
+    s8 __percpu *p = pcp->vm_stat_diff + item;
+    long x;
+    long t;
 
-	x = delta + __this_cpu_read(*p);
+    x = delta + __this_cpu_read(*p);
 
-	t = __this_cpu_read(pcp->stat_threshold);
+    t = __this_cpu_read(pcp->stat_threshold);
 
-	if (unlikely(x > t || x < -t)) {
-		zone_page_state_add(x, zone, item);
-		x = 0;
-	}
-	__this_cpu_write(*p, x);
+    if (unlikely(x > t || x < -t)) {
+        zone_page_state_add(x, zone, item);
+        x = 0;
+    }
+    __this_cpu_write(*p, x);
 }
 EXPORT_SYMBOL(__mod_zone_page_state);
 // pageset 中间管理的是短期数值，而 zone->vm_stat 中间管理的当超过 threshold 的数值
 // 全局变量和 per zone 的共同管理:
 
 static inline void zone_page_state_add(long x, struct zone *zone,
-				 enum zone_stat_item item)
+                 enum zone_stat_item item)
 {
-	atomic_long_add(x, &zone->vm_stat[item]);
-	atomic_long_add(x, &vm_zone_stat[item]);
+    atomic_long_add(x, &zone->vm_stat[item]);
+    atomic_long_add(x, &vm_zone_stat[item]);
 }
 ```
 
@@ -602,14 +602,14 @@ https://www.halolinux.us/kernel-architecture/hotncold-pages.html
 
 // 初始化
 ```c
-struct address_space *swapper_spaces[MAX_SWAPFILES] __read_mostly; // 每一个file 对应一个 address_space 
+struct address_space *swapper_spaces[MAX_SWAPFILES] __read_mostly; // 每一个file 对应一个 address_space
 static unsigned int nr_swapper_spaces[MAX_SWAPFILES] __read_mostly; // address_space 的存储含有上限，每128M一个 address_space 对象
 
 int init_swap_address_space(unsigned int type, unsigned long nr_pages) // 参数 nr_pages
 
 
 SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
-	maxpages = read_swap_header(p, swap_header, inode); // 通过read header 中间的 last_page 确定(其中arch 中字段长度是理论限制)
+    maxpages = read_swap_header(p, swap_header, inode); // 通过read header 中间的 last_page 确定(其中arch 中字段长度是理论限制)
 
 ```
 
@@ -623,57 +623,57 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
  * @page: page we want to move to swap
  *
  * Allocate swap space for the page and add the page to the
- * swap cache.  Caller needs to hold the page lock. 
+ * swap cache.  Caller needs to hold the page lock.
  */
 int add_to_swap(struct page *page)
 {
-	swp_entry_t entry;
-	int err;
+    swp_entry_t entry;
+    int err;
 
-	VM_BUG_ON_PAGE(!PageLocked(page), page);
-	VM_BUG_ON_PAGE(!PageUptodate(page), page);
+    VM_BUG_ON_PAGE(!PageLocked(page), page);
+    VM_BUG_ON_PAGE(!PageUptodate(page), page);
 
-	entry = get_swap_page(page);
-	if (!entry.val)
-		return 0;
+    entry = get_swap_page(page);
+    if (!entry.val)
+        return 0;
 
-	/*
-	 * Radix-tree node allocations from PF_MEMALLOC contexts could
-	 * completely exhaust the page allocator. __GFP_NOMEMALLOC
-	 * stops emergency reserves from being allocated.
-	 *
-	 * TODO: this could cause a theoretical memory reclaim
-	 * deadlock in the swap out path.
-	 */
-	/*
-	 * Add it to the swap cache.
-	 */
-	err = add_to_swap_cache(page, entry,
-			__GFP_HIGH|__GFP_NOMEMALLOC|__GFP_NOWARN);
-	/* -ENOMEM radix-tree allocation failure */
-	if (err)
-		/*
-		 * add_to_swap_cache() doesn't return -EEXIST, so we can safely
-		 * clear SWAP_HAS_CACHE flag.
-		 */
-		goto fail;
-	/*
-	 * Normally the page will be dirtied in unmap because its pte should be
-	 * dirty. A special case is MADV_FREE page. The page'e pte could have
-	 * dirty bit cleared but the page's SwapBacked bit is still set because
-	 * clearing the dirty bit and SwapBacked bit has no lock protected. For
-	 * such page, unmap will not set dirty bit for it, so page reclaim will
-	 * not write the page out. This can cause data corruption when the page
-	 * is swap in later. Always setting the dirty bit for the page solves
-	 * the problem.
-	 */
-	set_page_dirty(page);
+    /*
+     * Radix-tree node allocations from PF_MEMALLOC contexts could
+     * completely exhaust the page allocator. __GFP_NOMEMALLOC
+     * stops emergency reserves from being allocated.
+     *
+     * TODO: this could cause a theoretical memory reclaim
+     * deadlock in the swap out path.
+     */
+    /*
+     * Add it to the swap cache.
+     */
+    err = add_to_swap_cache(page, entry,
+            __GFP_HIGH|__GFP_NOMEMALLOC|__GFP_NOWARN);
+    /* -ENOMEM radix-tree allocation failure */
+    if (err)
+        /*
+         * add_to_swap_cache() doesn't return -EEXIST, so we can safely
+         * clear SWAP_HAS_CACHE flag.
+         */
+        goto fail;
+    /*
+     * Normally the page will be dirtied in unmap because its pte should be
+     * dirty. A special case is MADV_FREE page. The page'e pte could have
+     * dirty bit cleared but the page's SwapBacked bit is still set because
+     * clearing the dirty bit and SwapBacked bit has no lock protected. For
+     * such page, unmap will not set dirty bit for it, so page reclaim will
+     * not write the page out. This can cause data corruption when the page
+     * is swap in later. Always setting the dirty bit for the page solves
+     * the problem.
+     */
+    set_page_dirty(page);
 
-	return 1;
+    return 1;
 
 fail:
-	put_swap_page(page, entry);
-	return 0;
+    put_swap_page(page, entry);
+    return 0;
 }
 
 /*
@@ -684,18 +684,18 @@ fail:
  */
 void delete_from_swap_cache(struct page *page)
 {
-	swp_entry_t entry;
-	struct address_space *address_space;
+    swp_entry_t entry;
+    struct address_space *address_space;
 
-	entry.val = page_private(page);
+    entry.val = page_private(page);
 
-	address_space = swap_address_space(entry); // 获取 address_space 和 entry
-	xa_lock_irq(&address_space->i_pages);
-	__delete_from_swap_cache(page);
-	xa_unlock_irq(&address_space->i_pages);
+    address_space = swap_address_space(entry); // 获取 address_space 和 entry
+    xa_lock_irq(&address_space->i_pages);
+    __delete_from_swap_cache(page);
+    xa_unlock_irq(&address_space->i_pages);
 
-	put_swap_page(page, entry);
-	page_ref_sub(page, hpage_nr_pages(page));
+    put_swap_page(page, entry);
+    page_ref_sub(page, hpage_nr_pages(page));
 }
 
 /*
@@ -704,44 +704,44 @@ void delete_from_swap_cache(struct page *page)
  */
 void __delete_from_swap_cache(struct page *page)
 {
-	struct address_space *address_space;
-	int i, nr = hpage_nr_pages(page);
-	swp_entry_t entry;
-	pgoff_t idx;
+    struct address_space *address_space;
+    int i, nr = hpage_nr_pages(page);
+    swp_entry_t entry;
+    pgoff_t idx;
 
-	VM_BUG_ON_PAGE(!PageLocked(page), page);
-	VM_BUG_ON_PAGE(!PageSwapCache(page), page);
-	VM_BUG_ON_PAGE(PageWriteback(page), page);
+    VM_BUG_ON_PAGE(!PageLocked(page), page);
+    VM_BUG_ON_PAGE(!PageSwapCache(page), page);
+    VM_BUG_ON_PAGE(PageWriteback(page), page);
 
-	entry.val = page_private(page);
-	address_space = swap_address_space(entry);
-	idx = swp_offset(entry);
-	for (i = 0; i < nr; i++) {
-		radix_tree_delete(&address_space->i_pages, idx + i); // 将radix 的索引的删除
-		set_page_private(page + i, 0);
-	}
-	ClearPageSwapCache(page);
-	address_space->nrpages -= nr;
-	__mod_node_page_state(page_pgdat(page), NR_FILE_PAGES, -nr);
-	ADD_CACHE_INFO(del_total, nr);
+    entry.val = page_private(page);
+    address_space = swap_address_space(entry);
+    idx = swp_offset(entry);
+    for (i = 0; i < nr; i++) {
+        radix_tree_delete(&address_space->i_pages, idx + i); // 将radix 的索引的删除
+        set_page_private(page + i, 0);
+    }
+    ClearPageSwapCache(page);
+    address_space->nrpages -= nr;
+    __mod_node_page_state(page_pgdat(page), NR_FILE_PAGES, -nr);
+    ADD_CACHE_INFO(del_total, nr);
 }
 
 
-// 获取offset 数值，然后采用 
-#define swap_address_space(entry)			    \
-	(&swapper_spaces[swp_type(entry)][swp_offset(entry) \
-		>> SWAP_ADDRESS_SPACE_SHIFT])
+// 获取offset 数值，然后采用
+#define swap_address_space(entry)               \
+    (&swapper_spaces[swp_type(entry)][swp_offset(entry) \
+        >> SWAP_ADDRESS_SPACE_SHIFT])
 /*
  * Extract the `type` field from a swp_entry_t.  The swp_entry_t is in
  * arch-independent format
  */
 static inline unsigned swp_type(swp_entry_t entry)
 {
-	return (entry.val >> SWP_TYPE_SHIFT(entry)); // swap 的本身包含选中哪一个 swap file/dev 的字段
+    return (entry.val >> SWP_TYPE_SHIFT(entry)); // swap 的本身包含选中哪一个 swap file/dev 的字段
 }
 ```
 
-# swap 的 readahead cluster 
+# swap 的 readahead cluster
 
 
 
@@ -751,29 +751,29 @@ static inline unsigned swp_type(swp_entry_t entry)
 
 为什么我们需要swap cache 的内容, 从 swap_entry_t　获取 page ？
 
-When swapping pages out to the swap files, 
+When swapping pages out to the swap files,
 Linux avoids writing pages if it does not have to. (什么意思)
 There are times when a page is both in a swap file and in physical memory.(什么情况)
-This happens when a page that was swapped out of memory was then brought back into memory when it was again accessed by a process. 
+This happens when a page that was swapped out of memory was then brought back into memory when it was again accessed by a process.
 So long as the page in memory is not written to, the copy in the swap file remains valid.
 
 
 Linux uses the swap cache to track these pages. The swap cache is a list of page table entries,
-one per physical page in the system. 
-This is a page table entry for a swapped out page 
+one per physical page in the system.
+This is a page table entry for a swapped out page
 and describes which swap file the page is being held in together with its location in the swap file.
 If a swap cache entry is non-zero, it represents a page.
 
 
 # swp_entry_t 为什么会出现在 page->private 中间的
 ```c
-			/**
-			 * @private: Mapping-private opaque data.
-			 * Usually used for buffer_heads if PagePrivate.
-			 * Used for swp_entry_t if PageSwapCache.
-			 * Indicates order in the buddy system if PageBuddy.
-			 */
-			unsigned long private;
+            /**
+             * @private: Mapping-private opaque data.
+             * Usually used for buffer_heads if PagePrivate.
+             * Used for swp_entry_t if PageSwapCache.
+             * Indicates order in the buddy system if PageBuddy.
+             */
+            unsigned long private;
 ```
 1. PageSwapCache 是什么东西 ? 只有当在page swap cache 中间的才有意义
 2. add_to_swap 被调用的条件 是什么 ? 分析shrink_page_list
@@ -785,6 +785,5 @@ If a swap cache entry is non-zero, it represents a page.
 
 1. fread 会一开始就将 整个文件缓存到内存中间吗 ? 应该不会，fopen 只是打开文件，而fread 的参数会指定大小，用户程序负责这些细节。
 2. fread 打开的文件显然不在地址空间中间
-3. 当fread 打开的文件会被共享吗 ? 应该不会 ! 
+3. 当fread 打开的文件会被共享吗 ? 应该不会 !
 4. fread file 还会继续使用 radix tree 实现反向映射吗 ?
-

@@ -1,14 +1,14 @@
 # Professional Linux Kernel Architecture : Kernel Activities
 
 Two types of **interrupt** are distinguished:
-1. `Hardware Interrupts` — 
+1. `Hardware Interrupts` —
     * Are produced automatically by the system and connected peripherals. They support more efficient implementation of device drivers,
     * but are also needed by the processor itself to draw attention to exceptions or errors that require interaction with the kernel code.
 2. `SoftIRQs` — Are used to effectively implement deferred activities in the kernel itself
 
 
 Frequently, the kernel needs mechanisms to **defer** activities until a certain time in the future or to place them in a queue for later processing when time is available
-> 1. 再一次重新定义interrupt 
+> 1. 再一次重新定义interrupt
 > 2. 本章主要关注的重点: 如何defer。问题是defer 和 IRQ 有什么关系，为什么被成为soft IRQ了
 > 3. 本章完全没有分析exception 除以0 异常
 
@@ -67,7 +67,7 @@ other mappings between interrupt and IRQ numbers, but I will not deal with these
 > Interrupt 的关键不就是 中断进入和退出的过程吗!
 
 ![](../img/14-2.png)
-As Figure 14-2 shows, interrupt handling is divided into three parts. 
+As Figure 14-2 shows, interrupt handling is divided into three parts.
 
 The parts that precede and follow invocation of the interrupt handler are known as the `entry` and `exit` path
 
@@ -114,7 +114,7 @@ In the exit path the kernel checks whether
 2. there are signals that must be delivered to the process
 > 1. 难道不是从哪里来，回到哪里去吗 ? 为什么需要scheduler ?
 > * 应该是被中断者首先睡眠，被加入到 scheduler 的队列中间，中断的事情处理结束之后，然后调用 scheduler 就可以了
-> 2. entry 和 exit 具体的流程函数调用是什么 
+> 2. entry 和 exit 具体的流程函数调用是什么
 
 
 Only when these two questions have been answered can the kernel devote itself to completing its regular
@@ -241,11 +241,11 @@ the IRQs are ultimately mapped is of no relevance here.
 
 The three
 abstraction layers introduced above are represented in the structure as follows:
-1. The flow-level ISR is provided by `handle_irq`. 
+1. The flow-level ISR is provided by `handle_irq`.
 ```c
 typedef	void (*irq_flow_handler_t)(struct irq_desc *desc);
 ```
-2. `handler_data` may point to some arbitrary, IRQ, and handler function-specific data. 
+2. `handler_data` may point to some arbitrary, IRQ, and handler function-specific data.
 ```c
 /**
  * struct irq_data - per irq chip data passed down to chip functions
@@ -275,7 +275,7 @@ struct irq_data {
 };
 ```
 
-3. `action` provides a chain of actions that need to be executed when the interrupt occurs. 
+3. `action` provides a chain of actions that need to be executed when the interrupt occurs.
 4. An IRQ can change its status not only during handler installation but also at run time: `status` describes
 the current status.
 
@@ -507,7 +507,7 @@ the interrupt. This information can then be used to implement proper flow handli
 Recall that different hardware requires different approaches to flow handling — edge- and leveltriggering need to be dealt with differently, for instance. The kernel provides several default flow
 handlers for various types. They have one thing in common: *Every flow handler is responsible to
 call the high-level ISRs once its work is finished*. `handle_IRQ_event` is responsible to activate the
-high-level handlers; 
+high-level handlers;
 > 1. 妈个鸡，`handle_IRQ_event`又没有了。
 > 2. 而且`irq_flow_handler_t`的定义类型和书上的不一样，第一个参数消失了
 
@@ -561,7 +561,7 @@ is required — the code can by definition only run on a single CPU.
 
 
 #### 14.1.6 Initializing and Reserving IRQs
-Dynamic registration of an ISR by a device driver can be performed very simply using the data structures described. 
+Dynamic registration of an ISR by a device driver can be performed very simply using the data structures described.
 > 驱动需要注册
 
 
@@ -633,7 +633,7 @@ Of special importance is, of course, the handler function handler. All further w
 **Freeing IRQs**
 The reverse scheme is adopted in order to free interrupts. First, the interrupt controller is informed
 that the IRQ has been removed by means of a hardware-specific (`chip->shutdown`) function, and then
-the relevant entries are removed from the general data structures of the kernel. 
+the relevant entries are removed from the general data structures of the kernel.
 > 和 request_irq 对称的函数
 
 
@@ -692,7 +692,7 @@ In contrast to the regular kernel stack that is allocated per process, the two a
 per CPU. Whenever a hardware interrupt occurs (or a softIRQ is processed), the kernel needs to switch to
 the appropriate stack.
 
-> 其中提到的变量 hardirq_ctx 只有少数两个架构上面有 
+> 其中提到的变量 hardirq_ctx 只有少数两个架构上面有
 
 **Calling the Flow Handler Routine**
 > 分别描述在AMD64 和 IA-32 架构下do_IRQ的实现:
@@ -788,9 +788,9 @@ enum
 ```
 > 看注释，看来softirq 的确是一个重要的基础服务
 
-1. Two serve to implement tasklets (`HI_SOFTIRQ` and `TASKLET_SOFTIRQ`), 
-2. two are used for send and receive operations in networks (`NET_TX_SOFTIRQ` and `NET_RX_SOFTIRQ`, the source of the softIRQ mechanism and its most important application), 
-3. one is used by the block layer to implement asynchronous request completions (`BLOCK_SOFTIRQ`), and 
+1. Two serve to implement tasklets (`HI_SOFTIRQ` and `TASKLET_SOFTIRQ`),
+2. two are used for send and receive operations in networks (`NET_TX_SOFTIRQ` and `NET_RX_SOFTIRQ`, the source of the softIRQ mechanism and its most important application),
+3. one is used by the block layer to implement asynchronous request completions (`BLOCK_SOFTIRQ`), and
 4. one is used by the scheduler (`SCHED_SOFTIRQ`) to implement periodic load balancing on SMP systems.
 5. When high-resolution timers are enabled, they also require a softIRQ (`HRTIMER_SOFTIRQ`).
 
@@ -837,7 +837,7 @@ EXPORT_SYMBOL(irq_stat);
 ```
 
 `raise_softirq(int nr)` is used to raise a software interrupt (similarly to a normal interrupt). The number of the desired softIRQ is passed as a parameter.
-This function sets the corresponding bit in the per-CPU variable `irq_stat[smp_processor_id].__softirq_pending`. 
+This function sets the corresponding bit in the per-CPU variable `irq_stat[smp_processor_id].__softirq_pending`.
 This marks the softIRQ for execution but defers execution. By using a processorspecific bitmap, the kernel ensures that several softIRQs — even identical ones — can be executed on
 different CPUs at the same time.
 > 所以，硬件的版本对应的函数是什么东西？
@@ -848,7 +848,7 @@ the softIRQ daemon; this is one of the two alternative ways of launching the pro
 
 #### 14.2.1 Starting SoftIRQ Processing
 There are several ways of starting softIRQ processing, but all come down to invoking the `do_softirq`
-function. 
+function.
 > 接下俩描述 `do_softirq` 的实现
 
 #### 14.2.2 The SoftIRQ Daemon
@@ -917,7 +917,7 @@ struct tasklet_struct
 > omit
 
 
-## 14.4 Wait Queues and Completions 
+## 14.4 Wait Queues and Completions
 `Wait queues` are used to enable processes to wait for a particular event to occur without the need for
 constant polling.
 
@@ -1281,14 +1281,8 @@ struct delayed_work {
 > 后面还有一小段的内容没有看。
 
 ## 补充资料
-https://en.wikipedia.org/wiki/Interrupt_request_(PC_architecture)
-https://en.wikipedia.org/wiki/Interrupt_handler
-
-
-
-
-
+- https://en.wikipedia.org/wiki/Interrupt_request_(PC_architecture)
+- https://en.wikipedia.org/wiki/Interrupt_handler
 
 ## 外部链接
 insides 对于此问题重点讲解
-

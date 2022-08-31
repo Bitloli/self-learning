@@ -69,7 +69,7 @@ lazy 修改。
 节点 u 在访问完成其子节点 v 之后，包括 v 在内的所有节点都会认为自己的 ancestor 是 u,
 u 作为其他点的最低点去访问其他的子节点。
 
-```
+```txt
 function TarjanOLCA(u) is
     MakeSet(u)
     u.ancestor := u
@@ -84,7 +84,7 @@ function TarjanOLCA(u) is
                   " and " + v + " is " + Find(v).ancestor + "."
 ```
 
-```
+```txt
 function MakeSet(x) is
     x.parent := x
     x.rank   := 1
@@ -111,7 +111,7 @@ function Find(x) is
 [算法描述](https://stackoverflow.com/questions/19262341/tarjans-lowest-common-ancestor-algorithm-explanation)
 
 # Disjoint Set
-```
+```txt
 class DisjointSet{
 public:
     int * arr;

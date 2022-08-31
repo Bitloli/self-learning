@@ -28,3 +28,9 @@ As requests between service tiers of datacenter applications often consist of sm
 marginal impact on packet rate
 
 :( 看不下去了。
+
+# 2022
+
+## XRP: In-Kernel Storage Functions with eBPF
+- 使用 ebpf 来在内核中 by-pass 存储栈。
+- https://www.usenix.org/conference/osdi22/presentation/zhong
