@@ -26,7 +26,7 @@ TreeSet
 ## misc
 
 ### stack
-stack extends 
+stack extends
 
 ### Queue
 2. linkedList implements Deque<E>, Queue<E>, Queue and Deque 的实现总共含有三种, ArrayDeque LinkedList PriorityQueue
@@ -55,8 +55,8 @@ stack extends
     ```
 6.
     1. matcher.find() 查找
-    2. matcher.matches() 匹配 
-    3. matcher.lookingAt() 
+    2. matcher.matches() 匹配
+    3. matcher.lookingAt()
 
 Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
 ```
@@ -178,11 +178,11 @@ math.round(3.99)
 ### stack
 1. stack 的 add 和 push 的区别是什么
 
-### LinkedList 
+### LinkedList
 1. 不可以使用 int ,但是可以包括 Integer 的类型
-2. 添加多个元素, 只有addAll(Arrays.asList()的操作) 
+2. 添加多个元素, 只有addAll(Arrays.asList()的操作)
 
-### Queue 
+### Queue
 1. 整体的架构是什么
 
 
@@ -271,5 +271,3 @@ public boolean equals(Object obj) {
         3. 循环的边界
         4. 数值溢出
     2. 算法设计出现问题
-
-

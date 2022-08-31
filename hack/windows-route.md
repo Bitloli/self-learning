@@ -5,3 +5,4 @@
 
 - https://rentry.co/build-win2k3
 - https://github.com/j00ru/windows-syscalls : The repository contains system call tables collected from all modern and most older releases of Windows, starting with Windows NT.
+- https://github.com/sandboxie-plus/Sandboxie : windows 操作系统上的 sandbox
