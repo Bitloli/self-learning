@@ -2648,11 +2648,6 @@ ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsysca
 maybe because of user space address randomization
     - [  ] https://www.theurbanpenguin.com/aslr-address-space-layout-randomization/
 
-## DAX
-面试的时候被问了好几次
-- `O_DIRECT` 和 DAX 的差别
-- 是不是，直接读写 blockdev 是绕过了 fs，但是没有绕过 page cache?
-
 ## CXL
 - CXL 2.0的基本概念: https://www.zhihu.com/question/531720207/answer/2521601976
 - 显存为什么不能当内存使？内存、Cache和Cache一致性: https://zhuanlan.zhihu.com/p/63494668

@@ -5,10 +5,11 @@ use_nvme_as_root=false
 replace_kernel=true
 
 hacking_memory="numa"
-hacking_memory="virtio-mem"
 hacking_memory="hotplug"
+hacking_memory="virtio-mem"
 
 use_ovmf=false
+use_virtio_pmem=true
 
 abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json
@@ -38,7 +39,7 @@ debug_qemu=
 debug_kernel=
 LAUNCH_GDB=false
 
-# 必选参数
+arg_hacking=""
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
 root=/dev/vdb3
 
@@ -71,17 +72,25 @@ case $hacking_memory in
   arg_mem_cpu="$arg_mem_cpu -numa node,nodeid=0,cpus=0-1,nodeid=0,memdev=mem0 -numa node,nodeid=1,cpus=2-3,nodeid=1,memdev=mem1"
   arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem0,size=2G"
   arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem1,size=2G"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem2,size=2G"
   arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem3,size=2G"
-  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem4,size=2G"
-  arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,id=vm0,memdev=mem3,node=0,requested-size=1G"
-  arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,id=vm1,memdev=mem4,node=1,requested-size=1G"
+  arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,id=vm0,memdev=mem2,node=0,requested-size=1G"
+  arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,id=vm1,memdev=mem3,node=1,requested-size=1G"
+
+  arg_hugetlb="crashkernel=300M"
   ;;
 
 "hotplug")
-  arg_mem_cpu="-m 1G,slots=7,maxmem=8G" # @todo 这到底配置了多少内存
+  arg_mem_cpu="-m 1G,slots=7,maxmem=8G"
   arg_hugetlb=""
   ;;
 esac
+
+if [[ -n ${use_virtio_pmem+x} ]]; then
+  pmem_img=${workstation}/virtio_pmem.img
+  arg_hacking="${arg_hacking} -object memory-backend-file,id=nvmem1,share=on,mem-path=${pmem_img},size=4G"
+  arg_hacking="${arg_hacking} -device virtio-pmem-pci,memdev=nvmem1,id=nv1"
+fi
 
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
 if [[ -z ${seabios+x} ]]; then
@@ -221,7 +230,7 @@ fi
 
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
-  ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} \
+  ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
   ${arg_qmp}"
 echo "$cmd"
 eval "$cmd"

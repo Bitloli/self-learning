@@ -1,4 +1,4 @@
-# kvm 
+# kvm
 
 ## memslot
 how will dune register memslot for it ?
@@ -34,4 +34,3 @@ void vcpu_load(struct kvm_vcpu *vcpu)
 ## asid, machine id, tpid
 
 ## misc
-

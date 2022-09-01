@@ -72,3 +72,90 @@ entry_SYSCALL_64_after_hwframe+68
 ```
 
 任何一次 softirq
+
+
+```c
+static const struct net_device_ops loopback_ops = {
+	.ndo_init        = loopback_dev_init,
+	.ndo_start_xmit  = loopback_xmit,
+	.ndo_get_stats64 = loopback_get_stats64,
+	.ndo_set_mac_address = eth_mac_addr,
+};
+
+/* Registered in net/core/dev.c */
+struct pernet_operations __net_initdata loopback_net_ops = {
+	.init = loopback_net_init,
+};
+
+static const struct net_device_ops blackhole_netdev_ops = {
+	.ndo_start_xmit = blackhole_netdev_xmit,
+};
+
+static const struct ethtool_ops loopback_ethtool_ops = {
+	.get_link		= always_on,
+	.get_ts_info		= ethtool_op_get_ts_info,
+};
+```
+
+- `loopback_xmit`
+	- `__netif_rx`
+		- `enqueue_to_backlog`
+
+
+> However this three-way handshake takes some time. And during that time the connection is queued and this is the backlog.
+>
+> https://stackoverflow.com/questions/36594400/what-is-backlog-in-tcp-connections
+
+> XDP
+>
+> https://www.iovisor.org/technology/xdp
+
+> NAPI
+>
+>
+
+似乎这就是 percpu 的 backlog ?
+```c
+/*
+ *	Device drivers call our routines to queue packets here. We empty the
+ *	queue in the local softnet handler.
+ */
+
+DEFINE_PER_CPU_ALIGNED(struct softnet_data, softnet_data);
+EXPORT_PER_CPU_SYMBOL(softnet_data);
+```
+
+处理 backlog 的地方:
+- `process_backlog`
+- `napi_busy_loop`
+
+## [ ] softirq 的工作流程
+
+## [ ] 统计和 loopback 网卡有关的 softirq 的频率，和每次发生的数量
+虽然，两个版本的网络栈变化很大，但是从 loopback 的这一个函数而已，其调用过程是非常清晰明了的吧，不存在其他的位置。
+
+## iperf
+https://load-balancer.inlab.net/manual/performance/measuring-internal-bandwidth-with-iperf/
+
+
+## copy 是不是都是采用 SIMD 的
+
+
+```c
+void irq_exit(void)
+{
+#ifndef __ARCH_IRQ_EXIT_IRQS_DISABLED
+	local_irq_disable();
+#else
+	lockdep_assert_irqs_disabled();
+#endif
+	account_irq_exit_time(current);
+	preempt_count_sub(HARDIRQ_OFFSET);
+	if (!in_interrupt() && local_softirq_pending())
+		invoke_softirq(); ==================================》 __do_softirq
+
+	tick_irq_exit();
+	rcu_irq_exit();
+	trace_hardirq_exit(); /* must be last! */
+}
+```

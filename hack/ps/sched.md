@@ -634,3 +634,5 @@ __out:	__ret;									\
 })
 // 其中的，init_wait_entry 将会设置被移动出来队列的时候，设置的 function 导致其被自动运行
 ```
+
+## cpu_idle_poll

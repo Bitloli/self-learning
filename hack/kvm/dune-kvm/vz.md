@@ -2,38 +2,38 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-- [question](#question)
-- [TODO](#todo)
-- [irqchip](#irqchip)
-- [fpu](#fpu)
-- [async ioctl](#async-ioctl)
-- [functions](#functions)
-- [mmu](#mmu)
-- [emulate.c](#emulatec)
-- [exception](#exception)
-- [interrupts](#interrupts)
-- [hrtimer && timer](#hrtimer-timer)
-- [config](#config)
-- [coproc](#coproc)
-- [cp0](#cp0)
-- [kseg0](#kseg0)
-- [tlb](#tlb)
-- [asid](#asid)
-- [guestid](#guestid)
-- [cpu load / put](#cpu-load-put)
-- [kvm_trap_vz_handle_guest_exit and kvm_mips_handle_exit](#kvm_trap_vz_handle_guest_exit-and-kvm_mips_handle_exit)
-- [entry.c](#entryc)
-  - [kvm_mips_build_vcpu_run](#kvm_mips_build_vcpu_run)
-  - [kvm_mips_build_enter_guest](#kvm_mips_build_enter_guest)
-  - [kvm_mips_build_exit](#kvm_mips_build_exit)
-  - [uasm.c && uasm-mips.c](#uasmc-uasm-mipsc)
-- [kscratch](#kscratch)
-- [GuestCtl0 GuestCtl1](#guestctl0-guestctl1)
-- [kvm_arch_vcpu_ioctl_run](#kvm_arch_vcpu_ioctl_run)
-- [kmalloc](#kmalloc)
-- [timer](#timer)
-- [GuestCtl0 GExcCode](#guestctl0-gexccode)
-- [code overview](#code-overview)
+* [question](#question)
+* [TODO](#todo)
+* [irqchip](#irqchip)
+* [fpu](#fpu)
+* [async ioctl](#async-ioctl)
+* [functions](#functions)
+* [mmu](#mmu)
+* [emulate.c](#emulatec)
+* [exception](#exception)
+* [interrupts](#interrupts)
+* [hrtimer && timer](#hrtimer-timer)
+* [config](#config)
+* [coproc](#coproc)
+* [cp0](#cp0)
+* [kseg0](#kseg0)
+* [tlb](#tlb)
+* [asid](#asid)
+* [guestid](#guestid)
+* [cpu load / put](#cpu-load-put)
+* [kvm_trap_vz_handle_guest_exit and kvm_mips_handle_exit](#kvm_trap_vz_handle_guest_exit-and-kvm_mips_handle_exit)
+* [entry.c](#entryc)
+  * [kvm_mips_build_vcpu_run](#kvm_mips_build_vcpu_run)
+  * [kvm_mips_build_enter_guest](#kvm_mips_build_enter_guest)
+  * [kvm_mips_build_exit](#kvm_mips_build_exit)
+  * [uasm.c && uasm-mips.c](#uasmc-uasm-mipsc)
+* [kscratch](#kscratch)
+* [GuestCtl0 GuestCtl1](#guestctl0-guestctl1)
+* [kvm_arch_vcpu_ioctl_run](#kvm_arch_vcpu_ioctl_run)
+* [kmalloc](#kmalloc)
+* [timer](#timer)
+* [GuestCtl0 GExcCode](#guestctl0-gexccode)
+* [code overview](#code-overview)
 
 <!-- vim-markdown-toc -->
 
@@ -67,7 +67,7 @@ kvm_mips_check_privilege : if `EMULATE_PRIV_FAIL`, then `kvm_mips_emulate_exc`
 
 - [ ] What does this mean ?	`if (!IS_ENABLED(CONFIG_KVM_MIPS_VZ))`
 
-Why so little exit handler ? `kvm_mips_handle_exit` need more 
+Why so little exit handler ? `kvm_mips_handle_exit` need more
 
 kvm_arch_init_vm :
 
@@ -170,7 +170,7 @@ interrupts and puts it in kernel-privilege mode. It will go to the general excep
 
 ## interrupts
 > KVM 可以将中断配置为直通虚拟机中断， 此时将 GuestCtl0.PIP 置 1 即可
-> 
+>
 > 通过 KVM 使用 mtc0 指令写 GuestCtl2.VIP 而使得 Guest.Cause.IP 置位， 用 HW 表示外部硬件中断
 
 kvm_vz_vcpu_run && kvm_mips_handle_exit => kvm_mips_deliver_interrupts => `kvm_mips_callbacks->irq_deliver` / kvm_vz_irq_deliver_cb
@@ -220,7 +220,7 @@ kvm_mips_callbacks::queue_timer_int
 
 在 KVM 初始化时， 定义了一个内核高精度定时器 hrtimer， 它的用处就是在
 guest 被调度时根据目前 count 和 compare 的差值进行高精度定时， 定时器触发时
-发生进程切换， 内核调度该定时器的 guest 进程立即执行并注入一个 TI。 
+发生进程切换， 内核调度该定时器的 guest 进程立即执行并注入一个 TI。
 
 ```c
 static struct kvm_timer_callbacks kvm_vz_timer_callbacks = {
@@ -426,7 +426,7 @@ kvm_mips_host_tlb_inv need `va` and `asid` to assemble `EntryHi`.
 ```c
 	.handle_tlb_mod = kvm_trap_vz_handle_tlb_st_miss,
 	.handle_tlb_ld_miss = kvm_trap_vz_handle_tlb_ld_miss, // ??? can't find the physical page ?
-	.handle_tlb_st_miss = kvm_trap_vz_handle_tlb_st_miss, // ??? 
+	.handle_tlb_st_miss = kvm_trap_vz_handle_tlb_st_miss, // ???
 ```
 
 
@@ -455,10 +455,10 @@ kvm_arch_vcpu_create
 - [x] kvm_mips_build_vcpu_run
   - [x] kvm_mips_build_enter_guest
     - [ ] tlbmiss_handler_setup_pgd : initialized in `build_setup_pgd`, used for setup a new pgd, called in `kvm_mips_build_enter_guest` and `kvm_mips_build_exit`
-      - [ ] 
+      - [ ]
 
 
-- [x] scratch 
+- [x] scratch
   - [x] kvm_mips_build_save_scratch : scratch_vcpu => cp0_epc scratch_vcpu => cp0_cause
   - [x] kvm_mips_build_restore_scratch
   - [x] c0_kscratch
@@ -472,7 +472,7 @@ kvm_arch_vcpu_create
 
 
 ### kvm_mips_build_exit
-- [ ] kvm_mips_entry_setup : so, we will 
+- [ ] kvm_mips_entry_setup : so, we will
   - [ ] K1 : address of `kvm_vcpu_arch` : ???
     - [ ] what if we have more than one vcpu : ??
     - [ ] which convention specify this ? -> so how we launch the vcpu ?
@@ -547,7 +547,7 @@ int kvm_mips_entry_setup(void)
 - [ ] enum fields
 - [ ] mask
 - [x] enum opcode : second parameters of `build_insn`
-- [ ] build_rs : 
+- [ ] build_rs :
 - [ ] build_insn
 
 - [x] label && relocation
@@ -744,8 +744,7 @@ static bool kvm_vz_should_use_htimer(struct kvm_vcpu *vcpu)
 ## GuestCtl0 GExcCode
 virtualization manual : chapter 4.7.7, table 5.3
 
-`Table 4.8 CP0 Registers in Guest CP0 context` : 
-
+`Table 4.8 CP0 Registers in Guest CP0 context` :
 
 ## code overview
 | name              | blank | commet | code |

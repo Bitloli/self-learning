@@ -46,3 +46,6 @@ yum install -y neovim python3-neovim
 - ps --ppid 2 -p 2 -o uname,pid,ppid,cmd,cls
   - 列举出来所有的内核线程
   - https://unix.stackexchange.com/questions/411159/linux-is-it-possible-to-see-only-kernel-space-threads-process
+
+## dd
+- dd if=/dev/zero of=pmem count=4 bs=10M

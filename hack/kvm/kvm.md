@@ -1289,12 +1289,6 @@ returns;
 
 ## TODO : shadow flood
 
-
-## kvm_main
-kvm_is_zone_device_pfn
-
-- [ ] zone device
-
 #### kvm_vm_ioctl_set_memory_region
 
 #### kvm_vcpu_unmap
