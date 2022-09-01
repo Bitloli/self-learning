@@ -4,8 +4,6 @@
 
 ## thread
 
-## percpu
-
 ## disable
 1. disable_irq
 2. disable_hardirq

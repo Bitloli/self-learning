@@ -69,6 +69,14 @@ ret_from_fork+34
 - make menuconfig 下的所有 memory 选项都是应该分析一下的。
 - zap_page_range 为什么会去调用 lru_add_drain，我的一生之敌啊
 
+- fs/cachefiles : 如果使用了 disk 文件系统来缓存网络，那么 sshfs 为什么性能还是这么差?
+  - 还是说，其实是使用上了的
+  - [ ] 其实利用 nfs 来理解一下分布式
+- online_pages 和内核启动过程中，应该是存在非常多相似之处
+
+## TODO
+- driver/base 下的代码需要分析一下
+
 
 ## 写一个内核依赖图
 > 先收集起来
@@ -128,10 +136,8 @@ AMD did not extend the port I/O instructions when defining the x86-64 architectu
 
 
 #### 动态链接库
-vdso 技术首先搞清楚再说 ?
-
-一个动态链接库在 ssd 上，当一个程序运行的时候，将其加载到内存中间，然后
-
+- vdso 技术首先搞清楚再说 ?
+- 一个动态链接库在 ssd 上，当一个程序运行的时候，将其加载到内存中间，然后
 
 # 操作性试验
 一个有意思的实践

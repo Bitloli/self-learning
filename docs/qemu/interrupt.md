@@ -855,6 +855,7 @@ Understanding Linux Kernel 中的 Table 4-2. Interrupt vectors in Linux
 #24 0xffffffff81001992 in ret_from_fork () at arch/x86/entry/entry_64.S:295
 #25 0x0000000000000000 in ?? ()
 ```
+
 在 acpi_ev_install_sci_handler 中，传递给 acpi_os_install_interrupt_handler 的参数 gsi 的数值是从 acpi_gbl_FADT.sci_interrupt 中获取的。
 这非常符合逻辑，因为中断接入到哪一个引脚上的信息就是从 acpi 上获取的，acpi 的信息需要和主板上是对应的。
 而 vector index 则是动态生成的。

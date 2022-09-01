@@ -14,7 +14,7 @@ the structure of the system was needed
 The tasks handled by `struct kobject` and its supporting code now include:
 1. Reference counting of objects
 2. Sysfs representation
-3. Data structure glue 
+3. Data structure glue
 4. Hotplug event handling
 > Wooooc, 看内核的时候怎么不知道有这么多功能啊
 
@@ -83,19 +83,12 @@ struct sysfs_ops {
 };
 ```
 The `default_attrs` array says what the attributes are.
-The `sysfs_ops` tell sysfs how to actually implement those attributes. 
+The `sysfs_ops` tell sysfs how to actually implement those attributes.
 > 本节后面的没有看
 
 #### 14.2.1 Nondefault Attributes
 #### 14.2.2 Binary Attributes
 #### 14.2.3 Symbolic Links
-
-
-
-
-
-
-
 
 ## 14.3 Hotplug Event Generation
 ## 14.4 Buses, Devices, and Drivers

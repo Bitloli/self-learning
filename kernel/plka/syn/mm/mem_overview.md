@@ -8,7 +8,7 @@
 | shmem.c              | 478   | 558     | 3012 | 用于支持 tmpfs 和 sysv shm 的实现                                                                 |
 | slab.c               | 669   | 834     | 2974 | 暂时不用关注的内容，认为已经过时了。                                                                                                                         |
 | swapfile.c           | 464   | 632     | 2682 | 应该是处理当 swap 的 base 是file而不是partion 的情况!                                                                                                          |
-| mmap.c               | 467   | 910     | 2332 | mmap 实现                                                                                                                                                    |
+| mmap.c               | 467   | 910     | 2332 | mmap munmap 实现                                                                                                                                                    |
 | vmscan.c             | 547   | 1364    | 2304 | 扫描确定需要回收页面，也就是 page reclaim 机制                                                                                                               |
 | huge_memory.c        | 354   | 458     | 2118 | transparent hugetlb                                                                                                                                          |
 | ksm.c                | 336   | 845     | 1998 | https://en.wikipedia.org/wiki/Kernel_same-page_merging ksm 将内容相同的page 合并                                                                             |
@@ -21,12 +21,12 @@
 | page-writeback.c     | 329   | 1031    | 1472 | Contains functions related to writing back dirty pages at the  address_space level.                                                                          |
 | khugepaged.c         | 243   | 289     | 1417 | transparent hugetlb 的守护进程                                                                                                                               |
 | kmemleak.c           | 249   | 615     | 1260 | 识别内核中间内存泄露的工具                                                                                                                                   |
-| memory_hotplug.c     | 301   | 374     | 1231 | 应该是numa，默认不会编译进去的                                                                                                                               |
+| memory_hotplug.c     | 301   | 374     | 1231 | 内核热插拔                                                                                                                               |
 | nommu.c              | 288   | 431     | 1231 | nommu 处理没有mmu的情况                                                                                                                                      |
 | compaction.c         | 338   | 605     | 1215 | 依托于memory migration 实现减少 external fragmentation，但是page_alloc.c 中间不是已经处理过这一个事情了吗 ?　各自侧重在于何处 ?                              |
 | gup.c                | 192   | 511     | 1175 | 访问user 的内存 @todo 也是非常神奇的东西呀 !                                                                                                                 |
 | memory-failure.c     | 202   | 604     | 1119 | 处理内存控制器之类的底层错误的                                                                                                                               |
-| rmap.c               | 243   | 626     | 1093 | 实现反向映射                                                                                                                                                 |
+| rmap.c               | 243   | 626     | 1093 | 反向映射                                                                                                                                                 |
 | memblock.c           | 246   | 593     | 1082 | 启动时候的内存管理                                                                                                                                           |
 | slab_common.c        | 247   | 287     | 1027 | 各种slab slob 分配器的公用函数                                                                                                                               |
 | hmm.c                | 200   | 278     | 943  | https://www.kernel.org/doc/html/v4.18/vm/hmm.html  处理异构内存                                                                                              |

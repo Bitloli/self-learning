@@ -818,7 +818,7 @@ mtree info 看到的:
 ## option rom 的特殊的地方在哪里
 
 ## [ ] 中断的这种错误没有吧
-```c
+```txt
 [    5.909127] e1000e 0000:00:02.0: Interrupt Throttling Rate (ints/sec) set to dynamic conservative mode
 [    5.915877] e1000e 0000:00:02.0 0000:00:02.0 (uninitialized): Failed to initialize MSI-X interrupts.  Falling back to MSI interrupts.
 [    5.919983] e1000e 0000:00:02.0 0000:00:02.0 (uninitialized): Failed to initialize MSI interrupts.  Falling back to legacy interrupts.

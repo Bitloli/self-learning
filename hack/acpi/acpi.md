@@ -873,8 +873,7 @@ PCI_INTERRUPT_PIN : 表示存在中断引脚可以发送中断
 ## fadt : acpi event interrupt number
 
 acpi_table_fadt::sci_interrupt  提供了
-```c
-/*
+```txt
 [    0.846127] Call Trace:
 [    0.846130] [<900000000020864c>] show_stack+0x2c/0x100
 [    0.846133] [<9000000000ec3968>] dump_stack+0x90/0xc0
@@ -890,7 +889,6 @@ acpi_table_fadt::sci_interrupt  提供了
 [    0.846159] [<90000000012d4ce0>] kernel_init_freeable+0x1f8/0x2b8
 [    0.846162] [<9000000000eda774>] kernel_init+0x10/0xf4
 [    0.846164] [<9000000000203cc8>] ret_from_kernel_thread+0xc/0x10
-*/
 ```
 
 [^1]: https://blog.csdn.net/tiantao2012/article/details/73775993

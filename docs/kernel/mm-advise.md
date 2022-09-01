@@ -15,35 +15,52 @@ fadvise 很简单，阅读
 
 ```c
 static long madvise_cold(struct vm_area_struct *vma,
-			struct vm_area_struct **prev,
-			unsigned long start_addr, unsigned long end_addr)
+            struct vm_area_struct **prev,
+            unsigned long start_addr, unsigned long end_addr)
 {
-	struct mm_struct *mm = vma->vm_mm;
-	struct mmu_gather tlb;
+    struct mm_struct *mm = vma->vm_mm;
+    struct mmu_gather tlb;
 
-	*prev = vma;
-	if (!can_madv_lru_vma(vma))
-		return -EINVAL;
+    *prev = vma;
+    if (!can_madv_lru_vma(vma))
+        return -EINVAL;
 
-	lru_add_drain();
-	tlb_gather_mmu(&tlb, mm);
-	madvise_cold_page_range(&tlb, vma, start_addr, end_addr);
-	tlb_finish_mmu(&tlb);
+    lru_add_drain(); // @todo 为什么首先让 cpu 释放自己的 page ?
+    tlb_gather_mmu(&tlb, mm); // 猜测是，将范围中 需要特殊处理的 page 放到此处
+    madvise_cold_page_range(&tlb, vma, start_addr, end_addr);
+    tlb_finish_mmu(&tlb);
 
-	return 0;
+    return 0;
 }
 ```
+- madvise_cold_page_range
+  - tlb_start_vma
+  - walk_page_range
+    - `__walk_page_range` : 这个进入到常规的 page walk 的过程中
+  - tlb_end_vma
 
 ```c
 static inline bool can_madv_lru_vma(struct vm_area_struct *vma)
 {
-	return !(vma->vm_flags & (VM_LOCKED|VM_PFNMAP|VM_HUGETLB));
+    return !(vma->vm_flags & (VM_LOCKED|VM_PFNMAP|VM_HUGETLB));
 }
 ```
 
 - [ ] 为什么这三种都不可以来作为?
 - [ ] VM_LOCKED ?
 - [ ] VM_PFNMAP ?
+
+- [ ] 为什么是在 pmd 上注册的哇?
+```c
+static const struct mm_walk_ops cold_walk_ops = {
+    .pmd_entry = madvise_cold_or_pageout_pte_range,
+};
+```
+
+- MADV_COLD 和 MADV_PAGEOUT 共用这一个 handler :  madvise_cold_or_pageout_pte_range
+
+- MADV_COLD :  deactivate_page : 将 page active 的 lru 中放到 inactive 中
+- MADV_PAGEOUT : reclaim_pages -> shrink_list -> reclaim_page_list -> shrink_page_list 将 page 写回。
 
 
 ```diff

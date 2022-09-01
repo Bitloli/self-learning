@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-set -ex
+set -e
 
 use_nvme_as_root=false
 replace_kernel=true
-use_numa=true
+
+hacking_memory="numa"
+hacking_memory="virtio-mem"
+hacking_memory="hotplug"
+
 use_ovmf=false
 
 abs_loc=$(dirname "$(realpath "$0")")
@@ -43,25 +47,47 @@ if [[ $use_nvme_as_root = true ]]; then
   root=/dev/nvme1n1
 fi
 
-arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
-arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
+arg_hugetlb="default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
 # 可选参数
-
 arg_mem_cpu="-m 12G -cpu host -smp 8"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
 arg_mem_balloon="-device virtio-balloon"
-if [[ $use_numa == true ]]; then
+
+case $hacking_memory in
+"numa")
   # @todo qemu-system-x86_64: -numa node,mem=6G,cpus=0-3,nodeid=0: Parameter -numa node,mem is not supported by this machine type
   memdev="-object memory-backend-ram,size=4G,id=m0 -object memory-backend-ram,size=4G,id=m1"
   arg_mem_cpu="$memdev -cpu host -m 8G -smp cpus=4 -numa node,memdev=m0,cpus=0-1,nodeid=0 -numa node,memdev=m1,cpus=2-3,nodeid=1"
-  arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
-fi
+  ;;
+
+"virtio-mem")
+  # arg_mem_cpu="-m 12G,maxmem=12G"
+  # arg_mem_cpu="$arg_mem_cpu -smp sockets=2,cores=2"
+  # arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem0,size=6G"
+  # arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,memdev=mem0,node=0,size=4G"
+  # arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem1,size=6G"
+  # arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,memdev=mem1,node=1,size=3G"
+  arg_mem_cpu="-m 4G,maxmem=20G -smp sockets=2,cores=2"
+  arg_mem_cpu="$arg_mem_cpu -numa node,nodeid=0,cpus=0-1,nodeid=0,memdev=mem0 -numa node,nodeid=1,cpus=2-3,nodeid=1,memdev=mem1"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem0,size=2G"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem1,size=2G"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem3,size=2G"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,id=mem4,size=2G"
+  arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,id=vm0,memdev=mem3,node=0,requested-size=1G"
+  arg_mem_cpu="$arg_mem_cpu -device virtio-mem-pci,id=vm1,memdev=mem4,node=1,requested-size=1G"
+  ;;
+
+"hotplug")
+  arg_mem_cpu="-m 1G,slots=7,maxmem=8G" # @todo 这到底配置了多少内存
+  arg_hugetlb=""
+  ;;
+esac
 
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
-if [[ -n ${seabios+x} ]]; then
-  arg_seabios="-chardev file,path=/tmp/seabios.log,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios -bios ${seabios}"
-else
+if [[ -z ${seabios+x} ]]; then
   arg_seabios=""
+else
+  arg_seabios="-chardev file,path=/tmp/seabios.log,id=seabios -device isa-debugcon,iobase=0x402,chardev=seabios -bios ${seabios}"
 fi
 
 if [[ $use_ovmf == true ]]; then
@@ -74,6 +100,9 @@ if [[ $use_ovmf == true ]]; then
   arg_seabios="$arg_seabios -drive file=/tmp/OVMF_VARS.secboot.fd,if=pflash,format=raw,unit=1"
   # arg_seabios="-bios /tmp/OVMF.fd"
 fi
+
+arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb"
+arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"
 arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_img2},format=raw,if=none,id=nvme2"

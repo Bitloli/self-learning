@@ -1,4 +1,6 @@
 # mm/percpu.c
+- [ ] 想一想，cpu 是可以 hotplug 的，那么 percpu 的设计就和 tls 的难度差不多了
+
 
 ## Principal
 
@@ -53,9 +55,9 @@ do {									\
 1. percpu 的数据如何汇总
     1. 汇总的时候，谁来主导 ?
 2. 访问的每一个 cpu 如何知道访问的自己的
-3. 静态分配的各种配置的实现 : 对齐，section SMP/UP 
+3. 静态分配的各种配置的实现 : 对齐，section SMP/UP
 
-3. https://0xax.gitbooks.io/linux-insides/content/Concepts/linux-cpu-1.html 
+3. https://0xax.gitbooks.io/linux-insides/content/Concepts/linux-cpu-1.html
 4. https://lwn.net/Articles/1509/
 
 ## doc & ref
@@ -156,5 +158,3 @@ setup_per_cpu_areas : x86 arch 初始化
 
 ## pcpu_alloc
 > 现在，只是需要理解其中的一个机制
-
-

@@ -40,7 +40,6 @@
 <!-- - 🚧 [QEMU 如何模拟 PCI 设备](./qemu/pci.md) -->
 <!-- - 🚧 [seabios 源码分析](./qemu/seabios.md) -->
 <!-- - 🚧 [QEMU Hash Table 设计](./qemu/qht.md) -->
-<!-- - 🚧 [QEMU ACPI 模拟](./qemu/acpi.md) -->
 <!-- - 🚧 [QEMU Hotplug 和 Reset](./qemu/reset.md) -->
 - [QEMU 中的线程和事件循环](./qemu/threads.md)
 - [QEMU 中的锁](./qemu/cpus.md)
