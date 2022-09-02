@@ -26,5 +26,3 @@ Cache Coherence Protocal
 uncached and occur at memory
 
 Page Migration
-
-

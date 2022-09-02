@@ -77,6 +77,9 @@ ret_from_fork+34
 ## TODO
 - driver/base 下的代码需要分析一下
 
+- mkfifo 和 mknod 's relation ?
+
+- meminfo 是如何实现的？
 
 ## 写一个内核依赖图
 > 先收集起来
@@ -88,7 +91,7 @@ ret_from_fork+34
 
 - 虚拟化
 
-- meminfo 是如何实现的？
+
 
 # 曾经的问题，整理一下
 
@@ -101,7 +104,7 @@ ret_from_fork+34
 4. 为什么会出现从一个 CPU 中被调度出去，从另一个恢复，会出现什么特殊的情况。
 5. 多核让 PIC 升级成为了 APIC，我们开始需要分析如何正确负载
 6. 多核出现形成了一个新的学科，memory consistency and cache coherency
-7. WDNMD,虽然多核已经非常复杂了，但是我们还拥有更加复杂的大核和小核机制。
+7. 我们还拥有更加复杂的大核和小核机制。
 
 #### io 映射
 1. 我怀疑 inb 在 amd64 中间消失了, 而且 inb 的实现机制是什么 ? inb 的端口分配是通过什么实现的

@@ -1,5 +1,5 @@
 ---
-title: How to do Research 
+title: How to do Research
 date: 2018-04-19 18:09:37
 tags: research
 ---
@@ -38,10 +38,10 @@ Subject: 微处理器中心2017级研究生论文研讨清单 第一期
 
 
 ## 一些想法
-55. ●  https://loremwalker.github.io/fq-book/#/README 科学上网的博客 20d 
-56. ●  https://www.zhihu.com/question/37781628/answer/138920636 读取学术论文策略 20d 
-57. ●  https://www.zhihu.com/question/26901116/answer/39253382 整理学术论文 20d 
-58. ●  https://zhuanlan.zhihu.com/p/26568672 博士博客 20d 
-59. ●  https://www.zhihu.com/question/23684933/answer/58624475 开始书写学术论文 20d 
-60. ●  https://www.zhihu.com/question/23924014/answer/26470331 搞笑阅读学术论文 20d 
-61. ●  https://www.zhihu.com/question/21278186/answer/94094440 科研大牛读论文 20d 
+55. ●  https://loremwalker.github.io/fq-book/#/README 科学上网的博客 20d
+56. ●  https://www.zhihu.com/question/37781628/answer/138920636 读取学术论文策略 20d
+57. ●  https://www.zhihu.com/question/26901116/answer/39253382 整理学术论文 20d
+58. ●  https://zhuanlan.zhihu.com/p/26568672 博士博客 20d
+59. ●  https://www.zhihu.com/question/23684933/answer/58624475 开始书写学术论文 20d
+60. ●  https://www.zhihu.com/question/23924014/answer/26470331 搞笑阅读学术论文 20d
+61. ●  https://www.zhihu.com/question/21278186/answer/94094440 科研大牛读论文 20d

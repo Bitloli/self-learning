@@ -18,5 +18,3 @@ Memory latency:
 1. reg rename
 2. queue
 3. cache
-
-

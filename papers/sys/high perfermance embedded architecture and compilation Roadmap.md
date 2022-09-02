@@ -11,7 +11,7 @@
     1. cache consistency
     2. special cache
     3. debug for multi core programming
-    4. 
+    4.
 
 3. interconnection network
     1. simplify the protocal stack
@@ -43,7 +43,7 @@ Combine snoop and directory
 
 A idea: we can build a compiler for markdown to substitude `stackoverflow`, command
 
-1. be in a swamp in the 
+1. be in a swamp in the
 
 Log debug
 `Healthd`
@@ -63,5 +63,3 @@ call ???
 JNI
 repo
 compile
-
-

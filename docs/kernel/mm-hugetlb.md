@@ -63,6 +63,8 @@ struct hugetlbfs_inode_info {
 
 - [ ] 预留机制和 cpuset 似乎是互相冲突的，详情参考 `hugetlb_acct_memory`
 
+- [ ] 为什么 hugetlb 的预留机制这么复杂，在 memory overcommit 中也是存在预留的哇。
+
 ## hugetlb 是如何影响文件系统的
 - 不能作为 page cache 的？
 - 对于文件系统是透明的吗?

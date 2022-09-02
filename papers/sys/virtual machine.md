@@ -29,4 +29,3 @@ Datacenter as a Computer
 
 how to hardware of server:
 1. low-end(for cost efficient)
-
