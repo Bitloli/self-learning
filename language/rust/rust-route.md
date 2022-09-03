@@ -7,6 +7,8 @@ http://dtrace.org/blogs/bmc/2020/10/11/rust-after-the-honeymoon/
 
 [All](https://github.com/rust-unofficial/awesome-rust#resources)
 
+https://www.ihcblog.com/rust-runtime-design-1/ : rust 的异步 io 模式。
+
 [project base learning](https://github.com/tuvtran/project-based-learning#rust) 其中关于链表的很有意思。
 
 https://anssi-fr.github.io/rust-guide/

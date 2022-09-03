@@ -2,6 +2,9 @@
 - https://tls13.xargs.org/ : openssl 超级详细解释
   - 在 UEFI 的安装启动的过程中，发现 SSL 之类的完全不懂，各种证书
 
+- https://dev.to/techschoolguru/a-complete-overview-of-ssl-tls-and-its-cryptographic-system-36pd
+  - ssl 和 tls 的基本介绍
+
 ## 感觉还是有必要将计算机安全的问题搞一下
 - [ ] https://ffri.github.io/ProjectChampollion/ : Rosetta 的逆向
 - [Linux Hardening Guide](https://madaidans-insecurities.github.io/guides/linux-hardening.html) : 如何让 Linux 更加安全

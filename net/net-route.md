@@ -3,6 +3,7 @@
 - https://switch-router.gitee.io/categories/ ：阅读其中的每一篇文章
 
 ## todo
+- https://cs144.github.io/ : tcp 实验
 - [ ] openwrt 到底是什么?
   - 教别人编译的 : https://github.com/coolsnowwolf/lede
 - [ ] 好吧，并不能找到 routing table 相关的代码 ! (netfilter ?)
@@ -460,6 +461,23 @@ https://github.com/anderspitman/awesome-tunneling
 - [官网](https://lldpd.github.io/)
 
 ## [ ] rps
+
+## netmark
+255.255.255.0 和 255.255.240.0 的差别是什么，为什么对于网卡需要配置这个。
+
+```txt
+ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.23.126  netmask 255.255.240.0  broadcast 192.168.31.255
+        inet6 fe80::5054:ff:fe04:23e2  prefixlen 64  scopeid 0x20<link>
+        ether 52:54:00:04:23:e2  txqueuelen 1000  (Ethernet)
+        RX packets 116441215  bytes 37452802900 (34.8 GiB)
+        RX errors 0  dropped 15  overruns 0  frame 0
+        TX packets 2361776  bytes 1007505754 (960.8 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+## nic
+- https://github.com/corundum/corundum
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

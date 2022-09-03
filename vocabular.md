@@ -30,6 +30,13 @@
 - eternity
 - obituary
 - proactive
+- dogmatic
+- potent
+- tingle
+- rollout
+- recap
+- glamorous
+- relegating
 
 
 ## 超过的

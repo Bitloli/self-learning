@@ -29,7 +29,9 @@ kernel=${kernel_dir}/arch/x86/boot/bzImage
 
 distribution=ubuntu-server-22.04
 distribution=centos7
-distribution=CentOS-Stream-8-x86_64
+distribution=CentOS-Stream-8-x86_64     # good
+distribution=openEuler-22.03-LTS-x86_64 # good
+
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2
 ext4_img1=${workstation}/img1.ext4
@@ -120,6 +122,7 @@ arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
 arg_monitor="-serial mon:stdio -display none"
 arg_initrd="-initrd /home/martins3/initramfs-6.0.0-rc2-00159-g4c612826bec1-dirty.img"
+arg_initrd=""
 arg_trace="--trace 'memory_region_ops_\*'"
 # -soundhw pcspk
 

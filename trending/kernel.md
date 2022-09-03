@@ -18,3 +18,5 @@
   - drivers/acpi/processor_thermal.c
 - d6ffe6067a54972564552ea45d320fb98db1ac5e : memory model，一生之敌
 - b467192ec7070d2d6d14ab5e6774a8afdcc9e89d : a serila kernel memory fix
+- 0495e337b7039191dfce6e03f5f830454b1fae6b : 修复 slub 的一个 deadlock 问题
+- 2555283eb40df89945557273121e9393ef9b542b : 修复一个 rmap 的问题

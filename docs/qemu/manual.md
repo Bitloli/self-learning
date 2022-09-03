@@ -108,6 +108,7 @@ Ubuntu 需要首先安装，利用 iso 制作镜像，然后使用该镜像。
 
 ### Centos 8
 - 注意安装的时候不要将盘搞成了 LVM 格式，否则 QEMU 的 -kernel 参数难以成功
+  - 依次选择 Customize 安装，然后自动构建
 - Centos 8 因为切换内核，无法使用网络
 
 ```txt

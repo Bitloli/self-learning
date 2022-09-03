@@ -14,5 +14,6 @@ https://blog.acrossapp.com/how-a-2-person-startup-already-uses-28-other-tools/ :
 ## 有趣的文章
 - https://ciechanow.ski/naval-architecture/ : 介绍了货船的设计，其中的动画效果非常酷炫
 - https://ciechanow.ski/mechanical-watch/ : 机械表的设计，一如既往的高质量
+- https://www.khanacademy.org/computing/pixar : 皮克斯设计介绍
 
-- [command line heroes](https://www.redhat.com/en/command-line-heroes/season-1/os-wars-part-1) : 红帽的音频节目
+- [command line heroes](https://www.redhat.com/en/command-line-heroes/season-1/os-wars-part-1) : 红帽的音频节目 [ddf]

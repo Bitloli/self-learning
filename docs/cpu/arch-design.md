@@ -75,10 +75,14 @@
 - acpica
 
 ## 架构设计需要考虑的点
-- 指令的长度: 一般 4 字节。
-- 指令是否对齐，不对齐会让译码很难做，但是对齐之后，加载一个 8 字节的指令需要多条指令。
+- 指令是否定长，不定长会让译码很难做，但是对齐之后，加载一个 8 字节的指令需要多条指令。
 - 如何避免指令的相关性。
 - 那些是当前负载中经常出现的指令。
+- 指令的复杂程度不是功耗的决定因素[^2]。
+- 最精简的指令集只是需要一条[^3] [^4]。
+
+- 在用户态执行的指令集和系统态执行的指令集不同。
+- 不同的核执行的指令集不同[^5]。
 
 ### memory model
 
@@ -102,5 +106,20 @@
 ### 操作系统
 - swap: 如何确定一个页面是否访问，到底是在 page table entry 上放一个 flags，还是使用 page fault 来实现。
 
+### 兼容性
+
+### 功耗
+
+### 可靠性
+
+### 成本
+
+## TODO
+- 测试 RISC-V 的用户态中断，硬件线程
+
 ## 参考资料
-- [riscv non isa](https://github.com/riscv-non-isa)
+[^1] [riscv non isa](https://github.com/riscv-non-isa)
+[^2] [Power Struggles: Revisiting the RISC vs. CISC Debate on Contemporary ARM and x86 Architectures](https://research.cs.wisc.edu/vertical/papers/2013/hpca13-isa-power-struggles.pdf)
+[^3]: [One-instruction set computer](https://en.wikipedia.org/wiki/One-instruction_set_computer)
+[^4]: https://en.wikipedia.org/wiki/No_instruction_set_computing
+[^5]: A reconfigurable heterogeneous multicore with a homogeneous ISA

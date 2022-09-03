@@ -18,6 +18,9 @@
 
 - https://github.com/linux-audit/audit-userspace : audit 模块的测试，那么是否存在所有的测试整理一下，免得很尴尬。
 
+## 模糊测试工具
+- https://github.com/google/syzkaller
+
 # kernel patch
 
 ## 配置

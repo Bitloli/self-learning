@@ -2,6 +2,12 @@
 - 简短有力的分析: https://zhuanlan.zhihu.com/p/41872203
 - https://mp.weixin.qq.com/s/s6AvLiVVkoMX4dIGpqmXYA
 
+## 相关资料
+- https://stackoverflow.com/questions/38447226/atomicity-on-x86
+- https://stackoverflow.com/questions/39393850/can-num-be-atomic-for-int-num
+
+- https://news.ycombinator.com/item?id=32520365
+
 ## 问题
 - [ ] 能不能稳定的复现，或者制作出来这些 memory model 的效果
 - [ ] 各种使用案例

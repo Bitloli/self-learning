@@ -2,19 +2,19 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-- [env setup](#env-setup)
-- [想法](#想法)
-- [design](#design)
-  - [questions](#questions)
-  - [crt](#crt)
-  - [calling route](#calling-route)
-- [how printf works](#how-printf-works)
-    - [start up](#start-up)
-    - [TCP_FD::write](#tcp_fdwrite)
-    - [syscall_SYS_read](#syscall_sys_read)
-- [reading material](#reading-material)
-- [Some cpp skills I learn](#some-cpp-skills-i-learn)
-- [Something else I learn](#something-else-i-learn)
+* [env setup](#env-setup)
+* [想法](#想法)
+* [design](#design)
+  * [questions](#questions)
+  * [crt](#crt)
+  * [calling route](#calling-route)
+* [how printf works](#how-printf-works)
+    * [start up](#start-up)
+    * [TCP_FD::write](#tcp_fdwrite)
+    * [syscall_SYS_read](#syscall_sys_read)
+* [reading material](#reading-material)
+* [Some cpp skills I learn](#some-cpp-skills-i-learn)
+* [Something else I learn](#something-else-i-learn)
 
 <!-- vim-markdown-toc -->
 
@@ -134,7 +134,7 @@ this is standard musl interface.
                   - IP4::transmit
                     - IP4::ship
                       - Arp::transmit
-                        - TODO : got lost out of cpp syntax, but I will 
+                        - TODO : got lost out of cpp syntax, but I will
 
 #### syscall_SYS_read
 - syscall_SYS_read
@@ -153,7 +153,7 @@ this is standard musl interface.
 - [ ] https://stackoverflow.com/questions/1041866/what-is-the-effect-of-extern-c-in-c
 - [ ] https://en.cppreference.com/w/cpp/container/array
   - https://stackoverflow.com/questions/4424579/stdvector-versus-stdarray-in-c
-    - > std::vector is a template class that encapsulate a dynamic array1, stored in the heap, that grows and shrinks automatically if elements are added or removed. 
+    - > std::vector is a template class that encapsulate a dynamic array1, stored in the heap, that grows and shrinks automatically if elements are added or removed.
     - > std::array is a template class that encapsulate a statically-sized array, stored inside the object itself, which means that, if you instantiate the class on the stack, the array itself will be on the stack.
 - https://stackoverflow.com/questions/18198314/what-is-the-override-keyword-in-c-used-for
 
@@ -193,5 +193,5 @@ class VirtioNet : Virtio, public net::Link_layer<net::Ethernet> {
 ```
 
 ## Something else I learn
-- [ ] cpp package manage 
+- [ ] cpp package manage
 - cmake

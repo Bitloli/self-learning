@@ -1,4 +1,5 @@
 # shmem
+
 ## KeyNote
 - what's the relation with ipc/shm.c
     - shm.c rely on shmem.c to create files and mmap on it
@@ -14,6 +15,11 @@ tmpfs           7.8G  4.3M  7.8G   1% /tmp
 - posix 的 shm_open 是通过 /dev/shm 实现的
     - it seems implemented in the glibc : https://code.woboq.org/userspace/glibc/sysdeps/posix/shm_open.c.html
 - shmem_unuse 当 swapoff 的时候，将 tmpfs 中的内容放回去
+
+## [ ] 验证一下这个说法
+
+- tmpfs 是可以限制大小，而 ramfs 不会
+  - https://askubuntu.com/questions/296038/what-is-the-difference-between-tmpfs-and-ramfs
 
 ## inode operations
 

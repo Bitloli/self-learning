@@ -30,3 +30,7 @@ https://developers.google.com/silicon
 ![](https://en.wikichip.org/wiki/File:cortex-a76_block_diagram.svg)
 
 - [ ] 启动有专门的 AGU (Address Generate Unit)
+
+## intel
+- https://news.ycombinator.com/item?id=32145324
+  - 居然真的有人将 intel 的 opcode 解码出来了

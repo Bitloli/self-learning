@@ -20,7 +20,7 @@ cpu_attach_domain
 - [ ] sched_group_span
 - [ ] load_balance_mask
 ```c
-	struct cpumask *cpus = this_cpu_cpumask_var_ptr(load_balance_mask);
+    struct cpumask *cpus = this_cpu_cpumask_var_ptr(load_balance_mask);
 ```
 
 - [ ] 计算 sched_group 的时候的 busy 程度的时候，是使用什么来分析的。
@@ -30,10 +30,10 @@ cpu_attach_domain
 /*
  * Scheduling policies
  */
-#define SCHED_NORMAL		0
-#define SCHED_FIFO		1
-#define SCHED_RR		2
-#define SCHED_BATCH		3
+#define SCHED_NORMAL        0
+#define SCHED_FIFO      1
+#define SCHED_RR        2
+#define SCHED_BATCH     3
 ```
 
 
@@ -43,12 +43,12 @@ cpu_attach_domain
 __init void init_sched_fair_class(void)
 {
 #ifdef CONFIG_SMP
-	open_softirq(SCHED_SOFTIRQ, run_rebalance_domains);
+    open_softirq(SCHED_SOFTIRQ, run_rebalance_domains);
 
 #ifdef CONFIG_NO_HZ_COMMON
-	nohz.next_balance = jiffies;
-	nohz.next_blocked = jiffies;
-	zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
+    nohz.next_balance = jiffies;
+    nohz.next_blocked = jiffies;
+    zalloc_cpumask_var(&nohz.idle_cpus_mask, GFP_NOWAIT);
 #endif
 #endif /* SMP */
 
@@ -58,10 +58,10 @@ __init void init_sched_fair_class(void)
 
 ```c
 enum migration_type {
-	migrate_load = 0,
-	migrate_util,
-	migrate_task,
-	migrate_misfit
+    migrate_load = 0,
+    migrate_util,
+    migrate_task,
+    migrate_misfit
 };
 
 /*
@@ -72,34 +72,34 @@ enum migration_type {
  * group. See update_sd_pick_busiest().
  */
 enum group_type {
-	/* The group has spare capacity that can be used to run more tasks.  */
-	group_has_spare = 0,
-	/*
-	 * The group is fully used and the tasks don't compete for more CPU
-	 * cycles. Nevertheless, some tasks might wait before running.
-	 */
-	group_fully_busy,
-	/*
-	 * SD_ASYM_CPUCAPACITY only: One task doesn't fit with CPU's capacity
-	 * and must be migrated to a more powerful CPU.
-	 */
-	group_misfit_task,
-	/*
-	 * SD_ASYM_PACKING only: One local CPU with higher capacity is available,
-	 * and the task should be migrated to it instead of running on the
-	 * current CPU.
-	 */
-	group_asym_packing,
-	/*
-	 * The tasks' affinity constraints previously prevented the scheduler
-	 * from balancing the load across the system.
-	 */
-	group_imbalanced,
-	/*
-	 * The CPU is overloaded and can't provide expected CPU cycles to all
-	 * tasks.
-	 */
-	group_overloaded
+    /* The group has spare capacity that can be used to run more tasks.  */
+    group_has_spare = 0,
+    /*
+     * The group is fully used and the tasks don't compete for more CPU
+     * cycles. Nevertheless, some tasks might wait before running.
+     */
+    group_fully_busy,
+    /*
+     * SD_ASYM_CPUCAPACITY only: One task doesn't fit with CPU's capacity
+     * and must be migrated to a more powerful CPU.
+     */
+    group_misfit_task,
+    /*
+     * SD_ASYM_PACKING only: One local CPU with higher capacity is available,
+     * and the task should be migrated to it instead of running on the
+     * current CPU.
+     */
+    group_asym_packing,
+    /*
+     * The tasks' affinity constraints previously prevented the scheduler
+     * from balancing the load across the system.
+     */
+    group_imbalanced,
+    /*
+     * The CPU is overloaded and can't provide expected CPU cycles to all
+     * tasks.
+     */
+    group_overloaded
 };
 ```
 
@@ -157,7 +157,7 @@ enum group_type {
 ```c
 static unsigned long cpu_load(struct rq *rq)
 {
-	return cfs_rq_load_avg(&rq->cfs);
+    return cfs_rq_load_avg(&rq->cfs);
 }
 ```
 
@@ -208,15 +208,15 @@ static unsigned long cpu_load(struct rq *rq)
  * issues.
  */
 struct sched_avg {
-	u64				last_update_time;
-	u64				load_sum;
-	u64				runnable_sum;
-	u32				util_sum;
-	u32				period_contrib;
-	unsigned long			load_avg;
-	unsigned long			runnable_avg;
-	unsigned long			util_avg;
-	struct util_est			util_est;
+    u64             last_update_time;
+    u64             load_sum;
+    u64             runnable_sum;
+    u32             util_sum;
+    u32             period_contrib;
+    unsigned long           load_avg;
+    unsigned long           runnable_avg;
+    unsigned long           util_avg;
+    struct util_est         util_est;
 } ____cacheline_aligned;
 ```
 
@@ -237,14 +237,14 @@ struct sched_avg {
 static __always_inline void
 ___update_load_avg(struct sched_avg *sa, unsigned long load)
 {
-	u32 divider = get_pelt_divider(sa);
+    u32 divider = get_pelt_divider(sa);
 
-	/*
-	 * Step 2: update *_avg.
-	 */
-	sa->load_avg = div_u64(load * sa->load_sum, divider);
-	sa->runnable_avg = div_u64(sa->runnable_sum, divider);
-	WRITE_ONCE(sa->util_avg, sa->util_sum / divider);
+    /*
+     * Step 2: update *_avg.
+     */
+    sa->load_avg = div_u64(load * sa->load_sum, divider);
+    sa->runnable_avg = div_u64(sa->runnable_sum, divider);
+    WRITE_ONCE(sa->util_avg, sa->util_sum / divider);
 }
 ```
 
@@ -277,31 +277,31 @@ ___update_load_avg(struct sched_avg *sa, unsigned long load)
  */
 int __update_load_avg_se(u64 now, struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
-	if (___update_load_sum(now, &se->avg, !!se->on_rq, se_runnable(se),
-				cfs_rq->curr == se)) {
+    if (___update_load_sum(now, &se->avg, !!se->on_rq, se_runnable(se),
+                cfs_rq->curr == se)) {
 
-		___update_load_avg(&se->avg, se_weight(se));
-		cfs_se_util_change(&se->avg);
-		trace_pelt_se_tp(se);
-		return 1;
-	}
+        ___update_load_avg(&se->avg, se_weight(se));
+        cfs_se_util_change(&se->avg);
+        trace_pelt_se_tp(se);
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
 
 int __update_load_avg_cfs_rq(u64 now, struct cfs_rq *cfs_rq)
 {
-	if (___update_load_sum(now, &cfs_rq->avg,
-				scale_load_down(cfs_rq->load.weight),
-				cfs_rq->h_nr_running,
-				cfs_rq->curr != NULL)) {
+    if (___update_load_sum(now, &cfs_rq->avg,
+                scale_load_down(cfs_rq->load.weight),
+                cfs_rq->h_nr_running,
+                cfs_rq->curr != NULL)) {
 
-		___update_load_avg(&cfs_rq->avg, 1);
-		trace_pelt_cfs_tp(cfs_rq);
-		return 1;
-	}
+        ___update_load_avg(&cfs_rq->avg, 1);
+        trace_pelt_cfs_tp(cfs_rq);
+        return 1;
+    }
 
-	return 0;
+    return 0;
 }
 ```
 
@@ -311,15 +311,15 @@ int __update_load_avg_cfs_rq(u64 now, struct cfs_rq *cfs_rq)
 static inline void
 enqueue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
-	cfs_rq->avg.load_avg += se->avg.load_avg;
-	cfs_rq->avg.load_sum += se_weight(se) * se->avg.load_sum;
+    cfs_rq->avg.load_avg += se->avg.load_avg;
+    cfs_rq->avg.load_sum += se_weight(se) * se->avg.load_sum;
 }
 
 static inline void
 dequeue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
-	sub_positive(&cfs_rq->avg.load_avg, se->avg.load_avg);
-	sub_positive(&cfs_rq->avg.load_sum, se_weight(se) * se->avg.load_sum);
+    sub_positive(&cfs_rq->avg.load_avg, se->avg.load_avg);
+    sub_positive(&cfs_rq->avg.load_sum, se_weight(se) * se->avg.load_sum);
 }
 ```
 - [x] 如果 load_avg 和 load_sum 靠这个来维持，那么为什么还存在 `__update_load_avg_cfs_rq`
@@ -384,12 +384,12 @@ static inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force)
 
 /* Task group related information */
 struct task_group {
-	/*
-	 * load_avg can be heavily contended at clock tick time, so put
-	 * it in its own cacheline separated from the fields above which
-	 * will also be accessed at each tick.
-	 */
-	atomic_long_t		load_avg ____cacheline_aligned;
+    /*
+     * load_avg can be heavily contended at clock tick time, so put
+     * it in its own cacheline separated from the fields above which
+     * will also be accessed at each tick.
+     */
+    atomic_long_t       load_avg ____cacheline_aligned;
 ```
 As two comments suggests, `tg->load_avg := \Sum tg->cfs_rq[]->avg.load_avg.`, tg_load_avg_contrib is used for lock efficiency.
 
@@ -422,7 +422,7 @@ As two comments suggests, `tg->load_avg := \Sum tg->cfs_rq[]->avg.load_avg.`, tg
 ```
                  tg->weight * grq->load.weight
 e->load.weight = -----------------------------               (1)
-	  \Sum grq->load.weight
+      \Sum grq->load.weight
 ```
     - 恐怖注释中间的，`tg->weight` 实际上是 `tg->shares`, 而 `tg->shares` 的数值就是普通的 weight
 
@@ -440,23 +440,23 @@ e->load.weight = -----------------------------               (1)
 ```c
 struct cfs_bandwidth {
 #ifdef CONFIG_CFS_BANDWIDTH
-	raw_spinlock_t		lock;
-	ktime_t			period;
-	u64			quota;
-	u64			runtime; // 记录限额剩余时间，会使用quota值来周期性赋值；
-	s64			hierarchical_quota;
+    raw_spinlock_t      lock;
+    ktime_t         period;
+    u64         quota;
+    u64         runtime; // 记录限额剩余时间，会使用quota值来周期性赋值；
+    s64         hierarchical_quota;
 
-	u8			idle;
-	u8			period_active; // 周期性计时已经启动；
-	u8			slack_started;
-	struct hrtimer		period_timer;
-	struct hrtimer		slack_timer; // 延迟定时器，在任务出列时，将剩余的运行时间返回到全局池里；
-	struct list_head	throttled_cfs_rq;
+    u8          idle;
+    u8          period_active; // 周期性计时已经启动；
+    u8          slack_started;
+    struct hrtimer      period_timer;
+    struct hrtimer      slack_timer; // 延迟定时器，在任务出列时，将剩余的运行时间返回到全局池里；
+    struct list_head    throttled_cfs_rq;
 
-	/* Statistics: */
-	int			nr_periods;
-	int			nr_throttled;
-	u64			throttled_time;
+    /* Statistics: */
+    int         nr_periods;
+    int         nr_throttled;
+    u64         throttled_time;
 #endif
 };
 
@@ -465,15 +465,15 @@ struct cfs_bandwidth {
 struct cfs_rq {
 // ...
 #ifdef CONFIG_CFS_BANDWIDTH
-	int			runtime_enabled;
-	s64			runtime_remaining; // 剩余的运行时间；
+    int         runtime_enabled;
+    s64         runtime_remaining; // 剩余的运行时间；
 
-	u64			throttled_clock;
-	u64			throttled_clock_task;
-	u64			throttled_clock_task_time;
-	int			throttled;
-	int			throttle_count;
-	struct list_head	throttled_list;
+    u64         throttled_clock;
+    u64         throttled_clock_task;
+    u64         throttled_clock_task_time;
+    int         throttled;
+    int         throttle_count;
+    struct list_head    throttled_list;
 #endif /* CONFIG_CFS_BANDWIDTH */
 ```
 - [ ] cfs_rq::runtime_remaining 和 cfs_bandwidth::runtime 描述感觉是同一个东西啊
@@ -505,7 +505,7 @@ A group’s unassigned quota is globally tracked, being refreshed back to cfs_qu
  *
  * (default: 5 msec, units: microseconds)
  */
-unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
+unsigned int sysctl_sched_cfs_bandwidth_slice       = 5000UL;
 ```
 
 - bandwidth_slice : 时间是 cpu 时间，而不是 wall clock
@@ -558,19 +558,19 @@ static const u64 cfs_bandwidth_slack_period = 5 * NSEC_PER_MSEC;
 
 ```c
 struct task_numa_env {
-	struct task_struct *p;
+    struct task_struct *p;
 
-	int src_cpu, src_nid;
-	int dst_cpu, dst_nid;
+    int src_cpu, src_nid;
+    int dst_cpu, dst_nid;
 
-	struct numa_stats src_stats, dst_stats;
+    struct numa_stats src_stats, dst_stats;
 
-	int imbalance_pct;
-	int dist;
+    int imbalance_pct;
+    int dist;
 
-	struct task_struct *best_task;
-	long best_imp;
-	int best_cpu;
+    struct task_struct *best_task;
+    long best_imp;
+    int best_cpu;
 };
 ```
 
@@ -609,30 +609,31 @@ wait_queue 的机制 : 将自己加入到队列，然后睡眠，之后其他的
 
 ```c
 
-#define ___wait_event(wq_head, condition, state, exclusive, ret, cmd)		\
-({										\
-	__label__ __out;							\
-	struct wait_queue_entry __wq_entry;					\
-	long __ret = ret;	/* explicit shadow */				\
-										\
-	init_wait_entry(&__wq_entry, exclusive ? WQ_FLAG_EXCLUSIVE : 0);	\
-	for (;;) {								\
-		long __int = prepare_to_wait_event(&wq_head, &__wq_entry, state);\
-										\
-		if (condition)							\
-			break;							\
-										\
-		if (___wait_is_interruptible(state) && __int) {			\
-			__ret = __int;						\
-			goto __out;						\
-		}								\
-										\
-		cmd;								\
-	}									\
-	finish_wait(&wq_head, &__wq_entry);					\
-__out:	__ret;									\
+#define ___wait_event(wq_head, condition, state, exclusive, ret, cmd)       \
+({                                      \
+    __label__ __out;                            \
+    struct wait_queue_entry __wq_entry;                 \
+    long __ret = ret;   /* explicit shadow */               \
+                                        \
+    init_wait_entry(&__wq_entry, exclusive ? WQ_FLAG_EXCLUSIVE : 0);    \
+    for (;;) {                              \
+        long __int = prepare_to_wait_event(&wq_head, &__wq_entry, state);\
+                                        \
+        if (condition)                          \
+            break;                          \
+                                        \
+        if (___wait_is_interruptible(state) && __int) {         \
+            __ret = __int;                      \
+            goto __out;                     \
+        }                               \
+                                        \
+        cmd;                                \
+    }                                   \
+    finish_wait(&wq_head, &__wq_entry);                 \
+__out:  __ret;                                  \
 })
 // 其中的，init_wait_entry 将会设置被移动出来队列的时候，设置的 function 导致其被自动运行
 ```
 
 ## cpu_idle_poll
+- https://vstinner.github.io/intel-cpus.html : cstate pstate 的介绍

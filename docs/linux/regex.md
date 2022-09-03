@@ -8,6 +8,8 @@
 
 用于[测试和解释 regex 的网站](https://regexr.com/)
 
+[将 regex 转化为 plain English](https://www.autoregex.xyz/)
+
 ## 笔记
 一些特殊字符用来指定一个字符在文本中重复的次数。它们分别是加号 +、星号 * 和问号 ?。
   - 我们在字符后面加上 *，表示一个字符完全不匹配或可以匹配多次。
