@@ -29,6 +29,8 @@
 - [谭志虎的计算机组成原理](https://www.ryjiaoyu.com/book/details/42720)
 - 一个上万行的小型操作系统，比如清华的[ucore](https://github.com/chyyuu/ucore_os_lab) [^1] 或者 [xv6](https://github.com/mit-pdos/xv6-riscv)
 
+<!-- ## 心理准备 -->
+
 ## 环境准备
 1. 阅读环境准备
     - 首先你要保证你的操作系统是 Linux 内核，让自己对于 kernel 支撑起来的用户态环境有一个感性的认识。

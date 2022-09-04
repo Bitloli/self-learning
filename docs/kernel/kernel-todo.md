@@ -9,6 +9,9 @@
   - 什么 uninterruptable sleep 之类的哇
 - memory policy, cgroup cpuset, cgroup memory 三个位置同时可以限制内存使用
 
+- https://news.ycombinator.com/item?id=27328285
+  - 一个个的检查一下。
+
 - [ ] ksm
 - [ ] shmem
 - [ ] /home/maritns3/core/vn/kernel/plka/syn/mm/memory.md 整理一下 pgfault 的过程

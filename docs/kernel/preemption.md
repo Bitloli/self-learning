@@ -22,6 +22,8 @@ https://github.com/torvalds/linux/blob/70664fc10c0d722ec79d746d8ac1db8546c94114/
   - 我是一直没有理解什么样的代码不能被 preemption 的。
 - gather_bootmem_prealloc 为什么需要有 cond_resched
 
+- preemption 让内核必须给每一个 thread 配置一个内核栈，而不是每一个 CPU 一个。
+
 ## [ ] preemption 和 softirq 都是可以嵌套的，但是 hwirq 不可以
 
 从这个回答，中断是可以的嵌套的，但是我认为这个操作是错误的:

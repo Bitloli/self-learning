@@ -1,6 +1,12 @@
 - https://unix.stackexchange.com/questions/297591/swap-cache-of-vmstat-vs-swapcached-of-proc-meminfo
   - 这里面介绍了好几个工具，都仔细看看
 
+- http://linux.laoqinren.net/archives/ : 存在几篇 blog 分析这个
+- https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=34e431b0ae398fc54ea69ff85ec700722c9da773
+  - MemAvailable  和 MemFree 是什么关系
+- https://lwn.net/Articles/178850/
+
+
 - [ ] 将 /proc/sys/vm 中的内容分析一下
 
 - [ ] /proc/meminfo /proc/sys/vm/nr_hugepages /proc/sys/vm/nr_overcommit_hugepages /sys/kernel/mm/hugepages /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/ /sys/kernel/

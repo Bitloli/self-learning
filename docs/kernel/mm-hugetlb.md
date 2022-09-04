@@ -1117,3 +1117,6 @@ static inline bool is_file_hugepages(struct file *file)
 
 ## 细节
 - flush_free_hpage_work ：为什么额外的需要 workfn 来处理
+
+## TODO
+- https://biscuitos.github.io/blog/Hugetlbfs/

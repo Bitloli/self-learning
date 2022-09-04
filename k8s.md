@@ -1,0 +1,1 @@
+- https://news.ycombinator.com/item?id=32447995 : krunvm is a CLI-based utility for creating microVMs from OCI images

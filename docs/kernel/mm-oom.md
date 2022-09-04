@@ -21,6 +21,7 @@ struct oom_control {
 
 ## TODO
 - https://github.com/rfjakob/earlyoom : 了解这个工具的原理
+- https://superuser.com/questions/1150215/disabling-oom-killer-on-ubuntu-14-04
 
 
 [^1]: https://lwn.net/Articles/666024/

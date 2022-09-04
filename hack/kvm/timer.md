@@ -50,3 +50,6 @@ See “Changes to Instruction Behavior in VMX Non-Root Operation” in Chapter 2
 ## https://www.kernel.org/doc/Documentation/virtual/kvm/timekeeping.txt
 
 ## https://www.google.com.hk/search?q=kvm+clock+vs+tsc&newwindow=1&sxsrf=ALiCzsZSUeVrlv1hASUowmU4_9Mw0b6Ztw%3A1659617897923&ei=acLrYrKKOP7RkPIPxaaz2A8&oq=kvmclock+vs&gs_lcp=Cgdnd3Mtd2l6EAMYADIECAAQDTIFCAAQhgMyBQgAEIYDOgcIABBHELADOgYIABAeEA06CAgAEB4QDRAKOggIABAeEAgQDToKCAAQHhAPEBYQCkoECEEYAEoECEYYAFDhBFiaB2CGFGgBcAF4AIABsQKIAfwGkgEFMi0xLjKYAQCgAQHIAQjAAQE&sclient=gws-wiz
+
+- https://news.ycombinator.com/item?id=32548085
+- http://liujunming.top/2022/08/20/Notes-about-KVM-steal-time/ : steal time

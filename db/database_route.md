@@ -21,6 +21,7 @@
 - https://github.com/sudeep9/mojo : 分析,学习 sqlite 的小工具 ?
 - https://news.ycombinator.com/item?id=32684424 : 比较 duckdb 和 sqlite
 - https://news.ycombinator.com/item?id=32675861 : SQLite: Past, Present, and Future
+- https://news.ycombinator.com/item?id=32478907 : sqlite is not a toy database
 
 ## 两本教科书
 - database system concepts

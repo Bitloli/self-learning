@@ -61,6 +61,9 @@ https://kernel-recipes.org/en/2019/talks/faster-io-through-io_uring/
 - https://github.com/tokio-rs/io-uring
 - https://lwn.net/Articles/879724/ ：终于，两年之后，开始处理网络的问题了
 
+- https://lwn.net/Articles/903855/ : 据说可以优化 qcow2
+  - https://lore.kernel.org/io-uring/20220509092312.254354-1-ming.lei@redhat.com/
+
 [^7]: [io uring and eBPF](https://thenewstack.io/how-io_uring-and-ebpf-will-revolutionize-programming-in-linux/)
 [^8]: [zhihu : io_uring introduction](https://zhuanlan.zhihu.com/p/62682475?utm_source=wechat_timeline)
 [^10]: [Efficient IO with io_uring](https://kernel.dk/io_uring.pdf)

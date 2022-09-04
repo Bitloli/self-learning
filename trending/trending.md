@@ -15,6 +15,11 @@
 - https://news.ycombinator.com/item?id=22902204
 - https://github.com/Wenzel/awesome-virtualization#papers
 
+## LPC
+- https://www.youtube.com/watch?v=U6HYrd85hQ8
+
+暂时都没有搞清楚这个东西到底是做什么的?
+
 ## KVM Forum
 - youtube : https://www.youtube.com/channel/UCRCSQmAOh7yzgheq-emy1xA
 

@@ -118,6 +118,8 @@ operations can be used to wake any processes or threads waiting for a particular
 - [ ]  memcg 如何操作 slab (本来认为 slab 作为内核的部分，不会被 memcg 控制)
 - [ ]  ticket spinlock
 
+- https://lkml.org/lkml/2021/4/27/1208
+
 ## 记录一下遇到的问题
 
 ```c

@@ -9,3 +9,6 @@
 
 - https://www.cnblogs.com/skpupil/p/16380664.html
 - https://www.cnblogs.com/skpupil/p/16380794.html
+
+## 对比 multi generation
+- https://lwn.net/Articles/856931/

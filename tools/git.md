@@ -1,5 +1,8 @@
 ## bisect
 
+- https://news.ycombinator.com/item?id=32161247 : Things I wish everyone knew about Git (Part II)
+
+
 - https://gitee.com/all-about-git : 有趣的总结
 - https://stackoverflow.com/questions/4713088/how-to-use-git-bisect
 

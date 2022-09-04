@@ -25,3 +25,6 @@
 ## blog
 如何更好地理解和掌握 KMP 算法? - 阮行止的回答 - 知乎
 https://www.zhihu.com/question/21923021/answer/1032665486
+
+## 使用这个复习后缀数组
+- https://visualgo.net/zh

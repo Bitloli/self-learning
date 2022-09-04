@@ -1,5 +1,7 @@
 # DS
 
+- https://neon.tech/blog/paxos/ : Why does Neon use Paxos instead of Raft, and what’s the difference?
+
 ## 各种介绍
 https://github.com/stateright/stateright : 一个图新界面，用于辅助分布式协议的实现
 
