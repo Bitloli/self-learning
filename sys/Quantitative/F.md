@@ -112,7 +112,3 @@ Likewise, paths that cause a set of
 packets to block in the network forever waiting only for network resources (i.e.,
 links or associated buffers) held by other packets in the set also prevent packets
 from reaching their destinations. This situation is referred to as *deadlock*
-
-
-
-

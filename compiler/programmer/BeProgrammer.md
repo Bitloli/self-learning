@@ -26,7 +26,7 @@ relocation
 2. 4..4 指令修正方式没有看的太清楚
 3. 强弱符号在链接的时候处理和想象的含有出入 4. elf文件头保存入口地址
 4. it's there linker for other language ?
-5. 
+5.
 
 ## links
 1. [速查手册](https://sourceware.org/binutils/docs/binutils/readelf.html)

@@ -34,19 +34,3 @@ MXP processor
 #### E15
 Multiprocessing is becoming widespread in the embedded computing arena for
 two primary reasons.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

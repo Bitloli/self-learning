@@ -42,5 +42,3 @@ Control flow instructions of this sort are called PC-relative
 ## A.9 Putting It All Together: The RISC-V Architecture
 
 ## A.10 Fallacies and Pitfalls
-
-

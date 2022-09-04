@@ -95,8 +95,4 @@ In a grammar, the Bison-generated nonterminal symbol for a mid-rule action with 
 
 ### 新添加的Error为什么完全没有使用过
 1.　在哪一个位置定义的
-2. 
-
-
-
-
+2.

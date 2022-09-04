@@ -3,7 +3,7 @@
 The MIPS architecture was planned with separate instruction and data
 caches, so it can fetch an instruction and read or write a memory variable simultaneously
 
-2. five stage 
+2. five stage
 
 
 IF (instruction fetch) Gets the next instruction from the instruction cache
@@ -51,7 +51,7 @@ A MIPS CPU runs at one of two privilege levels: user and kernel.
 > 哪一个策略更加好
 
 - CP3 has been invaded by floating-point instructions from MIPS32/64 and is now only usable where you are sure you’ll *never want to implement floating point*.
-- CP2 is available and occasionally used for custom ISA extensions or to provide application-specific registers in a few SoC applications. 
+- CP2 is available and occasionally used for custom ISA extensions or to provide application-specific registers in a few SoC applications.
 - CP1 is the floating-point unit itself.
 
 Special MIPS Use of the *Word Coprocessor*. The word coprocessor is normally used to mean an
@@ -106,8 +106,8 @@ mtc0 s,$12,1 # 64 位向下兼容指令
 ### Exception Restart Address (EPC) Register
 **EPC** holds the address of the return point for this exception.
 
-The instruction causing (or suffering) the exception is at EPC, unless Cause (BD), 
-in which case EPC points to the previous (branch) instruction. 
+The instruction causing (or suffering) the exception is at EPC, unless Cause (BD),
+in which case EPC points to the previous (branch) instruction.
 >  Cause(BD) 是什么东西，为什么会有两种情况出来的
 
 EPC is 64 bits wide if the CPU is.
@@ -225,7 +225,7 @@ cache or memory
 > 这一章的核心问题解决了什么东西
 > 对于Cache实现那些操作，如何实现，　使用那些指令
 > 需要注意的问题是什么
-> 
+>
 
 0. the way MIPS caches work and what the software has to do to make caches useful and reliable.
 1. bootstrap software must be careful to initialize the caches correctly before relying on them
@@ -383,12 +383,12 @@ In the MIPS architecture interrupts, traps, system calls, and everything else th
 > 这一个定义老子是服了
 
 Category:
-1. External events(interrupts)： 
+1. External events(interrupts)：
 2. Memory translation exceptions: page fault, segment fault and so on.
 3. Other unusual program conditions for the kernel to fix :this category is fuzzy, maybe caused by some difficult and rare combination of operation and operands
 4. Program or hardware-detected errors
 5. Data integrity problems
-6. System calls and traps 
+6. System calls and traps
 
 Some things do not cause exceptions, though you’d expect them to.
 
@@ -412,22 +412,22 @@ FP instruction won’t produce an exception
 
 ## Exception Handling: Basics
 Any MIPS exception handler routine has to go through the same stages:
-1. Bootstrapping  
+1. Bootstrapping
   **k0** and **k1** registers  to reference a piece of memory that can be used for other register saves
-2. Dispatching different exceptions 
+2. Dispatching different exceptions
 
-3. Constructing the exception processing environment  
+3. Constructing the exception processing environment
   save CPU registers
 4. Processing the exception
 5. Preparing to return
   The high-level function is usually called as a subroutine and therefore returns into the low-level dispatch code
 > **low level dispatch code** 是什么东西，为什么preparing to return 和 return 需要拆分成为两个部分出来的
 
-6. Returning from an exception 
+6. Returning from an exception
 
 
 ## Returning from an Exception
-1. The return of control to the exception victim and the change (if required) back from kernel to a lower-privilege level must be done at the same time 
+1. The return of control to the exception victim and the change (if required) back from kernel to a lower-privilege level must be done at the same time
 > 为什么需要是原子性的，没有会发生什么，如何实现保证的
 
 2. MIPS CPUs have an instruction, **eret**, that does the whole job; it both
@@ -465,12 +465,12 @@ eret # return to program
 
 
 ## Interrupts
-The MIPS exception mechanism is general purpose, following are two main 
+The MIPS exception mechanism is general purpose, following are two main
   1. One is the TLB miss when an application running under a
   memory-mapped OS like UNIX steps outside the (limited) boundaries of the
   on-chip translation table; we mentioned that before and will come back to it in
   2. the other popular exceptions are interrupts, occurring when a device
-  outside the CPU wants attention. 
+  outside the CPU wants attention.
 
 we’re dealing with an outside world that won’t wait for us, interrupt service time is often critical
 
@@ -837,13 +837,13 @@ no task-to-task protection
 But operating systems targeted at
 embedded applications do not usually have their roots in hardware with
 memory management, and the process memory map often has the fossils
-of unmapped memory maps hidden inside it. 
+of unmapped memory maps hidden inside it.
 
 
 
-# Floating porint 
+# Floating porint
 
->  
+>
 
 
 
@@ -882,10 +882,10 @@ of unmapped memory maps hidden inside it.
 1. Assembly code is line oriented and `;` makes multiple instructions same line possible
 2. comments
 
-3. 
+3.
 
 
-### 
+###
 
 
 
@@ -896,7 +896,7 @@ of unmapped memory maps hidden inside it.
 1. Many of the MIPS arithmetical and logical operations have an alternative form that uses a 16-bit immediate in place of **t**
 > t 是什么意思
 
-2. If an immediate value is too large to fit into the 16-bit field in the machine instruction, 
+2. If an immediate value is too large to fit into the 16-bit field in the machine instruction,
 then the assembler helps out again. It automatically loads the constant into the **assembler temporary register at/$1** and then uses it to perform the operation
 
 3. assembler automatically chooses the best way to code the operation **li**, according to the properties of the integer value.
@@ -909,10 +909,10 @@ managing branch delay slots
 ### Regarding 64-Bit and 32-Bit Instructions
   1. the execution of MIPS32 instructions always leaves the upper 32 bits of any GP register set either to all ones or all zeros (reflecting the value of bit 31)
   2. arithmetic functions can not carry over directly to 64-bit systems. Adds, subtracts, shifts, multiplies, and divides all need new versions. The new instructions
-are named by prefixing the old mnemonic with d (double) 
+are named by prefixing the old mnemonic with d (double)
 > 为什么arithmetic function 就是这么特殊了啊。
 
-  
+
 ## Addressing Modes
 1. As noted previously, the hardware supports only one addressing mode, base **reg+offset**
 2. the assembler will synthesize code to access data at addresses specified in various other ways
@@ -930,7 +930,7 @@ are named by prefixing the old mnemonic with d (double)
   lui at, %hi(addr) /* 将addr中的高16bit放置到 */
   ```
 
-4. `addiu` Adds a register and a sign-extended immediate value and stores the result in a register  
+4. `addiu` Adds a register and a sign-extended immediate value and stores the result in a register
   The only difference between them is **addi** generates a trap when overflow while **addiu** doesn't. So addi and its overflow family (add, sub...) is often useless
 
 5. In principle, la could avoid messing around with apparently negative
@@ -949,9 +949,9 @@ different fix-up types
     1. the cooperation of the **compiler**, **assembler**, **linker**, and **start-up code** to pool all of the “small” variables and constants into a single memory region;
     2. then it sets register $28 (known as the **global pointer** or **gp register**) to point to the
 middle of this region. (The linker creates a special symbol, gp, whose address is the middle of this region. The address of gp must then be loaded into the gp
-register by the start-up code, before any load or store instructions are used.) 
+register by the start-up code, before any load or store instructions are used.)
 
-3. 
+3.
 
 
 # 14 How Hardware and Software Work Together

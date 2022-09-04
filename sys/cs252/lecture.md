@@ -11,8 +11,8 @@ The [site](https://inst.eecs.berkeley.edu/~cs252/sp17/) of this course
 
 
 # 1 intruction
-What is computer architecture? 
-1. Myopic view from years ago: Instruction Set Architecture (ISA) 
+What is computer architecture?
+1. Myopic view from years ago: Instruction Set Architecture (ISA)
 2. Updated view: Instruction Set Architecture, Microarchitecture, and Hardware
 
 > D. Bhandarkar, “A journey through history from mainframes to smartphones”, Electronic Design Process Symposium, Apr 2015. 7
@@ -57,7 +57,7 @@ Annotated loops :: Shared memory multiprocessors
 Element function code :: GPUs (CUDA/OpenCL) 
 Explicit message passing :: Clusters (MPI)
 
-7. Business Models 
+7. Business Models
     1. Viability of different computer designs depends on the
 expected business model
     2. Some factors to consider: Volume: billions of units/year for smartphones or hundreds of units/ year for supercomputers 
@@ -111,7 +111,7 @@ Separating Completion from Commit
     1. Entries	allocated in program order during decode
     1. Buffers	completed values and exception state until	inorder	commit	point
     1. Completed values can	be	used by	dependents	before committed (bypassing)
-    1. Each	entry holds program	counter, instruction type,	
+    1. Each	entry holds program	counter, instruction type,
     1. destination	register specifier and	value if any, and exception	status	(info	often	compressed	to	save	hardware)
 2. Memory reordering needs special	data structures
     1. Speculative	store address and data buffers
@@ -120,7 +120,7 @@ Separating Completion from Commit
 In-Order Commit	for	Precise	Traps
 1. In-order	instruction	fetch	and	decode,	and	dispatch	to reservation	stations	inside	reorder	buffer
 2. Instructions	issue	from	reservation	stations	out-of-order
-3. Out-of-order	completion,	values	stored	in	temporary	buffers 
+3. Out-of-order	completion,	values	stored	in	temporary	buffers
 4. Commit	is	in-order,	checks	for	traps,	and	if	none	updates	 architectural	state
 
 # 7 Advanced Out-of-Order Designs
@@ -128,9 +128,9 @@ In-Order Commit	for	Precise	Traps
 ```
  +--------------+
  |     PC       |--------------------------
- +------+-------+                          
-        |                                  
-+-------v---------+                        
+ +------+-------+
+        |
++-------v---------+
 |    I-Cache      |  Fetch : instruction bit retrive
 +-------+---------+     from instruction cache
         |
@@ -146,7 +146,7 @@ In-Order Commit	for	Precise	Traps
  | Issue Buffer |--------------------------
  +------+-------+
         |
-+-------v---------+ Execute: Instructions and operands issued to functional	units. 
++-------v---------+ Execute: Instructions and operands issued to functional	units.
 | Functional Units|     When execution completes, all results and exception	flags are available.
 +-------+---------+
         |

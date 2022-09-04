@@ -8,7 +8,7 @@ https://blog.fosketts.net/2011/07/06/defining-failure-mttr-mttf-mtbf/
 
 
 # Chapter 2
-1. Traditionally, designers of memory hierarchies focused on optimizing average memory access time, which is determined by the cache access time, miss rate, and miss penalty. More recently, however, power has become a major consideration 
+1. Traditionally, designers of memory hierarchies focused on optimizing average memory access time, which is determined by the cache access time, miss rate, and miss penalty. More recently, however, power has become a major consideration
 2. six basic way to reduce optimazation
     1. Larger block size to reduce miss rate
     2. Bigger caches to reduce miss rate
@@ -32,7 +32,7 @@ https://blog.fosketts.net/2011/07/06/defining-failure-mttr-mttf-mtbf/
                 2. eliminating a dependence by transforming
         2. Name Dependences
             1. A name dependence occurs when two instructions use the same register or memory location, called a name, but there is no flow of data between the instructions associated with that name
-    2. 
+    2.
 # Chapter 4
 > If you were plowing a field, which would you rather use: two strong oxen or 1024 chickens?
 
@@ -41,14 +41,14 @@ https://blog.fosketts.net/2011/07/06/defining-failure-mttr-mttf-mtbf/
     2. This chapter covers three variations of SIMD: vector architectures, multimedia SIMD instruction set extensions, and graphics processing units (GPUs)
 
 2. Vector Architecture
-    1. 
+    1.
 
-3. 
+3.
 
 4. Graphics Processing Units
     1. Programming the GPU
         1. Thus the design of GPUs may make more sense when architects ask, given the hardware invested to do graphics well, how can we supplement it to improve the performance of a wider range of applications?
-        2. In addition to the identifier for blocks (blockIdx) and the identifier for each thread in a block (threadIdx), CUDA provides a keyword for the number of threads per block (blockDim), which comes from the dimBlock parameter in the preceding bullet 
+        2. In addition to the identifier for blocks (blockIdx) and the identifier for each thread in a block (threadIdx), CUDA provides a keyword for the number of threads per block (blockDim), which comes from the dimBlock parameter in the preceding bullet
         ```
             // Invoke DAXPY with 256 threads per Thread Block
             __host__
@@ -57,14 +57,14 @@ https://blog.fosketts.net/2011/07/06/defining-failure-mttr-mttf-mtbf/
             // DAXPY in CUDA
             __global__
             void daxpy(int n, double a, double *x, double *y) {
-                int i = blockIdx.x*blockDim.x + threadIdx.x; 
+                int i = blockIdx.x*blockDim.x + threadIdx.x;
                 if (i < n) y[i] = a*x[i] + y[i];
             }
         ```
     2. NVIDIA GPU Computational Structures
         1. A Grid is the code that runs on a GPU that consists of a set of Thread Blocks.
-        2. 
-    
+        2.
+
 # Chapter 6
 > The datacenter is the computer.
 
@@ -80,7 +80,7 @@ https://blog.fosketts.net/2011/07/06/defining-failure-mttr-mttf-mtbf/
         2. Operational costs count
         3. Location counts
         4. Computing efficiently at low utilization
-        5. 
+        5.
 
 # Chapter 7
 1. introduction
@@ -88,7 +88,7 @@ https://blog.fosketts.net/2011/07/06/defining-failure-mttr-mttf-mtbf/
 
 2. Guidelines for DSAs
     1. Use dedicated memories to minimize the distance over which data is moved
-    2. Invest the resources saved from dropping advanced microarchitectural optimizations into more arithmetic units or bigger memories   
+    2. Invest the resources saved from dropping advanced microarchitectural optimizations into more arithmetic units or bigger memories
     3. Use the easiest form of parallelism that matches the domain
     4. Reduce data size and type to the simplest needed for the domain
     5. Use a domain-specific programming language to port code to the DSA

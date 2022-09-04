@@ -76,4 +76,3 @@ Q4: What happens on a write? (write strategy)
 
 
 ## Protection and Examples of Virtual Memory
-
