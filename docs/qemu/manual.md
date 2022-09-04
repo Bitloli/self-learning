@@ -141,12 +141,18 @@ ifcfg-enp0s5，其内容和原来的相同，只是替换其中的 interface 的
 ## Guest 网络
 
 ### 端口重定向
-```sh
--netdev user,id=net0,hostfwd=tcp::8080-:80
-```
-将 Host 8080 端口重定向到 Guest 的 80 端口
 
-<!-- TMP_TODO 的 - [ ]  -netdev user,id=net0,hostfwd=tcp::5556-:22 -->
+参考[^2]
+```sh
+-netdev user,id=net0,hostfwd=tcp::5556-:22
+```
+将 Host 5556 端口重定向到 Guest 的 22 端口
+
+然后就可以使用 ssh 登录:
+```sh
+ssh root@localhost -p5556
+```
+
 
 ### Guest 科学上网
 有时候 Guest 中需要安装某些东西，没有代理几乎没有成功的可能性。在 Host 打开 Qv2ray 或者 Clash，设置为可以代理整个局域网，
@@ -262,6 +268,7 @@ open vnc://192.168.23.126:5900
 - [ ] 內核启动参数中需要指定 root=/dev/sda3 如何确定
 
 [^1]: https://askubuntu.com/questions/1108334/how-to-boot-and-install-the-ubuntu-server-image-on-qemu-nographic-without-the-g
+[^2]: https://unix.stackexchange.com/questions/124681/how-to-ssh-from-host-to-guest-using-qemu
 
 
 <script src="https://giscus.app/client.js"

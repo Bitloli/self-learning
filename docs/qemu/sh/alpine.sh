@@ -117,7 +117,7 @@ arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"
 arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_img2},format=raw,if=none,id=nvme2"
-arg_network="-netdev user,id=n1,ipv6=off -device e1000e,netdev=n1"
+arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=net1"
 arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
 arg_monitor="-serial mon:stdio -display none"
@@ -219,7 +219,7 @@ fi
 
 if [[ -z ${replace_kernel+x} ]]; then
   arg_monitor="-vnc :0,password=on -monitor stdio"
-  arg_monitor="-nographic"
+  # arg_monitor="-nographic"
   qemu="qemu-system-x86_64" # 自己的编译的 QEMU 不支持加密，无法使用 vnc
 
   # @todo 应该是无需如此复杂的

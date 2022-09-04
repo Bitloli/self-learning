@@ -10,6 +10,9 @@
 ## find
 - 计算所有一个目录中所有的文件的 hash: find path/to/folder -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum
   - https://stackoverflow.com/questions/545387/linux-compute-a-single-hash-for-a-given-folder-contents
+- find /tmp -size 0 -print -delete : 删除大小为 0 的文件
+  - https://stackoverflow.com/questions/5475905/linux-delete-file-with-size-0
+- find . -type f -name "*.md" : 将所有的 md 找出来
 
 ## rpm
 - rpm -qf 可以找到一个文件对应的包
@@ -37,10 +40,6 @@ yum install -y neovim python3-neovim
 ## systemd
 - systemctl --user list-timers --all
 - systemctl list-timers --all
-
-## find
-- find /tmp -size 0 -print -delete : 删除大小为 0 的文件
-  - https://stackoverflow.com/questions/5475905/linux-delete-file-with-size-0
 
 ## ps
 - ps --ppid 2 -p 2 -o uname,pid,ppid,cmd,cls
