@@ -1,4 +1,7 @@
 ## get user page
+
+- https://offlinemark.com/2021/05/12/an-obscure-quirk-of-proc/
+
 [使用 gup 的例子](https://stackoverflow.com/questions/36337942/how-does-get-user-pages-work-for-linux-driver)
 1. 为什么 hugepage 会更加麻烦 ?
 
@@ -100,7 +103,7 @@ https://stackoverflow.com/questions/48241187/memory-region-flags-in-linux-why-bo
 如果这个 cow page 被 刷掉了，在重新的进行 fault 的时候，没有添加上
 但是此时访问请求标记没有了FOLL_WRITE，所以会认为是一个读访问，不会触发COW，这次缺页处理会填充pte对应原始物理页，再次调用follow_page成功获取原始页，所以正常情况会在cowed page上进行读写操作，
 
-- [ ] 问题的关键在于，在 `__get_user_pages` 中，在后续的访问中去掉 FOLL_WRITE 
+- [ ] 问题的关键在于，在 `__get_user_pages` 中，在后续的访问中去掉 FOLL_WRITE
   - [x] 为什么 `__get_user_pages` 是一个 while 循环，因为可能需要 gup 很多 page
   - [x] faultin_page 为什么会返回 0 : 当什么错误都没有了的时候，那么就调用 follow_page_mask 重新检查一次, 但是中间由于调用 madvise 很有可能将其删除了
   - 当 handle_mm_fault 的返回值中间有 VM_FAULT_WRITE, 那么说明 handle_mm_fault 进行了一次 cow，当前建立的映射是指向 cow page 的
@@ -176,9 +179,9 @@ static inline pte_t maybe_mkwrite(pte_t pte, struct vm_area_struct *vma)
   - ptrace.c 中的 : ptrace_readdata 和 ptrace_writedata 的内容，为了获取被 tracee 的 process 的内容，必须添加上 FOLL_FORCE, 而且如果想要写，那么就需要 FOLL_WRITE
     - 原因很简单，当 ptrace 想要在 tracee 的代码段中间设置断点，就是在 read only 的区间修改
 
-分析 check_vma_flags : 
+分析 check_vma_flags :
 1. 如果有 write 的需求，想要获取的 vm 没有权限，除非拥有 FOLL_FORCE，否则失败
-2. 即使是 force 的，比必然让这个 page 是可以 cow 才可以(这个文件不可以被映射为 SHARED, 可以使用 [^3] 作为测试) 
+2. 即使是 force 的，比必然让这个 page 是可以 cow 才可以(这个文件不可以被映射为 SHARED, 可以使用 [^3] 作为测试)
 也就是说，force 的是存在前提的，创建一个 cow page, 提供一个修改了文件的假象，毕竟，修改了 tracee 的二进制，然后忘记修改回来了，是非常糟糕的
 - [ ] check_vma_flags 调用 is_cow_mapping 检测 VM_MAYWRITE 的 flag 为什么可以成功啊, 这个 flag 是什么设置的
 

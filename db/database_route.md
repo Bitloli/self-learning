@@ -20,6 +20,7 @@
 - https://liyafu.com/2022-07-31-sqlite-untold-story/ : sqlite 背后的趣事
 - https://github.com/sudeep9/mojo : 分析,学习 sqlite 的小工具 ?
 - https://news.ycombinator.com/item?id=32684424 : 比较 duckdb 和 sqlite
+- https://news.ycombinator.com/item?id=32675861 : SQLite: Past, Present, and Future
 
 ## 两本教科书
 - database system concepts

@@ -7,6 +7,7 @@
 - https://stackoverflow.com/questions/39393850/can-num-be-atomic-for-int-num
 
 - https://news.ycombinator.com/item?id=32520365
+- [ ] sys/mccc 的 A Primer on Memory Consistency and Cache Coherence 可以重新看看
 
 ## 问题
 - [ ] 能不能稳定的复现，或者制作出来这些 memory model 的效果
