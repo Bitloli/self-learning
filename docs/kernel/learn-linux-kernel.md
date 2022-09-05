@@ -25,8 +25,8 @@
 
 ## 理论基础
 - [深入理解计算机体系结构](https://book.douban.com/subject/26912767/)
-- [陈海波的操作系统课程](https://ipads.se.sjtu.edu.cn/mospi/)
-- [谭志虎的计算机组成原理](https://www.ryjiaoyu.com/book/details/42720)
+- [陈海波教授的操作系统课程](https://ipads.se.sjtu.edu.cn/mospi/)
+- [谭志虎教授的计算机组成原理](https://www.ryjiaoyu.com/book/details/42720)
 - 一个上万行的小型操作系统，比如清华的[ucore](https://github.com/chyyuu/ucore_os_lab) [^1] 或者 [xv6](https://github.com/mit-pdos/xv6-riscv)
 
 <!-- ## 心理准备 -->

@@ -48,3 +48,8 @@ yum install -y neovim python3-neovim
 
 ## dd
 - dd if=/dev/zero of=pmem count=4 bs=10M
+
+## git
+
+- git ls-files --others --exclude-standard >> .gitignore
+  - 将没有被跟踪的文件添加到 .gitignore 中

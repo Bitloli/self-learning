@@ -167,12 +167,12 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 ## [ ] 这些 feature 需要逐个检查一下
 ```c
 /* The feature bitmap for virtio balloon */
-#define VIRTIO_BALLOON_F_MUST_TELL_HOST	0 /* Tell before reclaiming pages */
-#define VIRTIO_BALLOON_F_STATS_VQ	1 /* Memory Stats virtqueue */
-#define VIRTIO_BALLOON_F_DEFLATE_ON_OOM	2 /* Deflate balloon on OOM */
-#define VIRTIO_BALLOON_F_FREE_PAGE_HINT	3 /* VQ to report free pages */
-#define VIRTIO_BALLOON_F_PAGE_POISON	4 /* Guest is using page poisoning */
-#define VIRTIO_BALLOON_F_REPORTING	5 /* Page reporting virtqueue */
+#define VIRTIO_BALLOON_F_MUST_TELL_HOST 0 /* Tell before reclaiming pages */
+#define VIRTIO_BALLOON_F_STATS_VQ   1 /* Memory Stats virtqueue */
+#define VIRTIO_BALLOON_F_DEFLATE_ON_OOM 2 /* Deflate balloon on OOM */
+#define VIRTIO_BALLOON_F_FREE_PAGE_HINT 3 /* VQ to report free pages */
+#define VIRTIO_BALLOON_F_PAGE_POISON    4 /* Guest is using page poisoning */
+#define VIRTIO_BALLOON_F_REPORTING  5 /* Page reporting virtqueue */
 ```
 
 Linux 都是支持的。
@@ -332,17 +332,17 @@ virtio_balloon_get_config 最开始的时候也是会调用一次:
 
 ```txt
 config BALLOON_COMPACTION
-	bool "Allow for balloon memory compaction/migration"
-	def_bool y
-	depends on COMPACTION && MEMORY_BALLOON
-	help
-	  Memory fragmentation introduced by ballooning might reduce
-	  significantly the number of 2MB contiguous memory blocks that can be
-	  used within a guest, thus imposing performance penalties associated
-	  with the reduced number of transparent huge pages that could be used
-	  by the guest workload. Allowing the compaction & migration for memory
-	  pages enlisted as being part of memory balloon devices avoids the
-	  scenario aforementioned and helps improving memory defragmentation.
+    bool "Allow for balloon memory compaction/migration"
+    def_bool y
+    depends on COMPACTION && MEMORY_BALLOON
+    help
+      Memory fragmentation introduced by ballooning might reduce
+      significantly the number of 2MB contiguous memory blocks that can be
+      used within a guest, thus imposing performance penalties associated
+      with the reduced number of transparent huge pages that could be used
+      by the guest workload. Allowing the compaction & migration for memory
+      pages enlisted as being part of memory balloon devices avoids the
+      scenario aforementioned and helps improving memory defragmentation.
 ```
 
 ## HYPERV_BALLOON
@@ -362,3 +362,10 @@ config BALLOON_COMPACTION
 ## 为什么 vmware 的 balloon 写的这么长
 
 ➜  linux git:(master) ✗ /home/martins3/core/linux/drivers/misc/vmw_balloon.c
+
+## hint
+- 解决 migration 中，不知道将 balloon 设置为多大的问题:
+
+- 让 balloon 尽可能的大，然后让 host 将这些页保护起来，然后如果 guest 在迁移的过程中使用了这些页，那么就重新发送。
+
+## free pages reporting

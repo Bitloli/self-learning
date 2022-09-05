@@ -30,7 +30,7 @@ kernel=${kernel_dir}/arch/x86/boot/bzImage
 distribution=ubuntu-server-22.04
 distribution=centos7
 distribution=CentOS-Stream-8-x86_64     # good
-distribution=openEuler-22.03-LTS-x86_64 # good
+# distribution=openEuler-22.03-LTS-x86_64 # good
 
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2

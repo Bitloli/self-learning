@@ -769,11 +769,6 @@ Rust,绝对不是浅尝辄止的内容。
 
 ## [为什么正则分布会消失](https://alexdanco.com/2015/12/17/taylor-swift-ios-and-the-access-economy-why-the-normal-distribution-is-vanishing/)
 
-## [jemalloc](https://people.freebsd.org/~jasone/jemalloc/bsdcan2006/jemalloc.pdf)
-https://stackoverflow.com/questions/1624726/how-does-jemalloc-work-what-are-the-benefits
-
-可以看一下文章中间的内容，然后读一下源代码
-
 ## [stb library](https://github.com/nothings/stb)
 一个文件，一个库，可以看一下，应该主要是用于教学的东西
 

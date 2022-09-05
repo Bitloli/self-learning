@@ -2445,6 +2445,7 @@ static struct bio *do_mpage_readpage(struct mpage_readpage_args *args)
 2. https://github.com/jemalloc/jemalloc
     1. https://stackoverflow.com/questions/1624726/how-does-jemalloc-work-what-are-the-benefits
 3. https://github.com/plasma-umass/Mesh
+4. https://github.com/mjansson/rpmalloc
 
 1. 可以将 glibc 的直接替换为这些自定义的吗 ?
 2. 这些东西主要考虑的设计因素是什么
@@ -2490,6 +2491,11 @@ tls : (使用什么优化，但是看不懂，JEMALLOC_TLS_MODEL)
 extend 主要完成从 kernel 获取的内存地址页的管理，由 per arena 的三个数据结构管理
 
 分配使用是 mmap ，但是释放使用的是 madvise(MADV_FREE 和 MADV_DONTNEED)
+
+- [jemalloc](https://people.freebsd.org/~jasone/jemalloc/bsdcan2006/jemalloc.pdf)
+- https://stackoverflow.com/questions/1624726/how-does-jemalloc-work-what-are-the-benefits
+可以看一下文章中间的内容，然后读一下源代码
+
 
 ## profiler
 用户层的:

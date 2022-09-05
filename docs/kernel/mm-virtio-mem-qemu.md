@@ -55,6 +55,8 @@ struct VirtIOMEM {
     uint64_t block_size;
 ```
 
+- size : 当前在 plug 的大小
+- requested_size : 期望的大小
 
 ## qemu
 

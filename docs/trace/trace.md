@@ -267,6 +267,10 @@ dpdk 测试工具
 ## sudo cat /proc/self/stack
 检查一个进程在内核中的 stack
 
+## rtla
+- https://lwn.net/Articles/869563/
+- https://bristot.me/and-now-linux-has-a-real-time-linux-analysis-rtla-tool/
+
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)
 [^7]: [kernelshark](https://www.cnblogs.com/arnoldlu/p/9014365.html)
