@@ -1120,3 +1120,4 @@ static inline bool is_file_hugepages(struct file *file)
 
 ## TODO
 - https://biscuitos.github.io/blog/Hugetlbfs/
+- https://www.cnblogs.com/arnoldlu/p/14028825.html

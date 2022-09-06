@@ -1,5 +1,16 @@
 # Network Route
 
+## KeyNotes
+| OSI        | TCP/IP | 作用                     | 主要协议                 |
+|------------|--------|--------------------------|--------------------------|
+| 应用层     | 应用层 | 文件服务、电子邮件等应用 | DNS、HTTP、FTP 等        |
+| 表示层     | 应用层 | 格式、压缩、加密         | 无对应                   |
+| 会话层     | 应用层 | 建立或解除通信           | 无对应                   |
+| 传输层     | 传输层 | 进程到进程的通信         | TCP、UDP                 |
+| 网络层     | 网络层 | 主机到主机的通信         | IP、ICMP、IGMP、BGP 等   |
+| 数据链路层 | 链路层 | 构建数据帧传输的链路     | ARP、PPP、MTU、SLIP 等   |
+| 物理层     | 物理层 | 提供信息传输的物理介质   | IEEE802.2、IEEE802.11 等 |
+
 - https://switch-router.gitee.io/categories/ ：阅读其中的每一篇文章
 
 ## todo
@@ -99,8 +110,8 @@
 - [ ] 应该将 recv 的路径也跟着看一遍的
 
 - 物理设备接受一个 package [^10]
-  - core/dev.c:`netif_rx`: 将 skb 放到 CPU 的队列中
-  - core/dev.c:`net_rx_action`: 将 skb 从 CPU 队列中移除
+  - core/dev.c:`netif_rx`: 将 skb 放到 CPU 的队列中 : receives a packet from a device driver and queues it for the upper (protocol)
+  - core/dev.c:`net_rx_action`: 将 skb 从 CPU 队列中移除: 数据包申请sk_buff缓冲区对象，同时将数据从接收队列拷贝至sk_buff对象
 - ip 层接受
   - `ip_input.c:ip_rcv`
     - `ip_rcv_finish`
@@ -111,6 +122,14 @@
           - `ipv4/ip_forward.c:ip_forward()`
             - `core/dev.c:dev_queue_xmit()`
               - `sched/sch_generic.c:pfifo_fast_enqueue()`
+
+<p align="center">
+  <img src="./img/kernel-receive.png" alt="drawing" height="800" align="center"/>
+</p>
+<p align="center">
+from https://ipads.se.sjtu.edu.cn/mospi/
+</p>
+
 
 ## 有趣
 - [ping localhost 不会和网卡打交道，那是 loopback devices](https://superuser.com/questions/565742/localhost-pinging-when-there-is-no-network-card)

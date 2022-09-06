@@ -43,3 +43,16 @@
 ## SMC-R
 - https://help.aliyun.com/document_detail/327118.html
 - 内核中 net/smc 的位置
+
+## https://ipads.se.sjtu.edu.cn/mospi/
+如 Wukong [16] 利用 RDMA 来加速对 RDF 的查询；FaSST [9] 使用 RDMA 优化过的 RPC 库来支持分布式
+事务处理等。
+
+- Receive-side Scaling（RSS）：为了利用处理器的多核算力，网卡引入
+了 RSS 技术，又称“多队列网卡”，允许将网卡上的不同接收队列分配给不同
+的 CPU 核心进行处理，从而共同分担网络收包的压力。例如 FlexNIC [10] 观
+察到数据中心众核的发展趋势，利用网卡 RSS 技术提升了网络应用吞吐能力
+在多核上的可扩展性。RSS 通常会结合一定哈希算法，做多核心间网络处理
+上的负载均衡。在实际应用中，系统还会将 RSS 限制在有限几个处理器核心
+上，避免网络中断给整体系统计算带来的影响。
+- 巨帧（Jumbo Frames

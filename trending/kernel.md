@@ -21,3 +21,4 @@
 - 0495e337b7039191dfce6e03f5f830454b1fae6b : 修复 slub 的一个 deadlock 问题
 - 2555283eb40df89945557273121e9393ef9b542b : 修复一个 rmap 的问题
 - 8782fb61cc848364e1e1599d76d3c9dd58a1cc06 : mmap 和 page walk 的 race
+- 685ed983e2dc330680a076a1fd37ebe04017df91 : 多个 x86 kvm 的修复

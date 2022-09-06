@@ -1,5 +1,8 @@
 # memory hotplug
 
+## [ ] 问题
+- [ ] 为什么说是要处理 DIMMs 啊?
+
 ## 读读文档
 - https://elixir.bootlin.com/qemu/latest/source/docs/memory-hotplug.txt
 

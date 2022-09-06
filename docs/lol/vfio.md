@@ -55,13 +55,13 @@ echo 10de 1d12 > /sys/bus/pci/drivers/vfio-pci/new_id
 ```
 
 如果检查到多个 devices 的，那么上面的两个操作需要对于这个文件夹的所有的设备操作一次:
-```sh
+```txt
 ➜  vn git:(master) ✗ ls -l /sys/bus/pci/devices/0000:01:00.0/iommu_group/devices
 lrwxrwxrwx root root 0 B Mon May 30 09:53:28 2022  0000:01:00.0 ⇒ ../../../../devices/pci0000:00/0000:00:1c.0/0000:01:00.0
 ```
 
 5. 无需管理员权限运行
-```sh
+```txt
 ➜  vn git:(master) ✗ sudo chown maritns3:maritns3 /dev/vfio/11
 ```
 实际上，因为 ulimit 的原因，会存在如下报错:

@@ -219,7 +219,7 @@ fi
 
 if [[ -z ${replace_kernel+x} ]]; then
   arg_monitor="-vnc :0,password=on -monitor stdio"
-  # arg_monitor="-nographic"
+  arg_monitor="-nographic"
   qemu="qemu-system-x86_64" # 自己的编译的 QEMU 不支持加密，无法使用 vnc
 
   # @todo 应该是无需如此复杂的

@@ -16,6 +16,16 @@
 - [ ] 似乎 balloon 不会修改 watermark，但是 virito mm 会修改 watermark
   - [ ] 为什么 watermark 是按照总内存大小来设置，因为内核需要额外的内存来管理总的物理页面吗?
 
+- [ ] 能不能让 guest 只是释放它认为可以释放的，而不是说让 host 决定那些必须释放，然后这些页被一定被清理了
+  - [ ] 如果是，QEMU 需要接受一个 list 来被告知那些 4M 的 memory block 被 guest 释放了
+- [ ] QEMU 释放的方法是什么 ? 还是曾经的 ballon 中使用 memory advise 还是 unmap ?
+
+- [ ] 为什么不支持 VFIO 。
+  - 是不是说，当内存被分配为 VFIO 的 dma 区域之后，无法被 unplug ，但是这种情况在 virtio-balloon 中也是如此啊。
+  - 还是说，存在 VFIO，virtio-pmem 直接无法正常工作的
+
+- 存在 guest oom 给 QEMU 提示的情况吗?
+
 ## keynote
 nohup stress --vm-bytes 6000M --vm-keep -m 1 &
 
@@ -27,8 +37,8 @@ nohup stress --vm-bytes 6000M --vm-keep -m 1 &
 - [ ] 将页面删除的时候，ballon 只是找到这些内存就可以了，而 hotplug 需要让 guest 的 migration 启动
 - [ ] 会导致 host 碎片化吗?
   - 有什么方法防止碎片化?
-
 - [ ] 对于 hotplug 的内存，内核有没有一种说法，就是尽量不要去使用这些内存。
+
 
 ## 问题
 - [ ] 为什么需要架构支持?
@@ -108,6 +118,8 @@ nohup stress --vm-bytes 6000M --vm-keep -m 1 &
 
 - 应该是的，virtio-mem 的粒度是 4M
 - [ ] native hotplug 是 ?
+
+### [ ] 测试一下 qom-set vm0 size 64M 的效果
 
 ### qom-set vm0 requested-size 64M
 
@@ -256,8 +268,8 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000101018
  */
 static int virtio_mem_unplug_request(struct virtio_mem *vm, uint64_t diff)
 {
-	if (vm->in_sbm)
-		return virtio_mem_sbm_unplug_request(vm, diff);
-	return virtio_mem_bbm_unplug_request(vm, diff);
+    if (vm->in_sbm)
+        return virtio_mem_sbm_unplug_request(vm, diff);
+    return virtio_mem_bbm_unplug_request(vm, diff);
 }
 ```

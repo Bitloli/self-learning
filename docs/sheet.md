@@ -30,6 +30,8 @@ yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarc
 yum install -y neovim python3-neovim
 ```
 
+- sudo yum list installed : 展示自动安装的内核
+
 ## tar
 - tar czf name_of_archive_file.tar.gz name_of_directory_to_tar
   - https://unix.stackexchange.com/questions/46969/compress-a-folder-with-tar
@@ -50,6 +52,9 @@ yum install -y neovim python3-neovim
 - dd if=/dev/zero of=pmem count=4 bs=10M
 
 ## git
-
 - git ls-files --others --exclude-standard >> .gitignore
   - 将没有被跟踪的文件添加到 .gitignore 中
+
+## centos
+- nmcli networking off
+- nmcli networking on

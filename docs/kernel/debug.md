@@ -38,14 +38,7 @@ objdump -dS --adjust-vma=0xffffffff85037434 vmlinux
 
 ## mce
 
-```txt
-CONFIG_X86_MCE=y
-# CONFIG_X86_MCELOG_LEGACY is not set
-CONFIG_X86_MCE_INTEL=y
-CONFIG_X86_MCE_AMD=y
-CONFIG_X86_MCE_THRESHOLD=y
-# CONFIG_X86_MCE_INJECT is not set
-```
+- 发现只要是替换内核，那么 /dev/ 下没有 mcelog 的
 
 - mcelog 操作需要/dev/mcelog 设备，这个设备通常自动由 udev 创建，也可以通过手工命令创建 mknod /dev/mcelog c 10 227。设备创建后剋通过 ls -lh /dev/mcelog 检查：
   - [ ] 似乎 centos 8 没有办法自动创建
@@ -54,10 +47,17 @@ CONFIG_X86_MCE_THRESHOLD=y
 
 /etc/mcelog/mcelog.conf 是 mcelog 配置文件
 
+
+这一步似乎是必须的:
+- modprobe mce-inject
+- cd /sys/devices/system/machinecheck/machinecheck0 && echo 3 > tolerant # 为了防止出现 hardware 错误的时候，不要将机器 panic
+
+
 ## memtest
 - https://github.com/memtest86plus/memtest86plus
-
 
 ## 参考资料
 - https://huataihuang.gitbooks.io/cloud-atlas/content/os/linux/log/mcelog.html
 - https://www.cnblogs.com/muahao/p/6003910.html
+- https://stackoverflow.com/questions/38496643/how-can-we-generate-mcemachine-check-errors : 如何使用 memory inject
+- https://mcelog.org/ : 官方文档
