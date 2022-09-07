@@ -208,9 +208,8 @@ sudo dhclient en0
 ## ipoe
 - [ ] [IPOE到底是什么？](https://www.zhihu.com/question/35749997/answer/83459499)
 
-## [ ] tun
-
-## [ ] tap
+## [ ] tun & tap
+- https://jvns.ca/blog/2022/09/06/send-network-packets-python-tun-tap/
 
 ## [ ] bridge
 [bridge 和 ovs 的对比](https://www.fiber-optic-transceiver-module.com/ovs-vs-linux-bridge-who-is-the-winner.html)
@@ -251,6 +250,16 @@ static const struct net_device_ops veth_netdev_ops = {
 > from `man(2) network_namespaces`
 
 - [ ] 虽然可以找到 `struct netns_ipv4`，但是暂时不能理解 namespace 可以隔离 IPv4
+
+> Linux 的实现中，网络命名空间结构体定义如代码片段 15.3所示。如果
+当一个子进程被创建时需要将其放入一个新的网络命名空间内，内核首先会调
+用net_alloc创建一个新的net实例，然后调用setup_net初始化该实例中
+的字段，包括遍历所有的网络模块进行初始化，比如对 loopback 设备进行初
+始化、配置默认路由表等。新分配的网络命名空间中默认只包含一个 loopback
+设备，而内核会将后续新分配的网络设备绑定到当前网络命名空间，使得不同
+网络命名空间中的进程无法互相访问对方的网络设备。如果一个进程想要改
+变自己所在的网络命名空间，需要修改自己所绑定的字段，主要流程与上文一
+致。
 
 
 ## arp

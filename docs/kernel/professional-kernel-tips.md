@@ -3,8 +3,17 @@
 - [ ] 不知道有什么方法订阅这里的 mrge 信息 : https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/log/
 
 - [ ] https://brennan.io/2021/05/05/kernel-mailing-lists-thunderbird-nntp/
-- [ ] 理解一下为什么 kernel 的分支关系
+  - http://pan.rebelbase.com/
 - [ ] 应该将 nvim 中继承的 git blame 技术好好重新分析一下，例如，已经进入到一个文件之后，如何获取没一行的 commit message
+
+## 内核关系
+
+- linux 的分支:
+  - 主线 rc-1
+  - release
+
+- 各个 subsystem 的
+
 
 ## 参与社区
 - http://vger.kernel.org/lkml/

@@ -5,10 +5,10 @@
 从这个入手吧:
 - https://sjp38.github.io/post/damon/
 
-- https://lwn.net/Articles/905370/
-
+- https://virtio-mem.gitlab.io/user-guide/user-guide-qemu.html
 - https://www.cnblogs.com/skpupil/p/16380664.html
 - https://www.cnblogs.com/skpupil/p/16380794.html
 
 ## 对比 multi generation
 - https://lwn.net/Articles/856931/
+- https://lwn.net/Articles/905370/

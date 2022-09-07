@@ -3,7 +3,6 @@
 - https://virtio-mem.gitlab.io/
 - ppt : https://events19.linuxfoundation.org/wp-content/uploads/2017/12/virtio-mem-Paravirtualized-Memory-David-Hildenbrand-Red-Hat-1.pdf
 - https://lwn.net/Articles/813638/
-- vee 文章的 pdf 没有找到哇
 
 当时没有 virtio-mem 的时候对比 hotplug 和 balloon:
 - Hotplug or Ballooning: A Comparative Study on Dynamic Memory Management Techniques for Virtual Machines
@@ -273,3 +272,37 @@ static int virtio_mem_unplug_request(struct virtio_mem *vm, uint64_t diff)
     return virtio_mem_bbm_unplug_request(vm, diff);
 }
 ```
+
+## virtio-mem: Paravirtualized Memory Hot(Un)Plug
+On the other hand, memory ballooning, i.e., controlling a VM’s memory footprint by relocating pages between the VM and its hypervisor,
+either has to tolerate that even well-behaving VMs might exceed memory limits and **reuse inflated memory**, making it impossible to detect malicious VMs,
+or has to enforce memory limits and disallow access to inflated memory, which results in problematic reboot handling.
+- 猜测是因为 guest 内核被 hacking 过之后，balloon 就会不安全，但是 virtio-mem 可以回收之后立刻将这些内存让 QEMU 直接无法访问
+- 猜测，在 ballon 的情况下，memory 被隔离之后，如果重启，这些 memory 需要被重新释放给 guest ?
+
+- [ ] virtio-mem 收缩之后，会让 QEMU 通知 KVM 修改 memslot 吗?
+
+(Un)plug requests are rejected while the VM is getting migrated; as one example, discarding pages is problematic during postcopy live migration [16] in QEMU
+
+- [ ] 为什么不要在迁移的时候 plug / unplug ?
+
+When processing requests, the bitmap is queried and modified on success, accordingly.
+Initially, all blocks are unplugged. Just as most VIRTIO request in QEMU, requests are handled by a single thread, avoiding the need for manual locking.
+
+System Reset Handling. On QEMU system resets, all device-managed memory is discarded and the bitmap is cleared, resulting in all device-managed memory being unplugged after a reboot.
+
+- [ ] 为什么需要使用 bitmap 管理 ?
+
+**Resizeable Allocations.**
+
+- [ ] 如此迷茫? 这一个段都没有看懂是用于描述 QEMU 的什么的
+
+- [ ] 据说是在 driver init 的时候确定 blocksize 的
+  - [ ] 那么之后可以修改吗 ?
+
+- 似乎有的内存加入到之后，并不会立刻提交给 Linux
+
+Once all subblocks of a Linux memory block are unplugged by virtio-mem, we trigger offlining and removal from Linux.
+**We extended memory offlining code in Linux to skip pages that are marked logically offline by a driver, but are still looking like ordinarily allocated pages.**
+
+## 分析一下 QEMU’s pc-dimm

@@ -23,6 +23,7 @@
 - https://news.ycombinator.com/item?id=32675861 : SQLite: Past, Present, and Future
 - https://news.ycombinator.com/item?id=32478907 : sqlite is not a toy database
 - https://news.ycombinator.com/item?id=32539360
+- https://fly.io/blog/
 
 ## 两本教科书
 - database system concepts

@@ -9,7 +9,7 @@
 
 VHOST 打开方法
 1. Device Drivers  =>  VHOST drivers => Host kernel accelerator for virtio net
-```
+```plain
 CONFIG_VHOST_IOTLB=y
 CONFIG_VHOST=y
 CONFIG_VHOST_MENU=y
@@ -27,22 +27,14 @@ Device Driver ==> SCSI device support ==> SCSI low-level drivers ==> virtio-scsi
 # TODO
 - [ ] /home/maritns3/core/firecracker/src/devices/src/virtio/vsock/csm/connection.rs has a small typo
 - [ ] virtio and msi:
-- [ ] We're over optimistic about the meaning of the complexity of virtio, try to read **/home/maritns3/core/linux/drivers/virtio**, please.
 - [ ] what's scsi : https://www.linux-kvm.org/images/archive/f/f5/20110823142849!2011-forum-virtio-scsi.pdf
-- [ ] 有的设备不支持 PCI 总线，需要使用 MMIO 的方式，但是kvmtool 怎么知道这个设备需要使用 MMIO
+- [ ] 有的设备不支持 PCI 总线，需要使用 MMIO 的方式，但是 kvmtool 怎么知道这个设备需要使用 MMIO
 - [ ] 约定是第一个 bar 指向的 IO 空间在内核那一侧是怎么分配的 ?
 - [ ] virtio_bus 是挂载到哪里的?
 - [ ] virtio_console 的具体实现是怎么样子的 ?
 - [ ] 现在对于 eventfd 都是从 virt-blk 角度理解的，其实如何利用 eventfd 实现 guest 到 kernel 的通知，比如 irqfd 来实现 Qemu 直接将 irq 注入到 guest 中
 
-## virtiofs
-- [ ] https://libvirt.org/kbase/virtiofs.html
-  - [ ] ali 的人建议 : https://virtio-fs.gitlab.io/ : /home/maritns3/core/54-linux/fs/fuse/virtio_fs.c : 只有 1000 多行，9pfs 也很小，这些东西有什么特殊的地方吗 ?
-
-首先将 virtiofs 用起来: https://www.tauceti.blog/post/qemu-kvm-share-host-directory-with-vm-with-virtio/
-> virtio-fs on the other side is designed to offer local file system semantics and performance. virtio-fs takes advantage of the virtual machine’s co-location with the hypervisor to avoid overheads associated with network file systems. virtio-fs uses FUSE as the foundation. Unlike traditional FUSE where the file system daemon runs in userspace, the virtio-fs daemon runs on the host. A VIRTIO device carries FUSE messages and provides extensions for advanced features not available in traditional FUSE.
-
-似乎需要 Qemu 5.0 才可以。
+## 深入理解 virtio ，以 virtio-blk 为例
 
 
 ## virtio bus
@@ -64,8 +56,60 @@ static inline int driver_match_device(struct device_driver *drv,
       - 初始化 pci 设备
       - 回调 `virtio_driver->probe`, 使用 virtnet_probe 作为例子
 
-- [ ] virtio device 什么时候注册到 virtio bus 注册?
-- [ ] virtio device 和设备什么时候匹配?
+
+#### virtio_pci_probe
+
+```plain
+#0  virtio_pci_probe (pci_dev=0xffff888100c0c800, id=0xffffffff824aa4a0 <virtio_pci_id_table>) at include/linux/slab.h:600
+#1  0xffffffff816b2a4d in local_pci_probe (_ddi=_ddi@entry=0xffffc9000003bd68) at drivers/pci/pci-driver.c:324
+#2  0xffffffff816b4229 in pci_call_probe (id=<optimized out>, dev=0xffff888100c0c800, drv=<optimized out>) at drivers/pci/pci-driver.c:392
+#3  __pci_device_probe (pci_dev=0xffff888100c0c800, drv=<optimized out>) at drivers/pci/pci-driver.c:417
+#4  pci_device_probe (dev=0xffff888100c0c8c8) at drivers/pci/pci-driver.c:460
+#5  0xffffffff8194f094 in call_driver_probe (drv=0xffffffff82c04038 <virtio_pci_driver+120>, dev=0xffff888100c0c8c8) at drivers/base/dd.c:560
+#6  really_probe (dev=dev@entry=0xffff888100c0c8c8, drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/dd.c:639
+#7  0xffffffff8194f2bd in __driver_probe_device (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>, dev=dev@entry=0xffff888100c0c8c8) at drivers/base/dd.c:778
+#8  0xffffffff8194f339 in driver_probe_device (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>, dev=dev@entry=0xffff888100c0c8c8) at drivers/base/dd.c:808
+#9  0xffffffff8194fa49 in __driver_attach (data=0xffffffff82c04038 <virtio_pci_driver+120>, dev=0xffff888100c0c8c8) at drivers/base/dd.c:1190
+#10 __driver_attach (dev=0xffff888100c0c8c8, data=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/dd.c:1134
+#11 0xffffffff8194d043 in bus_for_each_dev (bus=<optimized out>, start=start@entry=0x0 <fixed_percpu_data>, data=data@entry=0xffffffff82c04038 <virtio_pci_driver+120>, fn=fn@entry=0xffffffff8194f9e0 <__driver_attach>) at drivers/base/bus.c:301
+#12 0xffffffff8194ebb5 in driver_attach (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/dd.c:1207
+#13 0xffffffff8194e60c in bus_add_driver (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/bus.c:618
+#14 0xffffffff819505fa in driver_register (drv=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/driver.c:240
+#15 0xffffffff81000e7f in do_one_initcall (fn=0xffffffff833342da <virtio_pci_driver_init>) at init/main.c:1296
+#16 0xffffffff832f54b8 in do_initcall_level (command_line=0xffff888003922b40 "root", level=6) at init/main.c:1369
+#17 do_initcalls () at init/main.c:1385
+#18 do_basic_setup () at init/main.c:1404
+#19 kernel_init_freeable () at init/main.c:1623
+#20 0xffffffff81efca11 in kernel_init (unused=<optimized out>) at init/main.c:1512
+#21 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
+#22 0x0000000000000000 in ?? ()
+```
+
+#### virtblk_probe && virtio_dev_probe
+```txt
+#0  virtblk_probe (vdev=0xffff8881001b5000) at drivers/block/virtio_blk.c:886
+#1  0xffffffff81721c9a in virtio_dev_probe (_d=0xffff8881001b5010) at drivers/virtio/virtio.c:305
+#2  0xffffffff8194f094 in call_driver_probe (drv=0xffffffff82c1a0e0 <virtio_blk>, dev=0xffff8881001b5010) at drivers/base/dd.c:560
+#3  really_probe (dev=dev@entry=0xffff8881001b5010, drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/dd.c:639
+#4  0xffffffff8194f2bd in __driver_probe_device (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>, dev=dev@entry=0xffff8881001b5010) at drivers/base/dd.c:778
+#5  0xffffffff8194f339 in driver_probe_device (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>, dev=dev@entry=0xffff8881001b5010) at drivers/base/dd.c:808
+#6  0xffffffff8194fa49 in __driver_attach (data=0xffffffff82c1a0e0 <virtio_blk>, dev=0xffff8881001b5010) at drivers/base/dd.c:1190
+#7  __driver_attach (dev=0xffff8881001b5010, data=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/dd.c:1134
+#8  0xffffffff8194d043 in bus_for_each_dev (bus=<optimized out>, start=start@entry=0x0 <fixed_percpu_data>, data=data@entry=0xffffffff82c1a0e0 <virtio_blk>, fn=fn@entry=0xffffffff8194f9e0 <__driver_attach>) at drivers/base/bus.c:301
+#9  0xffffffff8194ebb5 in driver_attach (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/dd.c:1207
+#10 0xffffffff8194e60c in bus_add_driver (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/bus.c:618
+#11 0xffffffff819505fa in driver_register (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/driver.c:240
+#12 0xffffffff817214d7 in register_virtio_driver (driver=driver@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/virtio/virtio.c:357
+#13 0xffffffff8333b1f3 in virtio_blk_init () at drivers/block/virtio_blk.c:1213
+#14 0xffffffff81000e7f in do_one_initcall (fn=0xffffffff8333b1a6 <virtio_blk_init>) at init/main.c:1296
+#15 0xffffffff832f54b8 in do_initcall_level (command_line=0xffff888003922b40 "root", level=6) at init/main.c:1369
+#16 do_initcalls () at init/main.c:1385
+#17 do_basic_setup () at init/main.c:1404
+#18 kernel_init_freeable () at init/main.c:1623
+#19 0xffffffff81efca11 in kernel_init (unused=<optimized out>) at init/main.c:1512
+#20 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
+#21 0x0000000000000000 in ?? ()
+```
 
 
 ## 等待清理的部分
@@ -507,7 +551,7 @@ static int notify_vq(struct kvm *kvm, void *dev, u32 vq)
       - disk_image__read
       - virtio_blk_complete
 
-## 5.7 驱动侧回收IO请求
+## 5.7 驱动侧回收 IO 请求
 发送中断的位置在:
 - virtio_blk_complet
   - `bdev->vdev.ops->signal_vq(req->kvm, &bdev->vdev, queueid);` : 其中的 vdev.ops 表示一个 virtio_device 的通用技能，因为为了区分 MMIO 和 PCI, 感觉可以完全忽略这个东西

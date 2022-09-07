@@ -6,7 +6,6 @@
 Hardware and Software Support for Virtualization : 作者[Edouard Bugnion](https://en.wikipedia.org/wiki/Edouard_Bugnion) 是 VMware 的创始人之一，绝对的经典。
 (虽然我还没有看)
 
-
 ## 参考书籍
 [深度探索 Linux 系统虚拟化](https://book.douban.com/subject/35238691/) 是基于 kvmtool 的。kvmtool 移除掉 QEMU 中对于二进制翻译的支持，也不支持设备的模拟，其定位是 microvm， 所以代码量很小，而且很整洁，
 这本书讲解也更加的清晰，我推荐这本书作为开始。
