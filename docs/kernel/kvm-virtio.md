@@ -1,30 +1,10 @@
-## env
-**如何打开 virtio 选项于 make menuconfig 中**
-1. Device Driver => Virtio Drivers ==> PCI drivers for virtio devices
-2. Device Driver => Block devices => Virtio block io
-3. Device Driver => Network Device support => Virtio network driver
-
-- [ ] 打开 console , 不然 kvm 中的 mini-img 中的串口无法使用
-  - 如果不打开 block device driver 的，直接无法启动
-
-VHOST 打开方法
-1. Device Drivers  =>  VHOST drivers => Host kernel accelerator for virtio net
-```plain
-CONFIG_VHOST_IOTLB=y
-CONFIG_VHOST=y
-CONFIG_VHOST_MENU=y
-CONFIG_VHOST_NET=y
-# CONFIG_VHOST_CROSS_ENDIAN_LEGACY is not set
-```
-
-VIRTIO_SCSI 打开:
-Device Driver ==> SCSI device support ==> SCSI low-level drivers ==> virtio-scsi support
-
+## 文档
+- https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html
 
 ## 核心的结构体
-- virtio_config_ops ：类似，将关键的结构体找到
+- virtio_config_ops
 
-# TODO
+## TODO
 - [ ] /home/maritns3/core/firecracker/src/devices/src/virtio/vsock/csm/connection.rs has a small typo
 - [ ] virtio and msi:
 - [ ] what's scsi : https://www.linux-kvm.org/images/archive/f/f5/20110823142849!2011-forum-virtio-scsi.pdf
@@ -34,8 +14,79 @@ Device Driver ==> SCSI device support ==> SCSI low-level drivers ==> virtio-scsi
 - [ ] virtio_console 的具体实现是怎么样子的 ?
 - [ ] 现在对于 eventfd 都是从 virt-blk 角度理解的，其实如何利用 eventfd 实现 guest 到 kernel 的通知，比如 irqfd 来实现 Qemu 直接将 irq 注入到 guest 中
 
+- [ ] 观察，如何从 blk 的数值是如何发送的，如果一会构成 block size ，一会合并，是不是很烦 ?
+  - 网络中，是不是总是需要等到一整个 page 才可以发送，还是说没有这个问题 ?
+  - 对于 virtio ballon 岂不是难受，所以这个想法是有问题的
+
+- [ ] QEMU 是如何初始化 virtio 设备的
+- 热插拔
+
+## 关键代码
+
+```c
+/* Virtio ring descriptors: 16 bytes.  These can chain together via "next". */
+struct vring_desc {
+  /* Address (guest-physical). */
+  __virtio64 addr;
+  /* Length. */
+  __virtio32 len;
+  /* The flags as indicated above. */
+  __virtio16 flags;
+  /* We chain unused descriptors via this, too */
+  __virtio16 next;
+};
+
+struct vring_avail {
+  __virtio16 flags;
+  __virtio16 idx;
+  __virtio16 ring[];
+};
+
+/* u32 is used here for ids for padding reasons. */
+struct vring_used_elem {
+  /* Index of start of used descriptor chain. */
+  __virtio32 id;
+  /* Total length of the descriptor chain which was used (written to) */
+  __virtio32 len;
+};
+
+struct vring_used {
+  __virtio16 flags;
+  __virtio16 idx;
+  struct vring_used_elem ring[];
+};
+```
+
 ## 深入理解 virtio ，以 virtio-blk 为例
 
+1. 架构层次
+2. 数据传输
+  - [ ] 有拷贝吗?
+3. 中断
+4. 睡眠
+
+## 代码上的问题
+
+- [ ] vp_find_vqs_intx : 为什么 ballon 总是调用 int 而不是 msi
+  - [ ] msi 相对于 int 的性能优势是什么?
+
+- 几个结构体直接的关系:
+  - vring_virtqueue 持有一个 vq，在创建 vring_create_virtqueue_packed 和 vring_create_virtqueue_split 的时候创建两者
+  - 测试显示，从来没有人调用过 vring_create_virtqueue_packed
+
+- [ ] vring_map_one_sg
+
+```c
+struct vring {
+	unsigned int num;
+
+	vring_desc_t *desc;
+
+	vring_avail_t *avail;
+
+	vring_used_t *used;
+};
+```
 
 ## virtio bus
 - [ ] struct bus_type 的 match 和 probe 是什么关系?
@@ -86,6 +137,7 @@ static inline int driver_match_device(struct device_driver *drv,
 ```
 
 #### virtblk_probe && virtio_dev_probe
+
 ```txt
 #0  virtblk_probe (vdev=0xffff8881001b5000) at drivers/block/virtio_blk.c:886
 #1  0xffffffff81721c9a in virtio_dev_probe (_d=0xffff8881001b5010) at drivers/virtio/virtio.c:305
@@ -111,9 +163,7 @@ static inline int driver_match_device(struct device_driver *drv,
 #21 0x0000000000000000 in ?? ()
 ```
 
-
-## 等待清理的部分
-
+## virtio_pci_driver virtio_bus virtio_blk 三者是什么关系
 ```c
 static struct pci_driver virtio_pci_driver = {
   .name   = "virtio-pci",
@@ -127,7 +177,6 @@ static struct pci_driver virtio_pci_driver = {
 };
 ```
 
-virtio_dev_probe 调用 virtio_blk::probe
 ```c
 static struct bus_type virtio_bus = {
   .name  = "virtio",
@@ -158,8 +207,8 @@ static struct virtio_driver virtio_blk = {
 };
 ```
 
-- [ ] 为什么会存在 virtio-pci 设备的存在，既然已经构建了一个 virtio_bus 的总线类型
 
+- [ ] 为什么会存在 virtio-pci 设备的存在，既然已经构建了一个 virtio_bus 的总线类型
 
 - [ ] virtio_pci_probe
   - [ ] virtio_pci_modern_probe : 给 virtio_pci_device::vdev 注册
@@ -173,8 +222,6 @@ struct virtio_pci_device {
   struct virtio_device vdev;
   struct pci_dev *pci_dev;
 ```
-
-- [ ] virtio_pci_config_ops 和 virtio_blk 是什么关系 ?
 
 ```c
 static const struct virtio_config_ops virtio_pci_config_ops = {
@@ -290,70 +337,142 @@ static const struct blk_mq_ops virtio_mq_ops = {
 };
 ```
 
-## 5.3 初始化 virtqueue
-- virtio_pci_legacy_probe
-  - `vp_dev->ioaddr = pci_iomap(pci_dev, 0, 0);` : the IO mapping for the PCI config space
-    - [ ] 那么一个 virtio_dev 作为一个 pci 设备是有对应的配置空间的，是在哪里提供同意的访问方法的
-    - 虽然 pci dev configuration space 访问起来是痛苦面具，但是 bar region 映射的空间还是很容易的
-  - `vp_dev->setup_vq = setup_vq;` : 在这里初始化
+### virtio_pci_driver
+- drivers/virtio/virtio_pci_common.c
 
-接着上面分析 setup_vq 的调用位置:
-- virtblk_probe
-  - init_vq
-    - 分配了 num_vqs 个 struct virtio_blk_vq, 就是对于 virtqueue 的封装吧
-    - virtio_find_vqs
-      - `vdev->config->find_vqs` : vdev 是 virtio_blk::vdev, virtio_device::virtio_config_ops 一共定义了三个 virtio_pci_config_ops , virtio_pci_config_nodev_ops, 在 virtio_pci_modern_probe/virtio_pci_legacy_probe 中间初始化, 这两个 probe 都是在 virtio_pci_probe 中间调用的
-        - 从这个 probe 关系可以看到，virtio 下面是向下再次扩展一次类型的
-        - 这里，从 parent 到 child 的初始化过程，到底是使用 modern pci 还是 legacy pci 是在 parent 已经初始化好了
-      - vp_find_vqs : 使用这个作为例子
-        - vp_find_vqs_msix
-        - vp_find_vqs_intx
-          - request_irq
-          - vp_setup_vq
-            - `vp_dev->setup_vq` : virtio_pci_device::setup_vq, 这个在 virtio_pci_legacy_probe 中间初始化
-            - 使用 virtio_pci_legacy.c::setup_vq 作为例子
-                - iowrite16(index, vp_dev->ioaddr + VIRTIO_PCI_QUEUE_SEL); // 告诉选择的数值是哪一个 queue
-                - ioread16(vp_dev->ioaddr + VIRTIO_PCI_QUEUE_NUM); // 读 bar 0 约定的配置空间，得到 queue 的大小
-                - vring_create_virtqueue
-                   - 在这里，有一个参数 vp_nofify 作为 callback 函数
-                   - vring_alloc_queue : 分配的页面是连续物理内存
-                - iowrite32(q_pfn, vp_dev->ioaddr + VIRTIO_PCI_QUEUE_PFN); // 告诉 kvmtool，virtqueue 准备好了
+主要提供 virtio_pci_config_ops ，virtio 驱动最后会调用到此处:
 
-```c
-/* the notify function used when creating a virt queue */
-bool vp_notify(struct virtqueue *vq)
-{
-  /* we write the queue's selector into the notification register to
-   * signal the other end */
-  iowrite16(vq->index, (void __iomem *)vq->priv);
-  return true;
-}
+```txt
+#0  vp_find_vqs (vdev=vdev@entry=0xffff888004150000, nvqs=5, vqs=0xffffc9000003bca8, callbacks=0xffffc9000003bcd0, names=0xffffc9000003bcf8, ctx=0x0 <fixed_percpu_data>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_common.c:405
+#1  0xffffffff81726212 in vp_modern_find_vqs (vdev=0xffff888004150000, nvqs=<optimized out>, vqs=<optimized out>, callbacks=<optimized out>, names=<optimized out>, ctx=<optimized out>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_modern.c:355
+#2  0xffffffff81727d9d in virtio_find_vqs (desc=0x0 <fixed_percpu_data>, names=0xffffc9000003bcf8, callbacks=0xffffc9000003bcd0, vqs=0xffffc9000003bca8, nvqs=5, vdev=<optimized out>) at include/linux/virtio_config.h:227
+#3  init_vqs (vb=vb@entry=0xffff888004152800) at drivers/virtio/virtio_balloon.c:527
+#4  0xffffffff81728385 in virtballoon_probe (vdev=0xffff888004150000) at drivers/virtio/virtio_balloon.c:888
 ```
 
-分析一下 kvmtool 的处理操作:
-```c
-static bool virtio_pci__data_out(struct kvm_cpu *vcpu, struct virtio_device *vdev,
-         unsigned long offset, void *data, int size)
-{
-  case VIRTIO_PCI_QUEUE_PFN:
-    val = ioport__read32(data);
-    if (val) {
-      virtio_pci__init_ioeventfd(kvm, vdev,
-               vpci->queue_selector);
-      vdev->ops->init_vq(kvm, vpci->dev, vpci->queue_selector,
-             1 << VIRTIO_PCI_QUEUE_ADDR_SHIFT,
-             VIRTIO_PCI_VRING_ALIGN, val);
-    } else {
-      virtio_pci_exit_vq(kvm, vdev, vpci->queue_selector);
-    }
-    break;
-```
-- [ ] ioeventfd 的使用
+- vp_find_vqs : 初始化 vq
+  - vp_find_vqs_msix ：这是推荐的配置
+    - vp_request_msix_vectors : 注册 vp_config_changed 的中断
+    - vp_setup_vq : 给每一个 queue 注册 vring_interrupt
+  - vp_find_vqs_intx
+    - request_irq
+    - vp_setup_vq
+      - `vp_dev->setup_vq` : virtio_pci_device::setup_vq, 这个在 virtio_pci_legacy_probe 中间初始化
+      - 使用 virtio_pci_legacy.c::setup_vq 作为例子
+          - iowrite16(index, vp_dev->ioaddr + VIRTIO_PCI_QUEUE_SEL); // 告诉选择的数值是哪一个 queue
+          - ioread16(vp_dev->ioaddr + VIRTIO_PCI_QUEUE_NUM); // 读 bar 0 约定的配置空间，得到 queue 的大小
+          - vring_create_virtqueue
+             - 在这里，有一个参数 vp_nofify 作为 callback 函数
+             - vring_alloc_queue : 分配的页面是连续物理内存
+          - iowrite32(q_pfn, vp_dev->ioaddr + VIRTIO_PCI_QUEUE_PFN); // 告诉 kvmtool，virtqueue 准备好了
 
-- `vdev->ops->init_vq`
-  - kvmtool/virtio/blk.c:init_vq
-    - virtio_get_vq : 转换获取 hva
-    - vring_init : 将对应的数组初始化
+## interrupt
+- vring_interrupt : qeueu 接受到信息
+- vp_config_changed : 当出现配置的时候，例如修改 virtio-mem 的大小的时候
+
+```txt
+#0  vring_interrupt (irq=irq@entry=11, _vq=0xffff888100d9c400) at drivers/virtio/virtio_ring.c:2441
+#1  0xffffffff8172648f in vp_vring_interrupt (irq=11, opaque=0xffff88800413d800) at drivers/virtio/virtio_pci_common.c:68
+#2  0xffffffff811658d1 in __handle_irq_event_percpu (desc=desc@entry=0xffff888003920e00) at kernel/irq/handle.c:158
+#3  0xffffffff81165a7f in handle_irq_event_percpu (desc=0xffff888003920e00) at kernel/irq/handle.c:193
+#4  handle_irq_event (desc=desc@entry=0xffff888003920e00) at kernel/irq/handle.c:210
+#5  0xffffffff81169c1b in handle_fasteoi_irq (desc=0xffff888003920e00) at kernel/irq/chip.c:714
+#6  0xffffffff810b9a14 in generic_handle_irq_desc (desc=0xffff888003920e00) at include/linux/irqdesc.h:158
+#7  handle_irq (regs=<optimized out>, desc=0xffff888003920e00) at arch/x86/kernel/irq.c:231
+#8  __common_interrupt (regs=<optimized out>, vector=34) at arch/x86/kernel/irq.c:250
+#9  0xffffffff81ef93d3 in common_interrupt (regs=0xffffc90000197bf8, error_code=<optimized out>) at arch/x86/kernel/irq.c:240
+```
+
+```txt
+#0  vp_config_changed (opaque=0xffff88800413d800, irq=11) at drivers/virtio/virtio_pci_common.c:54
+#1  vp_interrupt (irq=11, opaque=0xffff88800413d800) at drivers/virtio/virtio_pci_common.c:97
+#2  0xffffffff811658d1 in __handle_irq_event_percpu (desc=desc@entry=0xffff888003920e00) at kernel/irq/handle.c:158
+#3  0xffffffff81165a7f in handle_irq_event_percpu (desc=0xffff888003920e00) at kernel/irq/handle.c:193
+#4  handle_irq_event (desc=desc@entry=0xffff888003920e00) at kernel/irq/handle.c:210
+#5  0xffffffff81169c1b in handle_fasteoi_irq (desc=0xffff888003920e00) at kernel/irq/chip.c:714
+#6  0xffffffff810b9a14 in generic_handle_irq_desc (desc=0xffff888003920e00) at include/linux/irqdesc.h:158
+#7  handle_irq (regs=<optimized out>, desc=0xffff888003920e00) at arch/x86/kernel/irq.c:231
+#8  __common_interrupt (regs=<optimized out>, vector=34) at arch/x86/kernel/irq.c:250
+#9  0xffffffff81ef93d3 in common_interrupt (regs=0xffffc900000bbe38, error_code=<optimized out>) at arch/x86/kernel/irq.c:240
+Backtrace stopped: Cannot access memory at address 0xffffc90000101018
+```
+
+- [ ] 为什么两个 irq 都是 11 的哇
+
+- 通过 vp_notify 通知给 Host 内核的:
+```txt
+#0  vp_notify (vq=0xffff888140418e00) at drivers/virtio/virtio_pci_common.c:45
+#1  0xffffffff81722296 in virtqueue_notify (_vq=0xffff888140418e00) at drivers/virtio/virtio_ring.c:2231
+#2  0xffffffff8197812d in virtio_queue_rqs (rqlist=0xffffc90001027b68) at drivers/block/virtio_blk.c:441
+#3  0xffffffff81612ffd in __blk_mq_flush_plug_list (plug=0xffffc90001027b68, q=0xffff888101d59fc8) at block/blk-mq.c:2577
+#4  __blk_mq_flush_plug_list (plug=0xffffc90001027b68, q=0xffff888101d59fc8) at block/blk-mq.c:2572
+#5  blk_mq_flush_plug_list (plug=plug@entry=0xffffc90001027b68, from_schedule=from_schedule@entry=false) at block/blk-mq.c:2633
+#6  0xffffffff816070e1 in __blk_flush_plug (plug=0xffffc90001027b68, plug@entry=0xffffc90001027b18, from_schedule=from_schedule@entry=false) at block/blk-core.c:1153
+#7  0xffffffff81607370 in blk_finish_plug (plug=0xffffc90001027b18) at block/blk-core.c:1177
+#8  blk_finish_plug (plug=plug@entry=0xffffc90001027b68) at block/blk-core.c:1174
+#9  0xffffffff8128a9e7 in read_pages (rac=rac@entry=0xffffc90001027c58) at mm/readahead.c:181
+#10 0xffffffff8128b10d in page_cache_ra_order (ractl=0xffffc90001027c58, ractl@entry=0x0 <fixed_percpu_data>, ra=0xffff8881475a6598, new_order=2) at mm/readahead.c:539
+#11 0xffffffff8128b3bb in ondemand_readahead (ractl=ractl@entry=0x0 <fixed_percpu_data>, folio=folio@entry=0x0 <fixed_percpu_data>, req_size=req_size@entry=1) at mm/readahead.c:672
+#12 0xffffffff8128b605 in page_cache_sync_ra (ractl=0x0 <fixed_percpu_data>, ractl@entry=0xffffc90001027c58, req_count=req_count@entry=1) at mm/readahead.c:699
+#13 0xffffffff8127ece6 in page_cache_sync_readahead (req_count=1, index=0, file=0xffff8881475a6500, ra=0xffff8881475a6598, mapping=0xffff8881068e6eb0) at include/linux/pagemap.h:1215
+#14 filemap_get_pages (iocb=iocb@entry=0xffffc90001027e28, iter=iter@entry=0xffffc90001027e00, fbatch=fbatch@entry=0xffffc90001027d00) at mm/filemap.c:2566
+#15 0xffffffff8127f304 in filemap_read (iocb=iocb@entry=0xffffc90001027e28, iter=iter@entry=0xffffc90001027e00, already_read=0) at mm/filemap.c:2660
+#16 0xffffffff81280f20 in generic_file_read_iter (iocb=iocb@entry=0xffffc90001027e28, iter=iter@entry=0xffffc90001027e00) at mm/filemap.c:2806
+#17 0xffffffff81560d0b in xfs_file_buffered_read (iocb=0xffffc90001027e28, to=0xffffc90001027e00) at fs/xfs/xfs_file.c:277
+#18 0xffffffff81560df5 in xfs_file_read_iter (iocb=<optimized out>, to=<optimized out>) at fs/xfs/xfs_file.c:302
+#19 0xffffffff8134a5e3 in __kernel_read (file=0xffff8881475a6500, buf=buf@entry=0xffff8881427266a0, count=count@entry=256, pos=pos@entry=0xffffc90001027e90) at fs/read_write.c:428
+#20 0xffffffff8134a796 in kernel_read (file=<optimized out>, buf=buf@entry=0xffff8881427266a0, count=count@entry=256, pos=pos@entry=0xffffc90001027e90) at fs/read_write.c:446
+#21 0xffffffff81352809 in prepare_binprm (bprm=0xffff888142726600) at fs/exec.c:1664
+#22 search_binary_handler (bprm=0xffff888142726600) at fs/exec.c:1718
+#23 exec_binprm (bprm=0xffff888142726600) at fs/exec.c:1775
+#24 bprm_execve (flags=<optimized out>, filename=<optimized out>, fd=<optimized out>, bprm=0xffff888142726600) at fs/exec.c:1844
+#25 bprm_execve (bprm=0xffff888142726600, fd=<optimized out>, filename=<optimized out>, flags=<optimized out>) at fs/exec.c:1806
+#26 0xffffffff81352dfd in do_execveat_common (fd=fd@entry=-100, filename=0xffff888004379000, flags=0, envp=..., argv=..., envp=..., argv=...) at fs/exec.c:1949
+#27 0xffffffff8135301e in do_execve (__envp=0x7fffbacdd978, __argv=0x7fffbacdafe0, filename=<optimized out>) at fs/exec.c:2023
+#28 __do_sys_execve (envp=0x7fffbacdd978, argv=0x7fffbacdafe0, filename=<optimized out>) at fs/exec.c:2099
+#29 __se_sys_execve (envp=<optimized out>, argv=<optimized out>, filename=<optimized out>) at fs/exec.c:2094
+#30 __x64_sys_execve (regs=<optimized out>) at fs/exec.c:2094
+#31 0xffffffff81ef8c2b in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001027f58) at arch/x86/entry/common.c:50
+#32 do_syscall_64 (regs=0xffffc90001027f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+```
+
+
+## vring
+
+```txt
+#0  virtqueue_add (gfp=2592, ctx=0x0 <fixed_percpu_data>, data=0xffff88814003d508, in_sgs=1, out_sgs=1, total_sg=2, sgs=0xffffc9000007bc78, _vq=0xffff888100efd900) at drivers/virtio/virtio_ring.c:2086
+#1  virtqueue_add_sgs (_vq=_vq@entry=0xffff888100efd900, sgs=sgs@entry=0xffffc9000007bc78, out_sgs=out_sgs@entry=1, in_sgs=in_sgs@entry=1, data=data@entry=0xffff88814003d508, gfp=gfp@entry=2592) at drivers/virtio/virtio_ring.c:2122
+#2  0xffffffff81976586 in virtblk_add_req (vq=0xffff888100efd900, vbr=vbr@entry=0xffff88814003d508) at drivers/block/virtio_blk.c:130
+#3  0xffffffff81977742 in virtio_queue_rq (hctx=0xffff88814003d200, bd=0xffffc9000007bd70) at drivers/block/virtio_blk.c:353
+#4  0xffffffff816121cf in blk_mq_dispatch_rq_list (hctx=hctx@entry=0xffff88814003d200, list=list@entry=0xffffc9000007bdc0, nr_budgets=nr_budgets@entry=0) at block/blk-mq.c:1902
+#5  0xffffffff816184c3 in __blk_mq_sched_dispatch_requests (hctx=hctx@entry=0xffff88814003d200) at block/blk-mq-sched.c:306
+#6  0xffffffff816185a0 in blk_mq_sched_dispatch_requests (hctx=hctx@entry=0xffff88814003d200) at block/blk-mq-sched.c:339
+#7  0xffffffff8160eff0 in __blk_mq_run_hw_queue (hctx=0xffff88814003d200) at block/blk-mq.c:2020
+#8  0xffffffff8160f2a0 in __blk_mq_delay_run_hw_queue (hctx=<optimized out>, async=<optimized out>, msecs=msecs@entry=0) at block/blk-mq.c:2096
+#9  0xffffffff8160f509 in blk_mq_run_hw_queue (hctx=<optimized out>, async=async@entry=false) at block/blk-mq.c:2144
+#10 0xffffffff8160f8a0 in blk_mq_run_hw_queues (q=q@entry=0xffff888100c75fc8, async=async@entry=false) at block/blk-mq.c:2192
+#11 0xffffffff816103db in blk_mq_requeue_work (work=0xffff888100c761f8) at block/blk-mq.c:1361
+#12 0xffffffff81122d37 in process_one_work (worker=worker@entry=0xffff888003850a80, work=0xffff888100c761f8) at kernel/workqueue.c:2289
+#13 0xffffffff811232c8 in worker_thread (__worker=0xffff888003850a80) at kernel/workqueue.c:2436
+#14 0xffffffff81129c73 in kthread (_create=0xffff88800425b180) at kernel/kthread.c:376
+#15 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
+```
+
+- vring_virtqueue 持有 virtqueue 和 vring_virtqueue_split
+- vring_virtqueue_split 持有 vring
+- vring 持有 vring_desc，vring_avail 和 vring_used 的指针
+
+- [ ] virtqueue 的定位是什么?
+
+
+- virtqueue_add_split => virtqueue_add_desc_split 向 vring::desc 数组中添加
+
+- 一个 vring_desc 不是对应一个 page 的，而是对应一个 scatterlist
+- vring_desc 也是形成一个链表的
+- vring_map_one_sg 获取一个 scatterlist 的物理地址
+
+- [ ] 有趣，分析 scatterlist 和 blk 的联系，但是没有太看懂:
+  - 从 virtblk_add_req 开始分析吧
 
 ### vring_size
 参数 align 为 :
@@ -377,52 +496,27 @@ static inline unsigned vring_size(unsigned int num, unsigned long align)
 
 - [ ] vring_avail 和 vring_used 的成员都是只有两个(flags 和 idx), 为什么需要三个
 
+```txt
+#0  vring_alloc_queue_split (vring_split=vring_split@entry=0xffffc9000003bab0, vdev=vdev@entry=0xffff888004998000, num=128, num@entry=4294967295, vring_align=vring_align@entry=64, may_reduce_num=may_reduce_num@entry=true) at drivers/virtio/virtio_ring.c:1042
+#1  0xffffffff81724d40 in vring_create_virtqueue_split (name=0xffffffff82835c3d "inflate", callback=0xffffffff81727ab0 <balloon_ack>, notify=0xffffffff81726d30 <vp_notify>, context=false, may_reduce_num=true, weak_barriers=true, vdev=0xffff888004998000, vring_align=64, num=4294967295, index=0) at drivers/virtio/virtio_ring.c:1101
+#2  vring_create_virtqueue (index=index@entry=0, num=num@entry=128, vring_align=vring_align@entry=64, vdev=vdev@entry=0xffff888004998000, weak_barriers=weak_barriers@entry=true, may_reduce_num=may_reduce_num@entry=true, context=false, notify=0xffffffff81726d30 <vp_notify>, callback=0xffffffff81727ab0 <balloon_ack>, name=0xffffffff82835c3d "inflate") at drivers/virtio/virtio_ring.c:2546
+#3  0xffffffff817260a7 in setup_vq (vp_dev=0xffff888004998000, info=0xffff8880042c7c80, index=0, callback=0xffffffff81727ab0 <balloon_ack>, name=0xffffffff82835c3d "inflate", ctx=<optimized out>, msix_vec=65535) at drivers/virtio/virtio_pci_modern.c:321
+#4  0xffffffff8172697a in vp_setup_vq (vdev=vdev@entry=0xffff888004998000, index=index@entry=0, callback=0xffffffff81727ab0 <balloon_ack>, name=0xffffffff82835c3d "inflate", ctx=<optimized out>, msix_vec=msix_vec@entry=65535) at drivers/virtio/virtio_pci_common.c:189
+#5  0xffffffff81727535 in vp_find_vqs_intx (ctx=0x0 <fixed_percpu_data>, names=0xffffc9000003bcf8, callbacks=0xffffc9000003bcd0, vqs=0xffffc9000003bca8, nvqs=5, vdev=0xffff888004998000) at drivers/virtio/virtio_pci_common.c:381
+#6  vp_find_vqs (vdev=vdev@entry=0xffff888004998000, nvqs=5, vqs=0xffffc9000003bca8, callbacks=0xffffc9000003bcd0, names=0xffffc9000003bcf8, ctx=0x0 <fixed_percpu_data>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_common.c:413
+#7  0xffffffff81726652 in vp_modern_find_vqs (vdev=0xffff888004998000, nvqs=<optimized out>, vqs=<optimized out>, callbacks=<optimized out>, names=<optimized out>, ctx=<optimized out>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_modern.c:355
+#8  0xffffffff817281dd in virtio_find_vqs (desc=0x0 <fixed_percpu_data>, names=0xffffc9000003bcf8, callbacks=0xffffc9000003bcd0, vqs=0xffffc9000003bca8, nvqs=5, vdev=<optimized out>) at include/linux/virtio_config.h:227
+#9  init_vqs (vb=vb@entry=0xffff88800499a800) at drivers/virtio/virtio_balloon.c:527
+#10 0xffffffff817287c5 in virtballoon_probe (vdev=0xffff888004998000) at drivers/virtio/virtio_balloon.c:888
+```
+
+- [ ] vp_setup_vq 是需要和 vp_find_vqs_intx 下调用的，和中断是关系的吗?
+
+- 通过 vp_active_vq 将 vring_desc , vring_avail 和 vring_used 的地址发送给 QEMU 的。
+
 ### desc
 如果从 multiqueue 到达了一个消息下来，那么 vring_avail 增加一个。
 如果在 host 中间将任务完成了，那么 vring_used 增加一个, 在 host 通过中断的方式通知 guest 之后，guest 处理 vring_used ，并且释放
-```c
-/* Virtio ring descriptors: 16 bytes.  These can chain together via "next". */
-struct vring_desc {
-  /* Address (guest-physical). */
-  __virtio64 addr;
-  /* Length. */
-  __virtio32 len;
-  /* The flags as indicated above. */
-  __virtio16 flags;
-  /* We chain unused descriptors via this, too */
-  __virtio16 next;
-};
-
-struct vring_avail {
-  __virtio16 flags;
-  __virtio16 idx;
-  __virtio16 ring[];
-};
-
-/* u32 is used here for ids for padding reasons. */
-struct vring_used_elem {
-  /* Index of start of used descriptor chain. */
-  __virtio32 id;
-  /* Total length of the descriptor chain which was used (written to) */
-  __virtio32 len;
-};
-
-struct vring_used {
-  __virtio16 flags;
-  __virtio16 idx;
-  struct vring_used_elem ring[];
-};
-
-struct vring {
-  unsigned int num;
-
-  struct vring_desc *desc;
-
-  struct vring_avail *avail;
-
-  struct vring_used *used;
-};
-```
 
 从 5.2 的描述看，vring_desc 会构成链表，描述一次 IO 的所有数据。
 
@@ -435,11 +529,43 @@ vring_avail::ring 描述的项目增加，如果被设备消费了，那么 last
 
 - [ ] idx 是谁维护的，两个 last_avail_idx 和 last_used_idx 是谁维护的
 
-- [ ] 这些队列都是 guest 维护的吗?
+- [ ] 这些队列都是 guest 维护的吗? 显然不是
 
-## 5.4 驱动根据 I/O 请求组织描述符链
+- 在设备侧定义 last_avail_idx ，在驱动侧定义 last_used_idx
+  - vring_virtqueue::last_used_idx 例如， virtblk_done -> virtqueue_get_buf 的时候会更新的，因为设备处理数据完成。
 
-从 ldd3 的 sbull.c 的代码可以知道，queue_rq 就是上层数据到达的调用 block 设备的操作:
+- [ ] last_avail_idx 和 last_used_idx 都是队列的一部分，总是需要和另一个共享吧，不然队列直接被毁掉了，如何处理?
+
+## vring_used_elem::len 是什么作用的
+
+```txt
+#0  virtqueue_get_buf_ctx_split (ctx=0x0 <fixed_percpu_data>, len=0xffffc90000003f1c, _vq=0xffff888140418e00) at drivers/virtio/virtio_ring.c:790
+#1  virtqueue_get_buf_ctx (_vq=0xffff888140418e00, len=len@entry=0xffffc90000003f1c, ctx=ctx@entry=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_ring.c:2282
+#2  0xffffffff81722f27 in virtqueue_get_buf (_vq=<optimized out>, len=len@entry=0xffffc90000003f1c) at drivers/virtio/virtio_ring.c:2288
+#3  0xffffffff819766ba in virtblk_done (vq=0xffff888140418e00) at drivers/block/virtio_blk.c:283
+#4  0xffffffff81722f85 in vring_interrupt (irq=<optimized out>, _vq=<optimized out>) at drivers/virtio/virtio_ring.c:2462
+#5  vring_interrupt (irq=<optimized out>, _vq=<optimized out>) at drivers/virtio/virtio_ring.c:2437
+#6  0xffffffff811658d1 in __handle_irq_event_percpu (desc=desc@entry=0xffff888140458400) at kernel/irq/handle.c:158
+#7  0xffffffff81165a7f in handle_irq_event_percpu (desc=0xffff888140458400) at kernel/irq/handle.c:193
+#8  handle_irq_event (desc=desc@entry=0xffff888140458400) at kernel/irq/handle.c:210
+#9  0xffffffff81169e0a in handle_edge_irq (desc=0xffff888140458400) at kernel/irq/chip.c:819
+#10 0xffffffff810b9a14 in generic_handle_irq_desc (desc=0xffff888140458400) at include/linux/irqdesc.h:158
+#11 handle_irq (regs=<optimized out>, desc=0xffff888140458400) at arch/x86/kernel/irq.c:231
+#12 __common_interrupt (regs=<optimized out>, vector=36) at arch/x86/kernel/irq.c:250
+#13 0xffffffff81efa443 in common_interrupt (regs=0xffffc90001027998, error_code=<optimized out>) at arch/x86/kernel/irq.c:240
+```
+- 修改 vring_used_elem::len 的位置只有在 `vhost_net` 和 `virtqueue_get_buf_ctx_split` 中，`virtqueue_get_buf_ctx_split` 的调用是非常频繁的，看来 vring_used_elem::len 总是在被 host 更新
+  - 而且 vhost_net 本来就是 host 的代码，所以更加说明这是 host 告诉 guest 的。
+  - 的确是设备写回到 guest 驱动的数据。
+
+
+- [ ] 为什么 vring_avail 没有这个 length
+- [ ] 难道不能从 vring_desc 中获取吗?
+
+
+## Guest 的 virtio-blk 如何将数据发送到 vring 中的
+
+和 scsi 以及 nvme 相同的，驱动注册 multiqueue 的 hook:
 ```c
 static const struct blk_mq_ops virtio_mq_ops = {
   .queue_rq = virtio_queue_rq,
@@ -447,7 +573,9 @@ static const struct blk_mq_ops virtio_mq_ops = {
   .init_request = virtblk_init_request,
   .map_queues = virtblk_map_queues,
 };
+```
 
+```c
 /*
  * This comes first in the read scatter-gather list.
  * For legacy virtio, if VIRTIO_F_ANY_LAYOUT is not negotiated,
@@ -462,38 +590,36 @@ struct virtio_blk_outhdr {
   __virtio64 sector;
 };
 ```
-- virtio_queue_rq
-  - 根据参数初始化 virtblk_req::virtio_blk_outhdr
-  - blk_rq_map_sg : request 中间包含 bio 链表，每个 bio 中可能包含多个 bio_vec,  blk_rq_map_sg 将 bio 链表转换为 virtblk_req::scatterlist
-  - virtblk_add_req
-    - virtqueue_add_sgs
-      - virtqueue_add : 根据模式选择下面中的一个
-        - virtqueue_add_packed
-        - virtqueue_add_split
-          - 构造 vring_desc : desc[i].addr = cpu_to_virtio64(_vq->vdev, addr);
-          - 设置 vring_avail : vq->split.vring.avail->idx = cpu_to_virtio16(_vq->vdev, vq->split.avail_idx_shadow);
 
-- [ ] virtqueue
+- virtblk_add_req 中，将 virtblk_req::out_hdr 放到 scatterlist 中，之后 scatterlist 的元素会被逐个转换为 vring_desc
 
-- [ ] virtqueue_add_outbuf
+分析一下 virtio_blk_outhdr 是如何生成的，在 virtblk_setup_cmd 中是 virtio_blk_outhdr::sector 中唯一的访问位置:
 
-- [ ] vring_virtqueue :
-  - 似乎划分为 split 和 pack 两种方法
+```txt
+#0  virtblk_setup_cmd (vdev=0xffff888100705000, req=req@entry=0xffff8881411d0000, vbr=vbr@entry=0xffff8881411d0108) at drivers/block/virtio_blk.c:220
+#1  0xffffffff81977e31 in virtblk_prep_rq (vblk=0xffff888101910000, vblk=0xffff888101910000, vbr=0xffff8881411d0108, req=0xffff8881411d0000, hctx=0xffff888141087600) at drivers/block/virtio_blk.c:321
+#2  virtio_queue_rq (hctx=0xffff888141087600, bd=0xffffc9000003b868) at drivers/block/virtio_blk.c:348
+#3  0xffffffff81611edc in __blk_mq_issue_directly (last=true, rq=0xffff8881411d0000, hctx=0xffff888141087600) at block/blk-mq.c:2440
+#4  __blk_mq_try_issue_directly (hctx=0xffff888141087600, rq=rq@entry=0xffff8881411d0000, bypass_insert=bypass_insert@entry=false, last=last@entry=true) at block/blk-mq.c:2493
+#5  0xffffffff816120d2 in blk_mq_try_issue_directly (hctx=<optimized out>, rq=0xffff8881411d0000) at block/blk-mq.c:2517
+#6  0xffffffff8161370c in blk_mq_submit_bio (bio=<optimized out>) at block/blk-mq.c:2843
+#7  0xffffffff81606212 in __submit_bio (bio=<optimized out>) at block/blk-core.c:595
+#8  0xffffffff81606806 in __submit_bio_noacct_mq (bio=<optimized out>) at block/blk-core.c:672
+#9  submit_bio_noacct_nocheck (bio=<optimized out>) at block/blk-core.c:689
+#10 submit_bio_noacct_nocheck (bio=<optimized out>) at block/blk-core.c:678
+#11 0xffffffff81390395 in submit_bh_wbc (opf=<optimized out>, opf@entry=0, bh=0xffff8881017ab000, wbc=wbc@entry=0x0 <fixed_percpu_data>) at fs/buffer.c:2719
+#12 0xffffffff81391e88 in submit_bh (bh=<optimized out>, opf=0) at fs/buffer.c:2725
+#13 block_read_full_folio (folio=0xffffea0004066980, folio@entry=<error reading variable: value has been optimized out>, get_block=0xffffffff815fedb0 <blkdev_get_block>, get_block@entry=<error reading variable: value has been optimized out>) at fs/buffer.c:2340
+#14 0xffffffff8127d0da in filemap_read_folio (file=0x0 <fixed_percpu_data>, filler=<optimized out>, folio=0xffffea0004066980) at mm/filemap.c:2394
+#15 0xffffffff8127f9de in do_read_cache_folio (mapping=0xffff88810176b500, index=index@entry=0, filler=0xffffffff815fee00 <blkdev_read_folio>, filler@entry=0x0 <fixed_percpu_data>, file=file@entry=0x0 <fixed_percpu_data>, gfp=1051840) at mm/filemap.c:3519
+#16 0xffffffff8127faa9 in read_cache_folio (mapping=<optimized out>, index=index@entry=0, filler=filler@entry=0x0 <fixed_percpu_data>, file=file@entry=0x0 <fixed_percpu_data>) at include/linux/pagemap.h:274
+#17 0xffffffff8161deed in read_mapping_folio (file=0x0 <fixed_percpu_data>, index=0, mapping=<optimized out>) at include/linux/pagemap.h:762
+```
 
-- [ ] blk_mq_init_queue
+但是追查 `request::__sector` 就和 block layer 放到一起了。
 
-- [ ] virt_queue 在内核端也是定义了的吗
-  - [ ] 如何使用 ?
-  - [ ] 驱动如何将 multiqueue 收到的消息整合成为 vring ?
-  - virtblk_probe :初始化 `vblk->tag_set.ops = &virtio_mq_ops;`
-     - [ ] virtio_queue_rq :
-        - [ ] virtblk_add_req : 将 multiqueue 的 request 装换为
+## QEMU 侧如何接受数据
 
-- [ ] guest 怎么知道使用真正的 设备驱动 还是 virt-blk 啊，跑一个 kvmtool 试试不就知道了
-
-- [ ] 如果 virt 中间传输的地址是 HVA，但是到了 guest 的层次，其知道应该是 blk sector 啊!
-
-## 5.6 驱动通知设备处理请求
 virtio 标准在 virtio 设备的配置空间中，增加了一个 Queue Notify 寄存器，驱动准备好了 virtqueue 之后, 向 Queue Notify 寄存器发起写操作，
 切换到 Host 状态中间。
 
@@ -503,101 +629,71 @@ virtio 标准在 virtio 设备的配置空间中，增加了一个 Queue Notify 
     - virtqueue_kick_prepare
     - virtqueue_notify
       - `vq->notify`
-        - vring_virtqueue::notify : 在 vring_alloc_queue 中间注册的
-
-```c
-/* the notify function used when creating a virt queue */
-bool vp_notify(struct virtqueue *vq)
-{
-  /* we write the queue's selector into the notification register to
-   * signal the other end */
-  iowrite16(vq->index, (void __iomem *)vq->priv);
-  return true;
-}
-```
-现在从 kvmtool 的角度分析一下:
-
-```c
-static bool virtio_pci__data_out(struct kvm_cpu *vcpu, struct virtio_device *vdev,
-         unsigned long offset, void *data, int size)
-  case VIRTIO_PCI_QUEUE_NOTIFY:
-    val = ioport__read16(data);
-    vdev->ops->notify_vq(kvm, vpci->dev, val);
-    break;
-```
-在 notify_vq 注册的内容是:
-```c
-static int notify_vq(struct kvm *kvm, void *dev, u32 vq)
-{
-  struct blk_dev *bdev = dev;
-  u64 data = 1;
-  int r;
-
-  r = write(bdev->io_efd, &data, sizeof(data));
-  if (r < 0)
-    return r;
-
-  return 0;
-}
-```
+        - vring_virtqueue::notify : 在 vring_alloc_queue 中间注册的 vp_notify
 
 - [ ] 如果存在 eventfd 机制，因为通知方式是 MMIO，所以，其实内核可以在另一侧就通知出来这个事情，不需要在下上通知退出原因是什么位置的 MMIO
 
-- virtio_blk_thread
-  - `r = read(bdev->io_efd, &data, sizeof(u64));` ： 阻塞到 eventfd 上
-  - virtio_blk_do_io
-    - virt_queue__available
-    - virtio_blk_do_io_request
-      - disk_image__read
-      - virtio_blk_complete
 
-## 5.7 驱动侧回收 IO 请求
-发送中断的位置在:
-- virtio_blk_complet
-  - `bdev->vdev.ops->signal_vq(req->kvm, &bdev->vdev, queueid);` : 其中的 vdev.ops 表示一个 virtio_device 的通用技能，因为为了区分 MMIO 和 PCI, 感觉可以完全忽略这个东西
-    - `kvm__irq_trigger(kvm, vpci->legacy_irq_line);` : 好几种触发方式的一种, 还有 msix 之类的，但是 百度书 上使用 legacy_irq_line 的方式
-
-- [x] 这个中断号感觉就是非常随意的分配了一下而已，之后，guest kernel 怎么知道给谁注册, 什么时候
-
-- 这些消息都是放到 : kvmtool/x86/mptable.c 中间的，之后 guest kernel 启动的时候，这些数据就可以静态的确定了
-
-
-在 `vp_find_vqs_intx` 中间注册的函数:
-```c
-  rr = request_irq(vp_dev->pci_dev->irq, vp_interrupt, IRQF_SHARED,
-      dev_name(&vdev->dev), vp_dev);
+```txt
+#0  virtio_blk_handle_output (vdev=0x555557cae140, vq=0x7ffff40d8010) at ../hw/block/virtio-blk.c:810
+#1  0x0000555555b2307f in virtio_queue_notify_vq (vq=0x7ffff40d8010) at ../hw/virtio/virtio.c:2365
+#2  0x0000555555d5b628 in aio_dispatch_handler (ctx=ctx@entry=0x55555661d7c0, node=0x7ffcd0006340) at ../util/aio-posix.c:369
+#3  0x0000555555d5bee2 in aio_dispatch_handlers (ctx=0x55555661d7c0) at ../util/aio-posix.c:412
+#4  aio_dispatch (ctx=0x55555661d7c0) at ../util/aio-posix.c:422
+#5  0x0000555555d6ed7e in aio_ctx_dispatch (source=<optimized out>, callback=<optimized out>, user_data=<optimized out>) at ../util/async.c:320
+#6  0x00007ffff79e7dfb in g_main_context_dispatch () from /nix/store/s7yq6ngnxf4gsp4263q7xywfjihh5mpn-glib-2.72.2/lib/libglib-2.0.so.0
+#7  0x0000555555d7b058 in glib_pollfds_poll () at ../util/main-loop.c:297
+#8  os_host_main_loop_wait (timeout=91100000) at ../util/main-loop.c:320
+#9  main_loop_wait (nonblocking=nonblocking@entry=0) at ../util/main-loop.c:596
+#10 0x00005555559d28f7 in qemu_main_loop () at ../softmmu/runstate.c:734
+#11 0x000055555582712c in qemu_main (argc=<optimized out>, argv=<optimized out>, envp=<optimized out>) at ../softmmu/main.c:38
 ```
-handler 是 vp_interrupt
-```c
-irqreturn_t vring_interrupt(int irq, void *_vq)
-{
-  struct vring_virtqueue *vq = to_vvq(_vq);
 
-  if (!more_used(vq)) {
-    pr_debug("virtqueue interrupt with no work for %p\n", vq);
-    return IRQ_NONE;
-  }
+virtio_blk_handle_output 中，调用 virtio_blk_handle_request 来解析 virtio_blk_outhdr
 
-  if (unlikely(vq->broken))
-    return IRQ_HANDLED;
 
-  pr_debug("virtqueue callback for %p (%p)\n", vq, vq->vq.callback);
-  if (vq->vq.callback)
-    vq->vq.callback(&vq->vq);
+当 IO 任务结束之后，virtio_blk_rw_complete 调用 virtio_notify 来通知 Guest
 
-  return IRQ_HANDLED;
-}
+```txt
+0  virtio_blk_rw_complete (opaque=0x555557bc4400, ret=0) at ../hw/block/virtio-blk.c:119
+#1  0x0000555555c5bd38 in blk_aio_complete (acb=0x5555570c0060) at ../block/block-backend.c:1503
+#2  blk_aio_complete (acb=0x5555570c0060) at ../block/block-backend.c:1500
+#3  blk_aio_read_entry (opaque=0x5555570c0060) at ../block/block-backend.c:1558
+#4  0x0000555555d70d8b in coroutine_trampoline (i0=<optimized out>, i1=<optimized out>) at ../util/coroutine-ucontext.c:177
+#5  0x00007ffff769ef60 in __correctly_grouped_prefixwc () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
+#6  0x0000000000000000 in ?? ()
+$ qemu coroutine
+usage: qemu coroutine <coroutine-pointer>
+$ qemu bt
+#0  virtio_blk_rw_complete (opaque=0x555557bc4400, ret=0) at ../hw/block/virtio-blk.c:119
+#1  0x0000555555c5bd38 in blk_aio_complete (acb=0x5555570c0060) at ../block/block-backend.c:1503
+#2  blk_aio_complete (acb=0x5555570c0060) at ../block/block-backend.c:1500
+#3  blk_aio_read_entry (opaque=0x5555570c0060) at ../block/block-backend.c:1558
+#4  0x0000555555d70d8b in coroutine_trampoline (i0=<optimized out>, i1=<optimized out>) at ../util/coroutine-ucontext.c:177
+#5  0x00007ffff769ef60 in __correctly_grouped_prefixwc () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
+#6  0x0000000000000000 in ?? ()
+Coroutine at 0x7ffff7212320:
+#0  qemu_coroutine_switch (from_=from_@entry=0x7ffff7212320, to_=to_@entry=0x555556a55d40, action=action@entry=COROUTINE_ENTER) at ../util/coroutine-ucontext.c:307
+#1  0x0000555555d7b4b8 in qemu_aio_coroutine_enter (ctx=ctx@entry=0x55555661d7c0, co=co@entry=0x555556a55d40) at ../util/qemu-coroutine.c:162
+#2  0x0000555555d6fbf3 in aio_co_enter (ctx=0x55555661d7c0, co=0x555556a55d40) at ../util/async.c:665
+#3  0x0000555555cc2e17 in luring_process_completions (s=s@entry=0x55555686ae90) at ../block/io_uring.c:215
+#4  0x0000555555cc31f8 in ioq_submit (s=0x55555686ae90) at ../block/io_uring.c:260
+#5  0x0000555555c6c84c in bdrv_io_unplug (bs=0x555556863900) at ../block/io.c:3286
+#6  0x0000555555c6c81d in bdrv_io_unplug (bs=<optimized out>) at ../block/io.c:3291
+#7  0x0000555555c5ca16 in blk_io_unplug (blk=<optimized out>) at ../block/block-backend.c:2284
+#8  0x0000555555ada9dd in virtio_blk_handle_vq (s=0x555557cae140, vq=0x7ffff40d8010) at ../hw/block/virtio-blk.c:802
+#9  0x0000555555b2307f in virtio_queue_notify_vq (vq=0x7ffff40d8010) at ../hw/virtio/virtio.c:2365
+#10 0x0000555555d5b628 in aio_dispatch_handler (ctx=ctx@entry=0x55555661d7c0, node=0x7ffcd0006340) at ../util/aio-posix.c:369
+#11 0x0000555555d5bee2 in aio_dispatch_handlers (ctx=0x55555661d7c0) at ../util/aio-posix.c:412
+#12 aio_dispatch (ctx=0x55555661d7c0) at ../util/aio-posix.c:422
+#13 0x0000555555d6ed7e in aio_ctx_dispatch (source=<optimized out>, callback=<optimized out>, user_data=<optimized out>) at ../util/async.c:320
+#14 0x00007ffff79e7dfb in g_main_context_dispatch () from /nix/store/s7yq6ngnxf4gsp4263q7xywfjihh5mpn-glib-2.72.2/lib/libglib-2.0.so.0
+#15 0x0000555555d7b058 in glib_pollfds_poll () at ../util/main-loop.c:297
+#16 os_host_main_loop_wait (timeout=91100000) at ../util/main-loop.c:320
+#17 main_loop_wait (nonblocking=nonblocking@entry=0) at ../util/main-loop.c:596
+#18 0x00005555559d28f7 in qemu_main_loop () at ../softmmu/runstate.c:734
+#19 0x000055555582712c in qemu_main (argc=<optimized out>, argv=<optimized out>, envp=<optimized out>) at ../softmmu/main.c:38
+#20 0x00007ffff7676237 in __libc_start_call_main () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
+#21 0x00007ffff76762f5 in __libc_start_main_impl () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
+#22 0x0000555555827051 in _start () at ../sysdeps/x86_64/start.S:116
 ```
-这里的 callback 函数的注册路径和 notify_vq 相同，在调用链中间漫长的流转，在 blk 中间，是: virtblk_done
-
-- virtblk_done :将 IO 返回到上层, last_used_idx ++, 释放 vring_used 之类的事情
-  - virtqueue_get_buf
-  - blk_mq_complete_request
-
-## 5.8 设备异步处理 IO
-同步进行的方式是 : vp_notify 导致 guest vmexit, 然后在 host 中间处理，处理完成，发出中断，同时进入 guest, 在 guest 中间接受中断.
-异步进行的方式 : 将 vp_nofify 通知出去之后，立刻重新进入到 host 中间去。
-
-## 5.9 轻量虚拟机退出
-
-这就是 eventfd 机制了

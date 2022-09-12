@@ -244,6 +244,37 @@ secondary_startup_64_no_verify+213
 Sun Aug 21 23:21:23 EDT 2022
 ```
 
+### 有一个类似的错误，但是似乎和 rcu 无关
+出错位置 : virtblk_setup_cmd
+
+```txt
+[   38.630644] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00007f00
+[   38.631092] CPU: 3 PID: 1 Comm: init Not tainted 6.0.0-rc5-dirty #61
+[   38.631092] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.0-0-gd239552ce722-prebuilt.qemu.org 04/01/2014
+[   38.631092] Call Trace:
+[   38.631092]  <TASK>
+[   38.631092]  dump_stack_lvl+0x34/0x48
+[   38.631092]  panic+0x102/0x27b
+[   38.631092]  ? _raw_spin_trylock+0xe/0x50
+In[c o n s38.631092]  do_exit.cold+0x15/0x45
+[   38.631092]  do_group_exit+0x28/0x90
+[   38.631092istency de]  __x64_sys_exit_group+0xf/0x10
+[   38.631092]  do_syscall_64+0x3b/0x90
+tec[t e d  3b8.631092]  entry_SYSCALL_64_after_hwframe+0x63/0xcd
+[   38.631092] RIP: 0033:0x7fe729e23aae
+[   38.631092] Code:y ld.so: 89 fa 41 b8 e7 00 00 00 be 3c 00 00 00 eb 14 0f 1f 44 00 00 89 d7 89 f0 0f 05 48 3d 00 f0 ff ff 77 1a f4 89 d7 44 89 c0 0f 05 <48> 3d 00 f0 ff ff 76 e2 f7 d8 89 05 0a b7 20 00 eb d8 f7 d8 89 05
+[   38.631092] RSP: 002b:00007ffeace91708 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+[   38.631092] RAX: ffffffffffffffda RBX: 00007fe727c020d2 RCX: 00007fe729e23aae
+[   38.631092] RDX: 000000000000007f RSI: 000000000000003c RDI: 000000000000007f
+[   38.631092] RBP: 0000000000000000 R08: 00000000000000e7 R09: 0000000000000000
+[   38.631092] R10: 0000000000000020 R11: 0000000000000246 R12: 00007fe727c02438
+[   38.631092] R13: 00007fe7278021d4 R14: 00007fe72a1714f0 R15: 000000000000000f
+[   38.631092]  </TASK>
+ dl-version.c: 205: _dl_check_map_versions: Assertion `needed != NULL' failed!
+[   38.631092] Kernel Offset: disabled
+[   38.631092] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00007f00 ]---
+```
+
 
 ### 参考资料
 - [What is RCU, Fundamentally?](https://lwn.net/Articles/262464/)

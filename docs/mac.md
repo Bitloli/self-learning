@@ -50,9 +50,23 @@
 ### 安装 nerdfont
 - https://gist.github.com/davidteren/898f2dcccd42d9f8680ec69a3a5d350e
 
+### 安装 Linux
+虽然各种发行版的 server 版本都可以安装，但是只有 Ubuntu 桌面版支持的比较好 [^4]
+
+首先安装 Ubuntu Server，然后手动安装桌面环境:
+```sh
+sudo apt update && sudo apt upgrade
+sudo apt install ubuntu-desktop
+```
+
+- [ ] 安装上 nixos
+- [ ] 鼠标之类的东西还是非常的卡
+- [ ] 网络需要维修
+
 [^1]: 2019 年版本的小米 pro
 [^2]: 不过对于 Apple 的鼠标应该是没有问题的。
 [^3]: https://stackoverflow.com/questions/52801814/this-syntax-requires-an-imported-helper-but-module-tslib-cannot-be-found-wit
+[^4]: https://askubuntu.com/questions/1405124/install-ubuntu-desktop-22-04-arm64-on-macos-apple-silicon-m1-pro-max-in-parall
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

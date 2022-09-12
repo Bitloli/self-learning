@@ -22,3 +22,9 @@
 - 2555283eb40df89945557273121e9393ef9b542b : 修复一个 rmap 的问题
 - 8782fb61cc848364e1e1599d76d3c9dd58a1cc06 : mmap 和 page walk 的 race
 - 685ed983e2dc330680a076a1fd37ebe04017df91 : 多个 x86 kvm 的修复
+- 2f79cdfe58c13949bbbb65ba5926abfe9561d0ec : fs 中的一个 barrier 问题
+- e35be05d748a1b82c0bd3f62dafbad859a3bd027 : driver core
+- d2b768c3d44af4ea19c0f52e718acca01ebb22e8 : 一系列的 io uring 的修复
+- 873aefb376bbc0ed1dd2381ea1d6ec88106fdbd4 : vfio refercount 的 bug 修复
+- 8cbb2b50ee2dcb082675237eaaa48fe8479f8aa5 ：softirq on stack
+- 2ccd4502f512e04b6cc01995da730e8754529cf9 ：iommu
