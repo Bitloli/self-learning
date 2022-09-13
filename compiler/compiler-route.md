@@ -147,5 +147,8 @@ https://news.ycombinator.com/item?id=24170201 : 感觉完成度还可以的 浏�
 ## js runtime
 - https://github.com/oven-sh/bun
 
+## AI compiler
+- https://github.com/pytorch/glow
+
 ## 被 review 过的资源
 - [HOW TO LEARN COMPILERS: LLVM EDITION](https://lowlevelbits.org/how-to-learn-compilers-llvm-edition/) : 好吧，似乎其实 llvm 没有什么资源

@@ -4,6 +4,7 @@ iodepth=128
 
 [trash]
 bs=4k
+direct=1
 filename=/home/martins3/g
 rw=write
 runtime=10s
