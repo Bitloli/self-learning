@@ -1,0 +1,9 @@
+[global]
+ioengine=libaio
+iodepth=128
+
+[trash]
+bs=4k
+filename=/home/martins3/g
+rw=write
+runtime=10s

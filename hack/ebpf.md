@@ -12,7 +12,6 @@ https://github.com/mikeroyal/eBPF-Guide
 两个很新的 talk:
 - https://www.youtube.com/watch?v=_5Z2AU7QTH4
 - https://www.youtube.com/watch?v=AV8xY318rtc
-
 - https://www.circonus.com/2018/05/linux-system-monitoring-with-ebpf/ ：里面的图是如何被绘制出来的
 
 ## xdp

@@ -376,3 +376,5 @@ docs/qemu/glib/glib
 tmp/
 *.bkp
 .DS_Store
+perf.data
+perf.data.old
