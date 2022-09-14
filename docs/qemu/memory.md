@@ -889,8 +889,7 @@ typedef struct {
 
 其中的一个使用者为
 
-```c
-/*
+```txt
 #0  address_space_map (as=0x5555563e9880 <address_space_memory>, addr=addr@entry=4320863120, plen=plen@entry=0x7fffe2ff2e70, is_write=is_write@entry=false, attrs=attrs@
 entry=...) at /home/maritns3/core/xqm/exec.c:3513
 #1  0x00005555558f4cd5 in dma_memory_map (dir=DMA_DIRECTION_TO_DEVICE, len=<synthetic pointer>, addr=4320863120, as=<optimized out>) at /home/maritns3/core/xqm/include/
@@ -956,6 +955,18 @@ cpu_address_space_init : 初始化 `CPUAddressSpace *CPUState::cpu_ases`, CPUAdd
 
 [^1]: [ASPLOS IOMMU tutorial](http://pages.cs.wisc.edu/~basu/isca_iommu_tutorial/IOMMU_TUTORIAL_ASPLOS_2016.pdf)
 
-<script src="https://utteranc.es/client.js" repo="Martins3/Martins3.github.io" issue-term="url" theme="github-light" crossorigin="anonymous" async> </script>
+<script src="https://giscus.app/client.js"
+        data-repo="martins3/martins3.github.io"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MjA0MDg="
+        data-category="Show and tell"
+        data-category-id="MDE4OkRpc2N1c3Npb25DYXRlZ29yeTMyMDMzNjY4"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-theme="light"
+        data-lang="zh-CN"
+        crossorigin="anonymous"
+        async>
+</script>
 
 本站所有文章转发 **CSDN** 将按侵权追究法律责任，其它情况随意。
