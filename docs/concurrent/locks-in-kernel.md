@@ -141,6 +141,9 @@ static struct page *page_idle_get_page(unsigned long pfn)
 }
 ```
 
+## soft lock up
+- https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/managing_monitoring_and_updating_the_kernel/keeping-kernel-panic-parameters-disabled-in-virtualized-environments_managing-monitoring-and-updating-the-kernel#doc-wrapper
+
 [^1]: https://lwn.net/Articles/262464/
 [^2]: https://eli.thegreenplace.net/2018/basics-of-futexes/
 [^3]: https://stackoverflow.com/questions/6975098/when-is-the-system-call-set-tid-address-used

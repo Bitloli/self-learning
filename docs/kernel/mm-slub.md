@@ -6,7 +6,7 @@
     1. 找到利用 inuse 然后释放的
     2. a slab 其实指的是 a page managed by the slab
 
-2. `page->objects` 表示一个 page中间可以持有的所有的 objects 总数 ?
+2. `page->objects` 表示一个 page 中间可以持有的所有的 objects 总数 ?
     1. 存储在 kmem_cache 中间 ?
 
 1. page::next : 用于指向下一个链表。
@@ -19,23 +19,23 @@
 1. 关于 get_freepointer 想到:
     1. 为什么不把指针放到开始的位置，使用 `s->offset` @question
     2. 没有一个 object 跨越两个 page 的情况吧 !
-    3. 一个page 中间初始化中间链表的代码找一下 @todo
-    4. 如果想要形成链表，那么，是不是page 开始的位置不仅仅需要存储下一个 page，以及其中 freepointer.
+    3. 一个 page 中间初始化中间链表的代码找一下 @todo
+    4. 如果想要形成链表，那么，是不是 page 开始的位置不仅仅需要存储下一个 page，以及其中 freepointer.
         1. 实际上，这两个都是 struct page 中间保存
 
 ## 要点
 1. kmalloc_slab 分析大小确定其中的 size
-2. 从 mm/Makefile， SLAB 根本不会被编译到其中，其中的ref 只是由于单个文件产生的
+2. 从 mm/Makefile， SLAB 根本不会被编译到其中，其中的 ref 只是由于单个文件产生的
 3. get_freepointer(s, object) 返回 `object + s->offset`
 
 
 - 是不是 kmem_cache 只是创建一次，管理大小相同的区域。
 - 所以这些 kmem_cache 控制的 page allocator 其实各自分离开来，kmem_cache 存储了关于大小的信息。
-- page 来自于 kmem_cache::kmem_cache_cpu::page 
+- page 来自于 kmem_cache::kmem_cache_cpu::page
 
 - 如果 partial 的含义是部分占用，那么为什么还是可以配置的 ? get_partial_node : Try to allocate a partial slab from a specific node
 
-- 防止 cache bouncing ，让同一个CPU kmalloc 的数据总是在一起的
+- 防止 cache bouncing ，让同一个 CPU kmalloc 的数据总是在一起的
 
 ## doc & ref
 
@@ -169,7 +169,7 @@ When a slab is first created by the allocator, it has no objects allocated from 
 Once an object has been allocated, it becomes a "partial" slab which is stored on a list in the `kmem_cache` structure.
 *Since this is a patch aimed at scalability, there is, in fact, one "partial" list for each NUMA node on the system.*
 The allocator tries to keep allocations node-local, but it will reach across nodes before filling the system with partial slabs.
-> @todo 每一个 numa 节点存在一个 partial list，多核，调用同一个函数，如何并发调用slab 呀!o
+> @todo 每一个 numa 节点存在一个 partial list，多核，调用同一个函数，如何并发调用 slab 呀!o
 
 There is also a per-CPU array of active slabs, intended to prevent *cache line* bouncing even within a NUMA node.
 There is a special thread which runs (via a workqueue) which monitors the usage of per-CPU slabs; if a per-CPU slab is not being used, it gets put back onto the partial list for use by other processors.
@@ -392,7 +392,7 @@ redo:
 	new.frozen = 0;
 
   // 进行判断，得到 m 的内容
-	if (!new.inuse && n->nr_partial >= s->min_partial) 
+	if (!new.inuse && n->nr_partial >= s->min_partial)
 		m = M_FREE;
 	else if (new.freelist) {
 		m = M_PARTIAL;
@@ -426,7 +426,7 @@ redo:
 			remove_full(s, n, page); // 将其从 node fulll 上移动
 
 		if (m == M_PARTIAL)
-			add_partial(n, page, tail); 
+			add_partial(n, page, tail);
 		else if (m == M_FULL)
 			add_full(s, n, page);
 	}

@@ -185,3 +185,20 @@ Node 0, zone    DMA32           25         1466           37            0       
 Node 0, zone   Normal          298        10165          288            1            0            0
 ```
 - [ ] 为什么 Movable 中有那么多 order=10 的页
+
+## /proc/meminfo 中关于 hugepage 的统计真奇怪啊
+
+```txt
+AnonHugePages:    798720 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:    1024
+HugePages_Free:     1024
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+```

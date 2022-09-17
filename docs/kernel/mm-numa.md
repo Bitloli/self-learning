@@ -53,5 +53,8 @@ EXPORT_SYMBOL(node_states);
 ```
 - [ ] 到底 memory policy 是一个进程的行为还是直接影响所有的程序的
 
+## 设备和 numa 的关系是什么
+
+
 [^6]: [NUMA (Non-Uniform Memory Access): An Overview](https://queue.acm.org/detail.cfm?id=2513149)
 [^7]: [kernel doc : numa memory policy](https://www.kernel.org/doc/html/latest/admin-guide/mm/numa_memory_policy.html)

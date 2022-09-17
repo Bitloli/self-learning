@@ -1,6 +1,7 @@
 # 中断
 <!-- vim-markdown-toc GitLab -->
 
+* [追加上这些内容，然后彻底的理解中断系统了](#追加上这些内容然后彻底的理解中断系统了)
 * [Question](#question)
 * [doc](#doc)
 * [TODO](#todo)
@@ -35,6 +36,13 @@
 * [ref](#ref)
 
 <!-- vim-markdown-toc -->
+
+## 追加上这些内容，然后彻底的理解中断系统了
+- 在用户态如何进行中断的平衡
+  - https://github.com/Irqbalance/irqbalance
+- 分析中断和各种锁的影响
+- 分析中断和调度的影响 : preemption
+- 在虚拟化中的中断
 
 ## Question
 - [ ] 总结 从 ics 的中断 和 ucore 的中断的实现，然后再去分析

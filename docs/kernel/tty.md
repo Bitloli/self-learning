@@ -49,11 +49,11 @@ from https://www.linusakesson.net/programming/tty/
   <img src="./img/serial.jpg" alt="drawing" width="400" align="center"/>
 </p>
 
-如果在买一个串口转 usb ，然后 usb 的那一头查到另一台电脑上，例如 x86 电脑上，并且在其上执行:
+如果在买一个串口转 usb ，将串口插到 LoongArch 3A5000 的串口上，然后 usb 的那一头插到另一台电脑上（例如 x86 电脑），并且在 x86 电脑上执行:
 ```sh
 minicom -D /dev/ttyUSB0
 ```
-那么在 x86 中 minicom 启动一个 LoongArch 的 shell 出来。
+那么在 x86 中 minicom 启动一个 LoongArch 的 shell 出来，从而可以使用 x86 电脑调试 LoongArch 电脑。
 
 
 使用 `-serial mon:stdio` 参数启动 QEMU，也就是用 Host 的标准输入输出来模拟 Guest 的串口，Guest 的串口可以通过 /dev/ttyS0 来访问:
@@ -195,6 +195,7 @@ https://www.quora.com/How-do-I-understand-the-tmux-design-architecture-and-inter
 ## 扩展阅读
 - [A toy remote login server](https://jvns.ca/blog/2022/07/28/toy-remote-login-server/)
 - [What happens when you press a key in your terminal?](https://jvns.ca/blog/2022/07/20/pseudoterminals/)
+- [agetty](https://man7.org/linux/man-pages/man8/agetty.8.html) : init 启动到登录界面。
 
 [^1]: 为了让 Hello World 程序更加明显，最好是循环输出多次，例如 100000 。
 

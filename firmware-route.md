@@ -1,1 +1,0 @@
-- https://github.com/causten/openbmc-tutorials : 到底什么是 bmc

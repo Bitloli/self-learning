@@ -510,6 +510,12 @@ ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 ## netfilter
 - https://randorisec.fr/crack-linux-firewall/
 
+## https://linux.die.net/man/7/socket
+
+可以看看 socket 的所有的 option 都有啥 ?
+
+- SO_BINDTODEVICE
+
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/
 [^6]: [An Introduction to Computer Networks](http://intronetworks.cs.luc.edu/current2/html/)

@@ -203,3 +203,5 @@ static const struct vfio_iommu_driver_ops vfio_iommu_driver_ops_type1 = {
 ## 其他
 - https://github.com/gnif/vendor-reset
 - https://github.com/nutanix/libvfio-user : nutanix 的这个是做个啥的?
+
+## 什么是 virt/kvm/vfio.c

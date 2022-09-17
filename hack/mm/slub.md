@@ -1,6 +1,8 @@
 # slub
 
 ## 问题
+- [ ] kzalloc_node 可以让分配的 node 的位置确定，这进一步在要求 slub 的实现。
+
 - [ ] 关键结构体 :
 - [ ] free / alloc 慢速路径 和 快速路径上，分别因为什么原因
 
@@ -60,7 +62,7 @@ struct kmem_cache_node {
 ```
 - [ ] page 无法理解的成员：
   - objects : allocate_slab 中间初始化 `page->objects = oo_objects(oo);`, 所以描述就是 objects 总数
-	
+
 因为 partial 在 CPU 上只有一个，在 node 上持有多个，所以，在当前上下文 paritial list 指的是 node 的 paritial list.
 
 ## 笔记
@@ -123,12 +125,12 @@ struct kmem_cache {
 ## Let's understand some basic function
 - [x] get_freepointer_safe : 获取无锁空闲对象链表下一个对象的地址
     - `*(object + s->offset)` : because every free object contains the pointer points to next free object
-    - ==> get_freepointer ==> freelist_dereference ==> freelist_ptr 
+    - ==> get_freepointer ==> freelist_dereference ==> freelist_ptr
     - freelist_ptr(s, ptr, ptr_addr){return s}
 
 - [ ] calculate_sizes()
 
-- [x] get_freelist() : 
+- [x] get_freelist() :
     - Check the `page->freelist` of a page and either transfer the freelist to the per cpu freelist or deactivate the page.
     - ![loading](https://img2018.cnblogs.com/blog/1771657/201911/1771657-20191124161409130-2017775465.png)
 
@@ -142,7 +144,7 @@ struct kmem_cache {
 一个 slab 被某个 CPU freeze 后，就只有这个 CPU 能够从这个 slab 分配对象。
 具体那些 slab 是冻结的 ? 首先，本地 slab 总是被冻结的；其次，脱离链表的全满 slab 在重新获得一个被释放的空闲对象后，
 会进入本地 partial 链表并且被冻结。而其他的 slab, 如 numa node partial list, 刚刚从numa node list 移入本地 partial 中的 slab,
-以及脱离链表的全满 slab 都是不冻结的。[^1] 
+以及脱离链表的全满 slab 都是不冻结的。[^1]
 
 在 `__slab_free` 中间，是唯一利用 frozen 的判断，其余的存在检查 frozen 的正确性
 
