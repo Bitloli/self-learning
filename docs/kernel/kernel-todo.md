@@ -12,6 +12,8 @@
 - https://news.ycombinator.com/item?id=27328285
   - 一个个的检查一下。
 
+- vmstat.c 是做什么的? vmstat_shepherd
+
 - [ ] ksm
 - [ ] shmem
 - [ ] /home/maritns3/core/vn/kernel/plka/syn/mm/memory.md 整理一下 pgfault 的过程

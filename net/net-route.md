@@ -488,8 +488,6 @@ https://github.com/anderspitman/awesome-tunneling
 - [wiki](https://en.wikipedia.org/wiki/Link_Layer_Discovery_Protocol)
 - [官网](https://lldpd.github.io/)
 
-## [ ] rps
-
 ## netmark
 255.255.255.0 和 255.255.240.0 的差别是什么，为什么对于网卡需要配置这个。
 

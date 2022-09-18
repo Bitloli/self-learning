@@ -2,6 +2,9 @@
 - 简短有力的分析: https://zhuanlan.zhihu.com/p/41872203
 - https://mp.weixin.qq.com/s/s6AvLiVVkoMX4dIGpqmXYA
 
+## dma
+- dma_alloc_coherent
+
 ## 相关资料
 - https://stackoverflow.com/questions/38447226/atomicity-on-x86
 - https://stackoverflow.com/questions/39393850/can-num-be-atomic-for-int-num

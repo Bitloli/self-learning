@@ -18,3 +18,8 @@ https://l8liliang.github.io/2021/08/19/linux-network-performance.html#performanc
 
 - soft IRQ (`NET_TX_SOFTIRQ`) after `tx-usecs` timeout or `tx-frames`
   - [ ] 我感觉这个，有趣的哇
+  o
+
+## xps
+
+https://www.kernel.org/doc/html/latest/networking/scaling.html

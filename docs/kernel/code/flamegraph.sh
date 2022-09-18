@@ -24,7 +24,7 @@ cpu_bind="-a"
 while getopts "hg:c:b:" opt; do
   case $opt in
   c) cmd=${OPTARG} ;;
-  b) cpu_bind="-c ${OPTARG}" ;;
+  b) cpu_bind="--cpu ${OPTARG}" ;;
   h)
     usage
     exit 0

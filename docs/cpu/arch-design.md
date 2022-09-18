@@ -22,11 +22,18 @@
 
 ### 硬件虚拟化加速
 
-能够支持 hyerpv, kvm, zen 等，也就是至少需要考虑的:
-- 如何实现 CPU 虚拟化 内存虚拟化
-- 如何实现设备直通
+能够支持 hyerpv, kvm, zen 等，也就是至少需要考虑:
+- 如何实现 CPU 虚拟化和内存虚拟化
 
-参考 intel 的 vt-d 和 vt-x
+参考 Intel 的 VT-x
+
+### IOMMU
+IOMMU 可以实现 irq remapping 和 dma remapping 进而:
+- 安全上可以保护硬件；
+- 实现设备直通给 Guest 虚拟机；
+- Linux 利用 IOMMU 实现 VFIO 进而支持 SPDK 和 SPDK 等 kernel bypass 驱动。
+
+具体可以参考 Intel 的 VT-d
 
 ### 编译器
 需要以下的编译器的支持:
@@ -76,8 +83,13 @@
 - 各种使用汇编写的库
 
 ### Firmware
-- edk2
-- acpica
+#### UEFI
+
+已经存在开源的 edk2 ，但是需要架构的支持。
+
+#### ACPI
+
+将开源的 acpica 支持上。
 
 ## 架构设计需要考虑的点
 - 指令是否定长，不定长会让译码很难做，但是对齐之后，加载一个 8 字节的指令需要多条指令。
@@ -90,14 +102,19 @@
 - 不同的核执行的指令集不同[^5]。
 
 ### memory model
+懂的都懂，很关键。
 
 ### cache coherence
-- [ ] 如果 dma 修改了 memory ，如何同步到 cache 中去
+- 如果 dma 修改了 memory ，如何同步到 cache 中去
+
+### NUMA
+NUMA 总线协议
 
 ### 外设
 - 使用 memory mapped io 还是单独的 io 指令
 
-### 物理版图
+### 物理层设计
+没有搞过，不是特别懂，但是是存在这一个步骤的。
 
 ### 编译器
 - 各种 built-in
@@ -123,8 +140,9 @@
 - 测试 RISC-V 的用户态中断，硬件线程
 
 ## 参考资料
-[^1] [riscv non isa](https://github.com/riscv-non-isa)
-[^2] [Power Struggles: Revisiting the RISC vs. CISC Debate on Contemporary ARM and x86 Architectures](https://research.cs.wisc.edu/vertical/papers/2013/hpca13-isa-power-struggles.pdf)
+
+[^1]: [riscv non isa](https://github.com/riscv-non-isa)
+[^2]: [Power Struggles: Revisiting the RISC vs. CISC Debate on Contemporary ARM and x86 Architectures](https://research.cs.wisc.edu/vertical/papers/2013/hpca13-isa-power-struggles.pdf)
 [^3]: [One-instruction set computer](https://en.wikipedia.org/wiki/One-instruction_set_computer)
 [^4]: https://en.wikipedia.org/wiki/No_instruction_set_computing
 [^5]: A reconfigurable heterogeneous multicore with a homogeneous ISA
