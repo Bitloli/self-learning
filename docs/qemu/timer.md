@@ -2,11 +2,11 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-- [time-meter](#time-meter)
-- [timer](#timer)
-- [timerlist](#timerlist)
-- [timerlistgroup](#timerlistgroup)
-- [misc](#misc)
+* [time-meter](#time-meter)
+* [timer](#timer)
+* [timerlist](#timerlist)
+* [timerlistgroup](#timerlistgroup)
+* [misc](#misc)
 
 <!-- vim-markdown-toc -->
 
@@ -145,8 +145,7 @@ QEMU 需要实现定时器的功能。
 ```
 
 这是一个经典的处理 timer timeout hook 的路径:
-```c
-/*
+```txt
 #0  rtc_update_timer (opaque=0x55555669b400) at /home/maritns3/core/xqm/hw/rtc/mc146818rtc.c:427
 #1  0x0000555555caea96 in timerlist_run_timers (timer_list=0x5555565d6470) at /home/maritns3/core/xqm/util/qemu-timer.c:595
 #2  timerlist_run_timers (timer_list=0x5555565d6470) at /home/maritns3/core/xqm/util/qemu-timer.c:506
@@ -235,8 +234,7 @@ main_loop_tlg 是 main loop 的 QEMUTimerListGroup, 也是默认使用的。
 [timer](#timer) 中列举了各种 timer_new 的调用位置，那些 timer 都是添加到 main_loop_tlg 上的
 而添加到其他 QEMUTimerListGroup 的位置默认情况下只有:
 
-```c
-/*
+```txt
 >>> bt
 #0  aio_timer_new (type=QEMU_CLOCK_VIRTUAL, scale=1000000, cb=0x555555bdf550 <cache_clean_timer_cb>, opaque=0x555556850630, ctx=0x5555565d75b0) at /home/maritns3/core/
 xqm/include/block/aio.h:433

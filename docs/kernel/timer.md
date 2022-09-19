@@ -63,8 +63,8 @@
 - [ ] 关注几个结构体之间的关系:
 ```c
 struct tick_device { // 这个应该是每一个 CPU 一个
-	struct clock_event_device *evtdev; // 从 lapic 的那个文件中出来的
-	enum tick_device_mode mode;
+    struct clock_event_device *evtdev; // 从 lapic 的那个文件中出来的
+    enum tick_device_mode mode;
 };
 ```
 
@@ -335,7 +335,7 @@ kernel doc is invaluable[^4].
 
 ```c
 struct clock_event_device {
-	int			(*set_next_event)(unsigned long evt, struct clock_event_device *);
+    int         (*set_next_event)(unsigned long evt, struct clock_event_device *);
 
 void hrtimer_interrupt(struct clock_event_device *dev)
 ```
@@ -349,9 +349,9 @@ and the hrtimer_interrupt will be called.
 ```c
 struct signal_struct {
 
-	/* ITIMER_REAL timer for the process */
-	struct hrtimer real_timer;
-	ktime_t it_real_incr;
+    /* ITIMER_REAL timer for the process */
+    struct hrtimer real_timer;
+    ktime_t it_real_incr;
 
 ```
 do_setitimer ==> hrtimer_start
@@ -480,10 +480,10 @@ https://en.wikipedia.org/wiki/High_Precision_Event_Timer
  */
 void tick_set_periodic_handler(struct clock_event_device *dev, int broadcast)
 {
-	if (!broadcast)
-		dev->event_handler = tick_handle_periodic; // XXX this will be called when interrupt comes
-	else
-		dev->event_handler = tick_handle_periodic_broadcast;
+    if (!broadcast)
+        dev->event_handler = tick_handle_periodic; // XXX this will be called when interrupt comes
+    else
+        dev->event_handler = tick_handle_periodic_broadcast;
 }
 ```
 
@@ -519,29 +519,29 @@ The orgin of interrupt:
  */
 static irqreturn_t timer_interrupt(int irq, void *dev_id)
 {
-	global_clock_event->event_handler(global_clock_event);
-	return IRQ_HANDLED;
+    global_clock_event->event_handler(global_clock_event);
+    return IRQ_HANDLED;
 }
 
 static void __init setup_default_timer_irq(void)
 {
-	unsigned long flags = IRQF_NOBALANCING | IRQF_IRQPOLL | IRQF_TIMER;
+    unsigned long flags = IRQF_NOBALANCING | IRQF_IRQPOLL | IRQF_TIMER;
 
-	/*
-	 * Unconditionally register the legacy timer interrupt; even
-	 * without legacy PIC/PIT we need this for the HPET0 in legacy
-	 * replacement mode.
-	 */
-	if (request_irq(0, timer_interrupt, flags, "timer", NULL))
-		pr_info("Failed to register legacy timer interrupt\n");
+    /*
+     * Unconditionally register the legacy timer interrupt; even
+     * without legacy PIC/PIT we need this for the HPET0 in legacy
+     * replacement mode.
+     */
+    if (request_irq(0, timer_interrupt, flags, "timer", NULL))
+        pr_info("Failed to register legacy timer interrupt\n");
 }
 ```
 
 ```c
 enum tick_nohz_mode {
-	NOHZ_MODE_INACTIVE,
-	NOHZ_MODE_LOWRES,
-	NOHZ_MODE_HIGHRES,
+    NOHZ_MODE_INACTIVE,
+    NOHZ_MODE_LOWRES,
+    NOHZ_MODE_HIGHRES,
 };
 ```
 - [ ] nohz mode : lowres, highres
@@ -589,20 +589,20 @@ hpet 等
 // how many nsecs since last read
 static inline u64 timekeeping_get_ns(const struct tk_read_base *tkr)
 {
-	u64 delta;
+    u64 delta;
 
-	delta = timekeeping_get_delta(tkr); // cycle_t delta = (tkr->read(tkr->clock) - tkr->cycle_last) & tkr->mask;
-	return timekeeping_delta_to_ns(tkr, delta); // nsec = (delta * tkr->mult + tkr->xtime_nsec) >>= tkr->shift;
+    delta = timekeeping_get_delta(tkr); // cycle_t delta = (tkr->read(tkr->clock) - tkr->cycle_last) & tkr->mask;
+    return timekeeping_delta_to_ns(tkr, delta); // nsec = (delta * tkr->mult + tkr->xtime_nsec) >>= tkr->shift;
 }
 
 // simplified version
 void ktime_get_real_ts64(struct timespec64 *ts)
 {
   ts->tv_sec = tk->xtime_sec;
-	ts->tv_nsec = 0;
+    ts->tv_nsec = 0;
   nsecs = timekeeping_get_ns(&tk->tkr_mono);
-	ts->tv_sec += __iter_div_u64_rem(ts->tv_nsec + nsecs, NSEC_PER_SEC, &nsecs);
-	ts->tv_nsec = nsecs;
+    ts->tv_sec += __iter_div_u64_rem(ts->tv_nsec + nsecs, NSEC_PER_SEC, &nsecs);
+    ts->tv_nsec = nsecs;
 }
 ```
 
@@ -613,6 +613,9 @@ void ktime_get_real_ts64(struct timespec64 *ts)
 让其他 CPU 唤醒已经关闭本地 timer 的 CPU:
 具体进一步的参考
 http://www.wowotech.net/timer_subsystem/tick-broadcast-framework.html
+
+## 问题
+- do_idle 中为什么调用 tick_check_broadcast_expired 来决定是否进入 cpu_idle_poll 的状态
 
 
 [^1]: https://www.kernel.org/doc/html/latest/virt/kvm/timekeeping.html

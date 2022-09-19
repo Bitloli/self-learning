@@ -131,7 +131,15 @@ ifcfg-ens3
 参考[这个文档](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/networking_guide/sec-configuring_ip_networking_with_ifcg_files)，解决方法是在 /etc/sysconfig/network-scripts/ 创建一个
 ifcfg-enp0s5，其内容和原来的相同，只是替换其中的 interface 的名称。但是为什么切换内核会导致网卡的名称改变，可以深入调查一下。
 
-靠，又变了，看上去还会被内存影响。
+经过了一段时间，发现又出现了网络问题，现象如下:
+1. cmcli c show : 显示为 ens3
+2. ip a : 显示网卡为 enp0s7
+
+参考 https://askubuntu.com/questions/351300/networkmanager-in-disconnected-state ，然后使用如下命令可以修复:
+```sh
+sudo nmcli connection delete ens3
+sudo nmcli connection add con-name enp0s7 type ethernet
+```
 
 ### Windows
 - [script](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/windows.sh)

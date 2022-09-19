@@ -1,8 +1,5 @@
 # 首先，理解了
-- 到底什么是 socket ?
-
 - https://docs.kernel.org/admin-guide/pm/intel-speed-select.html
-
 
 - 打印出来当前正在 CPU 上运行的:
 ```sh
