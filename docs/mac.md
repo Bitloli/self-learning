@@ -41,8 +41,8 @@
 进入到插件的目录中，手动 npm -i[^3]
 
 ### 目前为未解决的问题
-- [ ] 应该是环境变量的问题，kitty 必须从 iterm 中启动， 可以使用 open $(which kitty) 来测试
-- [ ] kitty 中文渲染不正常。
+- 应该是环境变量的问题，kitty 必须从 iterm 中启动， 可以使用 open $(which kitty) 来测试
+- kitty 中文渲染不正常，可以确认不是软件的问题，因为插上外接显示器之后，字体就渲染不正常了。
 
 ### 安装 nerdfont
 - https://gist.github.com/davidteren/898f2dcccd42d9f8680ec69a3a5d350e

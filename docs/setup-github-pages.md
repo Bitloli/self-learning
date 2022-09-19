@@ -55,6 +55,14 @@ theme: jekyll-theme-cayman
 - language/bash/hook/lint-md.sh : 其中一项检查是执行这个脚本
 - .lintmdrc.json : lint-md 的执行参数
 
+### 订阅
+
+虽然本 blog 使用的 jellky 的主题，但是因为极简的配置，无法集成 [jekyll-feed](https://github.com/jekyll/jekyll-feed)
+
+所以 Newsletter 来实现订阅:
+
+https://martins3.substack.com
+
 ## 想法
 谈谈自己对于写博客想法:
 - blog 是一个人构建知识体系的过程。

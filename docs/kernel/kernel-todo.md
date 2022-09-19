@@ -9,9 +9,6 @@
   - 什么 uninterruptable sleep 之类的哇
 - memory policy, cgroup cpuset, cgroup memory 三个位置同时可以限制内存使用
 
-- https://news.ycombinator.com/item?id=27328285
-  - 一个个的检查一下。
-
 - vmstat.c 是做什么的? vmstat_shepherd
 
 - [ ] ksm

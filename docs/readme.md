@@ -8,6 +8,9 @@
     <a href="https://wakatime.com/@7be5bddf-f650-4cd0-a1d5-02c16f6a74f4"><img src="https://wakatime.com/badge/user/21daab89-a694-4970-88ed-a7d264a380e4.svg" alt="Total time coded since Feb 8 2020" /></a>
     <a href="https://github.com/Martins3/Martins3.github.io/commits/master"><img src="https://img.shields.io/github/commit-activity/w/martins3/martins3.github.io"></a>
   </p>
+  <p align="center">
+    <a href="https://martins3.substack.com">订阅</a>
+  </p>
 </p>
 
 ## Collections
@@ -116,7 +119,7 @@
 <!-- - [vfio : QEMU 实现](.) -->
 - [oom](./kernel/mm-oom.md)
 
-## Database
+<!-- ## Database -->
 <!-- - [leveldb 源码分析](./database/leveldb.md) -->
 
 ## Loongson
@@ -139,6 +142,10 @@
 - [2021 秋招总结](./abaaba/job.md)
 - [有缘再见，龙芯](./abaaba/loongson.md)
 
+## For Girlfriend
+- [How will I love you](https://martins3.github.io/theday/)
+- [Garden](http://martins3.gitee.io/garden/)
+
 ## Friends
 - [niugenen](https://niugenen.github.io/)
 - [limaomao821](https://limaomao821.github.io/)
@@ -146,6 +153,8 @@
 - [SPC 的自由天空](https://blog.spcsky.com/)
 - [utopianfuture](https://utopianfuture.github.io/)
 - [xieby1](https://xieby1.github.io/)
+
+
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"
