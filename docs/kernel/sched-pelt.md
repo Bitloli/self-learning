@@ -1,5 +1,83 @@
-## pelt
-[Per-entity load tracking](https://lwn.net/Articles/531853/)
+# pelt
+
+## 主要参考
+
+https://www.cnblogs.com/LoyenWang/p/12316660.html
+
+## 问题
+- [ ] 如果 pelt 不是必须的，其替代是什么?
+
+计算 /proc/loadavg 的方法:
+
+1. 两个函数来统计，分别处理 hz 和 nohz 的情况，使用 calc_load_fold_active
+```txt
+#0  calc_load_fold_active (adjust=0, this_rq=0xffff88807dc2b2c0) at kernel/sched/build_utility.c:3245
+#1  calc_load_nohz_fold (rq=0xffff88807dc2b2c0) at kernel/sched/build_utility.c:3399
+#2  calc_load_nohz_start () at kernel/sched/build_utility.c:3413
+#3  0xffffffff811a7389 in tick_nohz_stop_tick (cpu=0, ts=0xffff88807dc1e5c0) at kernel/time/tick-sched.c:913
+#4  __tick_nohz_idle_stop_tick (ts=0xffff88807dc1e5c0) at kernel/time/tick-sched.c:1108
+#5  tick_nohz_idle_stop_tick () at kernel/time/tick-sched.c:1129
+#6  0xffffffff8114b0e8 in cpuidle_idle_call () at kernel/sched/build_policy.c:231
+#7  do_idle () at kernel/sched/build_policy.c:345
+#8  0xffffffff8114b324 in cpu_startup_entry (state=state@entry=CPUHP_ONLINE) at kernel/sched/build_policy.c:442
+#9  0xffffffff81f383ab in rest_init () at init/main.c:727
+#10 0xffffffff8330dc05 in arch_call_rest_init () at init/main.c:883
+#11 0xffffffff8330e27d in start_kernel () at init/main.c:1138
+#12 0xffffffff81000145 in secondary_startup_64 () at arch/x86/kernel/head_64.S:358
+#13 0x0000000000000000 in ?? ()
+```
+
+```txt
+#0  calc_load_nohz_start () at kernel/sched/build_utility.c:3413
+#1  0xffffffff811a7389 in tick_nohz_stop_tick (cpu=3, ts=0xffff88813dd1e5c0) at kernel/time/tick-sched.c:913
+#2  __tick_nohz_idle_stop_tick (ts=0xffff88813dd1e5c0) at kernel/time/tick-sched.c:1108
+#3  tick_nohz_idle_stop_tick () at kernel/time/tick-sched.c:1129
+#4  0xffffffff8114b0e8 in cpuidle_idle_call () at kernel/sched/build_policy.c:231
+#5  do_idle () at kernel/sched/build_policy.c:345
+#6  0xffffffff8114b324 in cpu_startup_entry (state=state@entry=CPUHP_AP_ONLINE_IDLE) at kernel/sched/build_policy.c:442
+#7  0xffffffff810e0518 in start_secondary (unused=<optimized out>) at arch/x86/kernel/smpboot.c:262
+#8  0xffffffff81000145 in secondary_startup_64 () at arch/x86/kernel/head_64.S:358
+#9  0x0000000000000000 in ?? ()
+```
+
+2. 进行统计
+```txt
+#0  calc_global_load () at kernel/sched/build_utility.c:3516
+#1  0xffffffff811a6d0a in tick_do_update_jiffies64 (now=<optimized out>) at kernel/time/tick-sched.c:148
+#2  tick_do_update_jiffies64 (now=<optimized out>) at kernel/time/tick-sched.c:57
+#3  0xffffffff811a7897 in tick_nohz_restart_sched_tick (now=389458267506, ts=0xffff88813dd1e5c0) at kernel/time/tick-sched.c:962
+#4  tick_nohz_idle_update_tick (now=389458267506, ts=0xffff88813dd1e5c0) at kernel/time/tick-sched.c:1315
+#5  tick_nohz_idle_exit () at kernel/time/tick-sched.c:1349
+#6  0xffffffff8114b044 in do_idle () at kernel/sched/build_policy.c:358
+#7  0xffffffff8114b324 in cpu_startup_entry (state=state@entry=CPUHP_AP_ONLINE_IDLE) at kernel/sched/build_policy.c:442
+#8  0xffffffff810e0518 in start_secondary (unused=<optimized out>) at arch/x86/kernel/smpboot.c:262
+#9  0xffffffff81000145 in secondary_startup_64 () at arch/x86/kernel/head_64.S:358
+#10 0x0000000000000000 in ?? ()
+```
+
+- calc_global_load 调用 calc_global_nohz，同时处理两种情况的数据。
+
+
+```txt
+0  0xffffffff8114d371 in accumulate_sum (running=<optimized out>, runnable=<optimized out>, load=<optimized out>, sa=<optimized out>, delta=<optimized out>) at kernel/sched/build_policy.c:4029
+#1  ___update_load_sum (running=1, runnable=<optimized out>, load=1, sa=0xffff8881485f5b40, now=390223811783) at kernel/sched/build_policy.c:4150
+#2  __update_load_avg_se (now=now@entry=390223811783, cfs_rq=cfs_rq@entry=0xffff88813dc2b340, se=se@entry=0xffff8881485f5a80) at kernel/sched/build_policy.c:4232
+#3  0xffffffff811404d4 in update_load_avg (cfs_rq=0xffff88813dc2b340, se=0xffff8881485f5a80, flags=1) at kernel/sched/fair.c:4018
+#4  0xffffffff81142322 in entity_tick (queued=0, curr=0xffff8881485f5a80, cfs_rq=0xffff88813dc2b340) at kernel/sched/fair.c:4740
+#5  task_tick_fair (rq=0xffff88813dc2b2c0, curr=0xffff8881485f5a00, queued=0) at kernel/sched/fair.c:11416
+#6  0xffffffff8113c7c9 in scheduler_tick () at kernel/sched/core.c:5453
+#7  0xffffffff811946d1 in update_process_times (user_tick=0) at kernel/time/timer.c:1844
+#8  0xffffffff811a6c7f in tick_sched_handle (ts=ts@entry=0xffff88813dc1e5c0, regs=regs@entry=0xffffc900014e3b28) at kernel/time/tick-sched.c:243
+#9  0xffffffff811a6e5c in tick_sched_timer (timer=0xffff88813dc1e5c0) at kernel/time/tick-sched.c:1480
+#10 0xffffffff81195205 in __run_hrtimer (flags=2, now=0xffffc9000012cf48, timer=0xffff88813dc1e5c0, base=0xffff88813dc1e0c0, cpu_base=0xffff88813dc1e080) at kernel/time/hrtimer.c:1685
+#11 __hrtimer_run_queues (cpu_base=cpu_base@entry=0xffff88813dc1e080, now=389462153629, flags=flags@entry=2, active_mask=active_mask@entry=15) at kernel/time/hrtimer.c:1749
+#12 0xffffffff81195e91 in hrtimer_interrupt (dev=<optimized out>) at kernel/time/hrtimer.c:1811
+#13 0xffffffff810e256a in local_apic_timer_interrupt () at arch/x86/kernel/apic/apic.c:1095
+#14 __sysvec_apic_timer_interrupt (regs=<optimized out>) at arch/x86/kernel/apic/apic.c:1112
+#15 0xffffffff81f371fd in sysvec_apic_timer_interrupt (regs=0xffffc900014e3b28) at arch/x86/kernel/apic/apic.c:1106
+```
+
+- [Per-entity load tracking](https://lwn.net/Articles/531853/)
 
 [Load tracking in the scheduler](https://lwn.net/Articles/639543/)
 - The CFS algorithm defines a time duration called the "scheduling period," during which every runnable task on the CPU should run at least once.

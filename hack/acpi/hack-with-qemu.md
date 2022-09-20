@@ -29,7 +29,7 @@ info mtree
 - 如果在 Loongarch 上没有 isal ，可以 scp 到 x86 机器上拷贝
 
 ## 问题
-- [ ] 需要体用动态构建 ACPI 表吗?
+- [ ] 需要动态构建 ACPI 表吗?
 
 
 ## acpi setup

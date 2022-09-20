@@ -2,6 +2,14 @@
 
 sudo cgcreate -g cpu:A
 
+## 似乎 cgcreate 不能在 v2 下使用
+```txt
+➜ sudo cgcreate -g cpu:A
+
+[sudo] password for martins3:
+cgcreate: libcgroup initialization failed: Cgroup is not mounted
+```
+
 ```txt
 #0  alloc_fair_sched_group (tg=tg@entry=0xffff888142e18000, parent=parent@entry=0xffffffff834a2000 <root_task_group>) at include/linux/slab.h:640
 #1  0xffffffff8113e15a in sched_create_group (parent=0xffffffff834a2000 <root_task_group>) at kernel/sched/core.c:10097
@@ -43,3 +51,11 @@ CONFIG_RT_GROUP_SCHED
 3. thread group 让整个 reb tree 如何构建 ?
 4. 一个 thread group 会不会对于另一个 thread group 含有优先级 ?
 5. 是不是一旦配置了 tg 那么就所有的 thread 都必须属于某一个 group 中间 ?
+
+
+## 如何切换 cgroup v2
+- https://kubernetes.io/docs/concepts/architecture/cgroups/
+
+```sh
+stat -fc %T /sys/fs/cgroup/
+```

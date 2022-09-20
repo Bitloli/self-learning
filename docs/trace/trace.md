@@ -299,6 +299,9 @@ dpdk 测试工具
 
 ## mpstat
 
+- https://wiki.ubuntu.com/Kernel/Reference/stress-ng
+- https://gitee.com/openeuler/release-management/pulls/417/
+
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)
 [^7]: [kernelshark](https://www.cnblogs.com/arnoldlu/p/9014365.html)

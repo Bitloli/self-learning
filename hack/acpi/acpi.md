@@ -11,6 +11,10 @@
 
 操作系统通过 UEFI 来控制 ACPI，然后 ACPI 利用其虚拟机来执行 AML 语言。
 
+> To make use of the ACPI tables, the operating system must have an interpreter for the AML bytecode. A reference AML interpreter implementation is provided by the ACPI Component Architecture (ACPICA).
+
+但是这里又说，操作系统通过持有 ACPICA 来解释 AML
+
 ## [核心文档](https://acpica.org/sites/acpica/files/ACPI-Introduction.pdf)
 Fundamentally, ACPI defines two types of data structures which are shared between the
 system firmware and the OS: **data tables** and **definition blocks**. These data structures are the
