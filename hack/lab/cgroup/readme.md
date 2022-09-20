@@ -112,6 +112,10 @@ a 4c 01 e0 49 39 c7 7f f3 48 85 db 0f 84 ec 01 00 00
 [52243.454169] Memory cgroup out of memory: Killed process 259541 (stress) total-vm:157064kB, anon-rss:101976kB, file-rss:204kB, shmem-rss:0kB, UID:0 pgtables:252
 ```
 
+## cpu
+
+- https://oakbytes.wordpress.com/2012/09/02/cgroup-cpu-allocation-cpu-shares-examples/
+
 ## TODO
 1. https://segmentfault.com/a/1190000007468509
 

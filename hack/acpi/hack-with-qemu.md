@@ -17,9 +17,6 @@ info mtree
 
 # How acpi works in Linux Kernel and Simulated in QEMU
 
-## 问题
-- 如何实现关机操作
-
 ## ACPI 基础教程
 1. [Linux kernel doc](https://www.kernel.org/doc/html/latest/firmware-guide/acpi/index.html#)
 2. [acpica : acpi introduction](https://acpica.org/sites/acpica/files/ACPI-Introduction.pdf) :star:

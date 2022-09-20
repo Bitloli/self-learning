@@ -1,5 +1,16 @@
 # acpi
 
+## TODO
+- [ ] 和 UEFI 的关系
+- [ ] 和 PCIe 的关系
+
+## 基本内容
+- https://en.wikipedia.org/wiki/Advanced_Configuration_and_Power_Interface
+
+> Internally, ACPI advertises the available components and their functions to the operating system kernel using instruction lists ("methods") provided through the system firmware (UEFI or BIOS), which the kernel parses. ACPI then executes the desired operations written in ACPI Machine Language (such as the initialization of hardware components) using an embedded minimal virtual machine.
+
+操作系统通过 UEFI 来控制 ACPI，然后 ACPI 利用其虚拟机来执行 AML 语言。
+
 ## [核心文档](https://acpica.org/sites/acpica/files/ACPI-Introduction.pdf)
 Fundamentally, ACPI defines two types of data structures which are shared between the
 system firmware and the OS: **data tables** and **definition blocks**. These data structures are the
@@ -57,14 +68,8 @@ For instance, the /etc/acpi/power file can be used to configure acpid so
 that whenever a power button event is received, the shutdown command is
 executed.
 
-在 /etc/acpi/PWRF/00000080 的一个脚本文件，只有一行 `poweroff`
-
-- 那么在 poweroff 如何实现的 ?
-  - [ ] 执行 /sbin/poweroff, 但是 /sbin/poweroff 无法被 strace
-
 ## Official Documents
 ### [ ](https://uefi.org/specs/ACPI/6.4/06_Device_Configuration/Device_Configuration.html)
-
 
 https://lwn.net/Articles/367630/
 
@@ -80,38 +85,25 @@ https://lwn.net/Articles/367630/
 
 - [GPE](https://askubuntu.com/questions/148726/what-is-an-acpi-gpe-storm)
 
-
-
 - https://github.com/rust-osdev/about : 这个组织提供一堆可以用于 os dev 的工具，包括 uefi bootloader acpi
 - https://github.com/acpica/acpica : acpi 框架的源代码
 
 ## TODO
 - [ ] acpi 是如何提供给 os 的
 - [ ] acpi 表是如何构建起来的
-
-- [ ] /home/maritns3/core/kvmqemu/hw/i386/pc.c
-- [ ] /home/maritns3/core/kvmqemu/hw/acpi/cpu.c
-
-
+- [ ] qemu/hw/i386/pc.c
+- [ ] qemu/hw/acpi/cpu.c
 - [ ] 让人奇怪的地方在于，acpi 的只是解析出来了 IOAPIC 和 HPET 来, pcie 是怎么被探索出来的，
   - [ ] pcie 在 acpi 中对应的 table 是什么 ？
-
 - [ ] 至少，需要截获所有的 acpi 的访问，才可以正确模拟
   - [ ] acpi 表是从什么地方读去的, 固定的地址，还是进一步使用其他的机制通知的
-
 - [ ] 其实，还需要创建一个虚假的 acpi 给 x86
-
 - [ ] 除了 acpi 之外，还有什么是 firmware 传递给操作系统的?
   - [ ] efi 吗?
-
 - [ ] mmio 空间分配是怎么实现的？
-
 - [ ] 也许阅读一下
-
 - [什么是 AML](https://stackoverflow.com/questions/43088172/why-do-we-need-aml-acpi-machine-language)
-
 - [ ] apci 实际上还提供了关机选项啊
-
 - [ ] acpi_scan_add_handler
 - [ ] acpi_get_table 可以直接获取 acpi table 出来，所以，这些 table 是什么时候构建的 ?
 
@@ -127,8 +119,6 @@ $ acpidump > acpidump.out
 $ acpixtract -a acpidump.out
 $ iasl -d TABLE.dat
 ```
-
-## shutdown
 
 #### [ ] qemu 是如何组装 fadt 的
 - acpi_build
@@ -189,18 +179,17 @@ acpi_build 会进行两次配置
 从 pci -vvv 中间部分截取的信息:
 ```
 00:01.3 Bridge: Intel Corporation 82371AB/EB/MB PIIX4 ACPI (rev 03)
-	Subsystem: Red Hat, Inc. Qemu virtual machine
-	Control: I/O+ Mem+ BusMaster- SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR+ FastB2B- DisINTx-
-	Status: Cap- 66MHz- UDF- FastB2B+ ParErr- DEVSEL=medium >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
-	Interrupt: pin A routed to IRQ 9
+    Subsystem: Red Hat, Inc. Qemu virtual machine
+    Control: I/O+ Mem+ BusMaster- SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR+ FastB2B- DisINTx-
+    Status: Cap- 66MHz- UDF- FastB2B+ ParErr- DEVSEL=medium >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+    Interrupt: pin A routed to IRQ 9
 ```
 注意其实这个是  apci 普通的设备.
 
 - [ ] 从 acpi 到 pci 的配置空间 ?
 
 
-```c
-/*
+```txt
 >>> bt
 #0  pm_io_space_update (s=0x40) at ../hw/acpi/piix4.c:129
 #1  0x0000555555af6801 in pm_write_config (d=0x555557e57210, address=64, val=1537, len=4) at ../hw/acpi/piix4.c:161
@@ -212,8 +201,7 @@ acpi_build 会进行两次配置
 
 
 - 这里是 bios 的 log
-```c
-/*
+```txt
 === PCI new allocation pass #2 ===
 PCI: IO: c000 - c04f
 PCI: 32: 00000000c0000000 - 00000000fec00000                                               ---> pci_bios_map_devices
@@ -267,103 +255,69 @@ static void piix4_pm_config_setup(u16 bdf)
   - seabios 日志 : Moving pm_base to 0x600
 - [ ] piix4 的 pci 配置空间 : 0x40 / 0x80 都是个啥，为什么可以启动这个东西
 
-
-#### poweroff 内核的触发过程
-
-acpi_pm1_cnt_write
-```c
-/*
-#0  acpi_pm1_cnt_write (val=1, ar=0x555557b97d00) at ../hw/acpi/core.c:602
-#1  acpi_pm_cnt_write (opaque=0x555557b97d00, addr=0, val=1, width=2) at ../hw/acpi/core.c:602
-#2  0x0000555555b8d820 in memory_region_write_accessor (mr=mr@entry=0x555557b97f30, addr=0, value=value@entry=0x7fffd9ff90a8, size=size@entry=2, shift=<optimized out>,
-```
-
-
-内核调用流程:
-- machine_power_off
-  - native_machine_power_off
-    - pm_power_off = sleep.c:acpi_power_off
-      - acpi_enter_sleep_state
-        - acpi_hw_legacy_sleep
-          - acpi_pm1_cnt_write : 第一次执行写入到 0x1
-          - acpi_pm1_cnt_write : 第二次执行写入 0x2001
-
-在 acpi_pm1_cnt_write 中正好需要处理 ACPI_BITMASK_SLEEP_ENABLE
-
-// acpi_hw_write 写入的地址正好是 604 啊
-```c
-/*
-#0  acpi_hw_write (value=1, reg=0xffffffff82d0114c <acpi_gbl_FADT+172>) at drivers/acpi/acpica/hwregs.c:291
-#1  0xffffffff8148e293 in acpi_hw_write_pm1_control (pm1a_control=<optimized out>, pm1b_control=pm1b_control@entry=1) at drivers/acpi/acpica/hwregs.c:462
-#2  0xffffffff8148e649 in acpi_hw_legacy_sleep (sleep_state=<optimized out>) at drivers/acpi/acpica/hwsleep.c:101
-#3  0xffffffff8108baa6 in __do_sys_reboot (magic1=-18751827, magic2=<optimized out>, cmd=1126301404, arg=0x0 <fixed_percpu_data>) at kernel/reboot.c:364
-#4  0xffffffff81b945d0 in do_syscall_64 (nr=<optimized out>, regs=0xffffc90002007f58) at arch/x86/entry/common.c:47
-#5  0xffffffff81c0007c in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:112
-```
-
 从内核中间找到的:
 ```c
 struct acpi_table_fadt {
-	struct acpi_table_header header;	/* Common ACPI table header */
-	u32 facs;		/* 32-bit physical address of FACS */
-	u32 dsdt;		/* 32-bit physical address of DSDT */
-	u8 model;		/* System Interrupt Model (ACPI 1.0) - not used in ACPI 2.0+ */
-	u8 preferred_profile;	/* Conveys preferred power management profile to OSPM. */
-	u16 sci_interrupt;	/* System vector of SCI interrupt */
-	u32 smi_command;	/* 32-bit Port address of SMI command port */
-	u8 acpi_enable;		/* Value to write to SMI_CMD to enable ACPI */
-	u8 acpi_disable;	/* Value to write to SMI_CMD to disable ACPI */
-	u8 s4_bios_request;	/* Value to write to SMI_CMD to enter S4BIOS state */
-	u8 pstate_control;	/* Processor performance state control */
-	u32 pm1a_event_block;	/* 32-bit port address of Power Mgt 1a Event Reg Blk */
-	u32 pm1b_event_block;	/* 32-bit port address of Power Mgt 1b Event Reg Blk */
-	u32 pm1a_control_block;	/* 32-bit port address of Power Mgt 1a Control Reg Blk */
-	u32 pm1b_control_block;	/* 32-bit port address of Power Mgt 1b Control Reg Blk */
-	u32 pm2_control_block;	/* 32-bit port address of Power Mgt 2 Control Reg Blk */
-	u32 pm_timer_block;	/* 32-bit port address of Power Mgt Timer Ctrl Reg Blk */
-	u32 gpe0_block;		/* 32-bit port address of General Purpose Event 0 Reg Blk */
-	u32 gpe1_block;		/* 32-bit port address of General Purpose Event 1 Reg Blk */
-	u8 pm1_event_length;	/* Byte Length of ports at pm1x_event_block */
-	u8 pm1_control_length;	/* Byte Length of ports at pm1x_control_block */
-	u8 pm2_control_length;	/* Byte Length of ports at pm2_control_block */
-	u8 pm_timer_length;	/* Byte Length of ports at pm_timer_block */
-	u8 gpe0_block_length;	/* Byte Length of ports at gpe0_block */
-	u8 gpe1_block_length;	/* Byte Length of ports at gpe1_block */
-	u8 gpe1_base;		/* Offset in GPE number space where GPE1 events start */
-	u8 cst_control;		/* Support for the _CST object and C-States change notification */
-	u16 c2_latency;		/* Worst case HW latency to enter/exit C2 state */
-	u16 c3_latency;		/* Worst case HW latency to enter/exit C3 state */
-	u16 flush_size;		/* Processor memory cache line width, in bytes */
-	u16 flush_stride;	/* Number of flush strides that need to be read */
-	u8 duty_offset;		/* Processor duty cycle index in processor P_CNT reg */
-	u8 duty_width;		/* Processor duty cycle value bit width in P_CNT register */
-	u8 day_alarm;		/* Index to day-of-month alarm in RTC CMOS RAM */
-	u8 month_alarm;		/* Index to month-of-year alarm in RTC CMOS RAM */
-	u8 century;		/* Index to century in RTC CMOS RAM */
-	u16 boot_flags;		/* IA-PC Boot Architecture Flags (see below for individual flags) */
-	u8 reserved;		/* Reserved, must be zero */
-	u32 flags;		/* Miscellaneous flag bits (see below for individual flags) */
-	struct acpi_generic_address reset_register;	/* 64-bit address of the Reset register */
-	u8 reset_value;		/* Value to write to the reset_register port to reset the system */
-	u16 arm_boot_flags;	/* ARM-Specific Boot Flags (see below for individual flags) (ACPI 5.1) */
-	u8 minor_revision;	/* FADT Minor Revision (ACPI 5.1) */
-	u64 Xfacs;		/* 64-bit physical address of FACS */
-	u64 Xdsdt;		/* 64-bit physical address of DSDT */
-	struct acpi_generic_address xpm1a_event_block;	/* 64-bit Extended Power Mgt 1a Event Reg Blk address */
-	struct acpi_generic_address xpm1b_event_block;	/* 64-bit Extended Power Mgt 1b Event Reg Blk address */
-	struct acpi_generic_address xpm1a_control_block;	/* 64-bit Extended Power Mgt 1a Control Reg Blk address */
-	struct acpi_generic_address xpm1b_control_block;	/* 64-bit Extended Power Mgt 1b Control Reg Blk address */
-	struct acpi_generic_address xpm2_control_block;	/* 64-bit Extended Power Mgt 2 Control Reg Blk address */
-	struct acpi_generic_address xpm_timer_block;	/* 64-bit Extended Power Mgt Timer Ctrl Reg Blk address */
-	struct acpi_generic_address xgpe0_block;	/* 64-bit Extended General Purpose Event 0 Reg Blk address */
-	struct acpi_generic_address xgpe1_block;	/* 64-bit Extended General Purpose Event 1 Reg Blk address */
-	struct acpi_generic_address sleep_control;	/* 64-bit Sleep Control register (ACPI 5.0) */
-	struct acpi_generic_address sleep_status;	/* 64-bit Sleep Status register (ACPI 5.0) */
-	u64 hypervisor_id;	/* Hypervisor Vendor ID (ACPI 6.0) */
+    struct acpi_table_header header;    /* Common ACPI table header */
+    u32 facs;       /* 32-bit physical address of FACS */
+    u32 dsdt;       /* 32-bit physical address of DSDT */
+    u8 model;       /* System Interrupt Model (ACPI 1.0) - not used in ACPI 2.0+ */
+    u8 preferred_profile;   /* Conveys preferred power management profile to OSPM. */
+    u16 sci_interrupt;  /* System vector of SCI interrupt */
+    u32 smi_command;    /* 32-bit Port address of SMI command port */
+    u8 acpi_enable;     /* Value to write to SMI_CMD to enable ACPI */
+    u8 acpi_disable;    /* Value to write to SMI_CMD to disable ACPI */
+    u8 s4_bios_request; /* Value to write to SMI_CMD to enter S4BIOS state */
+    u8 pstate_control;  /* Processor performance state control */
+    u32 pm1a_event_block;   /* 32-bit port address of Power Mgt 1a Event Reg Blk */
+    u32 pm1b_event_block;   /* 32-bit port address of Power Mgt 1b Event Reg Blk */
+    u32 pm1a_control_block; /* 32-bit port address of Power Mgt 1a Control Reg Blk */
+    u32 pm1b_control_block; /* 32-bit port address of Power Mgt 1b Control Reg Blk */
+    u32 pm2_control_block;  /* 32-bit port address of Power Mgt 2 Control Reg Blk */
+    u32 pm_timer_block; /* 32-bit port address of Power Mgt Timer Ctrl Reg Blk */
+    u32 gpe0_block;     /* 32-bit port address of General Purpose Event 0 Reg Blk */
+    u32 gpe1_block;     /* 32-bit port address of General Purpose Event 1 Reg Blk */
+    u8 pm1_event_length;    /* Byte Length of ports at pm1x_event_block */
+    u8 pm1_control_length;  /* Byte Length of ports at pm1x_control_block */
+    u8 pm2_control_length;  /* Byte Length of ports at pm2_control_block */
+    u8 pm_timer_length; /* Byte Length of ports at pm_timer_block */
+    u8 gpe0_block_length;   /* Byte Length of ports at gpe0_block */
+    u8 gpe1_block_length;   /* Byte Length of ports at gpe1_block */
+    u8 gpe1_base;       /* Offset in GPE number space where GPE1 events start */
+    u8 cst_control;     /* Support for the _CST object and C-States change notification */
+    u16 c2_latency;     /* Worst case HW latency to enter/exit C2 state */
+    u16 c3_latency;     /* Worst case HW latency to enter/exit C3 state */
+    u16 flush_size;     /* Processor memory cache line width, in bytes */
+    u16 flush_stride;   /* Number of flush strides that need to be read */
+    u8 duty_offset;     /* Processor duty cycle index in processor P_CNT reg */
+    u8 duty_width;      /* Processor duty cycle value bit width in P_CNT register */
+    u8 day_alarm;       /* Index to day-of-month alarm in RTC CMOS RAM */
+    u8 month_alarm;     /* Index to month-of-year alarm in RTC CMOS RAM */
+    u8 century;     /* Index to century in RTC CMOS RAM */
+    u16 boot_flags;     /* IA-PC Boot Architecture Flags (see below for individual flags) */
+    u8 reserved;        /* Reserved, must be zero */
+    u32 flags;      /* Miscellaneous flag bits (see below for individual flags) */
+    struct acpi_generic_address reset_register; /* 64-bit address of the Reset register */
+    u8 reset_value;     /* Value to write to the reset_register port to reset the system */
+    u16 arm_boot_flags; /* ARM-Specific Boot Flags (see below for individual flags) (ACPI 5.1) */
+    u8 minor_revision;  /* FADT Minor Revision (ACPI 5.1) */
+    u64 Xfacs;      /* 64-bit physical address of FACS */
+    u64 Xdsdt;      /* 64-bit physical address of DSDT */
+    struct acpi_generic_address xpm1a_event_block;  /* 64-bit Extended Power Mgt 1a Event Reg Blk address */
+    struct acpi_generic_address xpm1b_event_block;  /* 64-bit Extended Power Mgt 1b Event Reg Blk address */
+    struct acpi_generic_address xpm1a_control_block;    /* 64-bit Extended Power Mgt 1a Control Reg Blk address */
+    struct acpi_generic_address xpm1b_control_block;    /* 64-bit Extended Power Mgt 1b Control Reg Blk address */
+    struct acpi_generic_address xpm2_control_block; /* 64-bit Extended Power Mgt 2 Control Reg Blk address */
+    struct acpi_generic_address xpm_timer_block;    /* 64-bit Extended Power Mgt Timer Ctrl Reg Blk address */
+    struct acpi_generic_address xgpe0_block;    /* 64-bit Extended General Purpose Event 0 Reg Blk address */
+    struct acpi_generic_address xgpe1_block;    /* 64-bit Extended General Purpose Event 1 Reg Blk address */
+    struct acpi_generic_address sleep_control;  /* 64-bit Sleep Control register (ACPI 5.0) */
+    struct acpi_generic_address sleep_status;   /* 64-bit Sleep Status register (ACPI 5.0) */
+    u64 hypervisor_id;  /* Hypervisor Vendor ID (ACPI 6.0) */
 };
 ```
 
-```
+```txt
 >>> p acpi_gbl_FADT
 $3 = {
   header = {
@@ -506,7 +460,7 @@ $3 = {
 
 
 ## acpi in address space
-```
+```txt
     0000000000000600-000000000000063f (prio 0, i/o): piix4-pm
       0000000000000600-0000000000000603 (prio 0, i/o): acpi-evt
       0000000000000604-0000000000000605 (prio 0, i/o): acpi-cnt
@@ -523,7 +477,7 @@ $3 = {
 下面三个设备在 acpi 中间存在对应的配置的
 
 seabios.md 中的部分内容
-```
+```txt
     PHPR, hid, sta (0x8), crs
         i/o 0xae00 -> 0xae17  // acpi-pci-hotplug
     GPE0, hid, sta (0x8), crs // acpi-gpe0
@@ -594,8 +548,7 @@ pcibios_add_bus 就是 acpi_pci_add_bus，最后调用到 bios 的处理函数�
 
 - [ ] 似乎这些设备的 probe 可能是 acpi 之类的推动起来的，也可能是 driver 初始化的时候推动起来的
 
-```c
-/*
+```txt
 #0  acpi_button_add (device=0xffff8881002d5000) at drivers/acpi/button.c:474
 #1  0xffffffff8146861c in acpi_device_probe (dev=0xffff8881002d5288) at drivers/acpi/bus.c:1003
 #2  0xffffffff8167fd76 in really_probe (dev=dev@entry=0xffff8881002d5288, drv=drv@entry=0xffffffff825b37e8 <acpi_button_driver+200>) at drivers/base/dd.c:576
@@ -625,8 +578,7 @@ pcibios_add_bus 就是 acpi_pci_add_bus，最后调用到 bios 的处理函数�
 - [ ] 思考一下 e1000 是如何探测的?
   - 最开始的时候，e1000 设备就被探测了, 那么是如何匹配上的?
 
-```c
-/*
+```txt
 [    1.278648] e1000 0000:00:03.0 eth0: (PCI:33MHz:32-bit) 52:54:00:12:34:56
 [    1.279551] e1000 0000:00:03.0 eth0: Intel(R) PRO/1000 Network Connection
 [    1.280417] huxueshi:pci_device_probe e1000
@@ -682,9 +634,7 @@ pcibios_add_bus 就是 acpi_pci_add_bus，最后调用到 bios 的处理函数�
 ## 从 acpi 到 pcie
 所有的 acpi 都是从这里开始的:
 
-```c
-/*
-#0  huxueshi () at drivers/base/bus.c:457
+```txt
 #1  bus_add_device (dev=dev@entry=0xffff8881002d90c0) at drivers/base/bus.c:457
 #2  0xffffffff8167cb4d in device_add (dev=dev@entry=0xffff8881002d90c0) at drivers/base/core.c:3273
 #3  0xffffffff814301d3 in pci_device_add (dev=dev@entry=0xffff8881002d9000, bus=bus@entry=0xffff888100259c00) at drivers/pci/probe.c:2498
@@ -733,7 +683,7 @@ piix3 的 pci 配置空间 PIIX_PIRQCA 是这个设备的扩展功能:
 
 内核 acpi_pci_link_get_current 函数通过执行 `_CRS` 获取 link
 
-```c
+```txt
 [    0.535591] ACPI: PCI: Interrupt link LNKA configured for IRQ 10
 [    0.535956] ACPI: PCI: Interrupt link LNKB configured for IRQ 10
 [    0.536718] ACPI: PCI: Interrupt link LNKC configured for IRQ 11
@@ -836,7 +786,7 @@ PCI_INTERRUPT_PIN : 表示存在中断引脚可以发送中断
 ## [ ] hotplug 这的设备
 在 device_add 中可以检测到:
 
-```
+```txt
 [    0.464903] huxueshi device: 'device:02': device_add
 [    0.465557] huxueshi device: 'device:03': device_add
 [    0.465896] huxueshi device: 'device:04': device_add

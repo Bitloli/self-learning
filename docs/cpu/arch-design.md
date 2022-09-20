@@ -152,7 +152,15 @@ NUMA 总线协议，更多的总线，更加复杂的 irqbalance 要求，需要
 ### 兼容性
 
 ### 功耗
-<!-- TODO 补充一下 -->
+
+#### 功耗参数
+功耗对于嵌入式设备或者移动设备极其重要，如果不小心考虑，相同性能，几十倍的功耗是很容易搞出来的。
+
+#### 功能功能
+- pstate : 高负载的时候如何提升频率；
+- cstate : 低负载的时候如何控制功耗；
+
+参考: https://en.wikipedia.org/wiki/Advanced_Configuration_and_Power_Interface
 
 ### 可靠性
 - ECC 内存

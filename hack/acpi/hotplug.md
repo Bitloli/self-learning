@@ -1,3 +1,5 @@
+# hotplug
+
 # [kernel doc](https://www.kernel.org/doc/html/latest/firmware-guide/acpi/index.html)
 
 - 使用 make menuconfig 大致分析一下一共都存在什么功能吧

@@ -11,6 +11,8 @@
 
 - [ ] 在代码中找到 device page table 的内容，以及 IOMMU 防护恶意驱动
 
+- [ ] QEMU 中存在 3000 行处理这个的
+
 ## https://events19.linuxfoundation.cn/wp-content/uploads/2017/11/Shared-Virtual-Addressing_Yisheng-Xie-_-Bob-Liu.pdf
 
 ## [isca_iommu_tutorial](http://pages.cs.wisc.edu/~basu/isca_iommu_tutorial/IOMMU_TUTORIAL_ASPLOS_2016.pdf)

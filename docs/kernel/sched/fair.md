@@ -7,13 +7,13 @@
 > 4. 5000 作用的位置，处理 bandwidth
 > 5. 后面也许都是在处理 cpu attach 的吧
 
-
 update_cfs_group : shares runable 然后利用 reweight_entity 分析
+
+## CONFIG_CFS_BANDWIDTH
+- Documentation/scheduler/sched-bwc.rst
 
 ## taks group
 > 1. root_task_group 在 sched_init 中间被初始化 ?
-
-
 
 ```c
 // init_tg_cfs_entry 的两个调用者
@@ -593,8 +593,6 @@ static void update_curr_fair(struct rq *rq)
 
 
 ## pick_next_task_fair
-![](../../img/source/pick_next_entity_fair.png)
-![](../../img/source/update_curr.png)
 
 > put_prev_task_fair 希望也是对称的分析的内容呀!
 
