@@ -38,7 +38,7 @@ SMT : L1 高速共享
 MC  : 共享 LLC
 SOC : DIE
 
-```
+```plain
 config SCHED_SMT
 	bool "SMT (Hyperthreading) scheduler support"
 	depends on SPARC64 && SMP

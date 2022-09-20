@@ -1,8 +1,8 @@
 # kernel/sched/fair.md
-有点怀疑，cgroup 会将一组的thread的所有的资源统一管理的 ? 而不是存在一个cgroup for mem , cgroup for cpu 之类的 ?
+有点怀疑，cgroup 会将一组的 thread 的所有的资源统一管理的 ? 而不是存在一个 cgroup for mem , cgroup for cpu 之类的 ?
 
 
-## 整理一下kernel的doc
+## 整理一下 kernel 的 doc
 > A group’s unassigned quota is globally tracked, being refreshed back to cfs_quota units at each period boundary. As threads consume this bandwidth it is transferred to cpu-local “silos” on a demand basis. The amount transferred within each of these updates is tunable and described as the “slice”.
 
 > For efficiency run-time is transferred between the global pool and CPU local “silos” in a batch fashion.
@@ -30,7 +30,7 @@ static int cpu_stat_show(struct seq_file *seq, void *v)
 ## sched_entity 是否对应的
 看上去，sched_entity 和 rq 对应:
 1. se 特指给 cfs_rq 使用 ?
-2. 如果真的是仅仅作为rb tree 中间的一个node 显然没有必要高处三个来！
+2. 如果真的是仅仅作为 rb tree 中间的一个 node 显然没有必要高处三个来！
 
 ```c
   // 所以entity 其实应该
@@ -100,8 +100,8 @@ struct sched_rt_entity {
 ```
 
 
-## 为什么只有三个rq
-> stop 和 idle 过于蛇皮，所以其实rq 和 sched_class 是对应的!
+## 为什么只有三个 rq
+> stop 和 idle 过于蛇皮，所以其实 rq 和 sched_class 是对应的!
 
 ```c
 	struct cfs_rq		cfs;
@@ -122,7 +122,7 @@ static struct task_struct * pick_next_task_dl(struct rq *rq, struct task_struct 
 
 	dl_rq = &rq->dl;
 
-// stop 利用 rq 中间的特定 task_struct 
+// stop 利用 rq 中间的特定 task_struct
 static struct task_struct * pick_next_task_stop(struct rq *rq, struct task_struct *prev, struct rq_flags *rf) {
 	struct task_struct *stop = rq->stop;
 
@@ -149,8 +149,8 @@ static struct task_struct * pick_next_task_idle(struct rq *rq, struct task_struc
 
 
 ## 浏览一下所有的函数的作用
-1. 为什么这些函数中间都需要持有的参数rq ? 难道不能通过 task_struct 找到 rq 吗 ?
-2. 会不会一个rq 中间持有多个 cfs_rq
+1. 为什么这些函数中间都需要持有的参数 rq ? 难道不能通过 task_struct 找到 rq 吗 ?
+2. 会不会一个 rq 中间持有多个 cfs_rq
 
 ```c
 struct sched_class {
@@ -247,9 +247,7 @@ static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
     hrtick_update(rq); // 高精度时钟 ?
 ```
 
-```c
 
-```
 
 ## 更新时钟机制
 
@@ -318,7 +316,7 @@ static inline u64 calc_delta_fair(u64 delta, struct sched_entity *se)
 
 * ***Latency Tracking***
 
-> 似乎latency 描述 : 在特定的时间之类的所有active 的process 必须处理一下。
+> 似乎 latency 描述 : 在特定的时间之类的所有 active 的 process 必须处理一下。
 > 的确是 preempt 机制的目的相同
 
 
@@ -375,7 +373,7 @@ long tg_get_cfs_period(struct task_group *tg)
 2. 创建 thread group 的创建的时机是什么 ?
 3. thread group 让整个 reb tree 如何构建 ?
 4. 一个 thread group 会不会对于另一个 thread group 含有优先级 ?
-5. 是不是一旦配置了tg那么就所有的thread 都必须属于某一个group 中间 ?
+5. 是不是一旦配置了 tg 那么就所有的 thread 都必须属于某一个 group 中间 ?
 
 ```c
 /* Task group related information */
@@ -450,5 +448,3 @@ struct cfs_bandwidth {
 };
 ```
 > Documentation/admin-guide/cgroup-v1/cgroups.rst
-
-

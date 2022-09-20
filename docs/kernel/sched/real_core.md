@@ -1,6 +1,6 @@
 # more analyze on the kernel/sched/core.c
 
-## preempt 实现的原理到底是什么 ?
+## preempt 实现的原理到底是什么
 
 ## cgroup 机制
 
@@ -77,7 +77,7 @@ static void __sched notrace __schedule(bool preempt)
 
 
 
-## `sched_tick_*` 
+## sched_tick_
 
 为了处理一下 nohz 导致的问题
 
@@ -92,7 +92,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	       struct task_struct *next, struct rq_flags *rf)
 ```
 1. 首先进行 MM 的切换，其中含有涉及到 tlb 之类的切换
-> 不是很懂，为什么mm 相等的情况，没有单独分析
+> 不是很懂，为什么 mm 相等的情况，没有单独分析
 2. switch_to 进行真正的切换
   1. `__switch_to_asm` 利用汇编切换 stack 和 thread's register
 
@@ -222,7 +222,6 @@ EXPORT_SYMBOL(default_wake_function);
 似乎，就上锁而言，wake up 需要保证的内容似乎稍微简单一点
 
 1. set_current_state
-2. 
 
 
 
@@ -360,11 +359,11 @@ out:
 ```
 
 
-## select_task_rq 和 set_task_cpu 看上去很简单呀！
+## select_task_rq 和 set_task_cpu 看上去很简单呀
 
 两者都是调用了 `sched_class->select_task_rq` 维持生活的
 
-set_task_cpu 会调用 set_task_rq进行一些设置的工作。
+set_task_cpu 会调用 set_task_rq 进行一些设置的工作。
 
 rq 和 cpu 在此处的含义有不同 ?
 ```c
@@ -407,7 +406,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
 
 函数简单，但是 为什么是这种更新机制 ?
 
-## try_to_wake_up 的辅助函数 `ttwu_*`
+## try_to_wake_up 的辅助函数 `ttwu_
 1. remote 的概念 ?
 
 ```c
@@ -487,7 +486,7 @@ void activate_task(struct rq *rq, struct task_struct *p, int flags)
 
 ## sched_ttwu_pending
 
-该函数似乎是将所有rq 中的所有的，wake_list
+该函数似乎是将所有 rq 中的所有的，wake_list
 
 ```c
 void sched_ttwu_pending(void)

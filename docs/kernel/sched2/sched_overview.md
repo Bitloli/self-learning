@@ -4,37 +4,37 @@
 1. 一共含有什么调度器
 2. 调度器中间含有什么函数 : 循环的时候
 3. 调度器的架构:
-    1. cpu : rq 管理学 : 对于四个rq进行循环使用 next 找到
+    1. cpu : rq 管理学 : 对于四个 rq 进行循环使用 next 找到
     2. wake_up 机制中间的内容是什么 ?
 4. context switch 的过程
 5. 优先级数值的计算的方法是什么 ?
-6. 一直想要express的内容 : 线程其实和之间的是一个连续的变化过程，但是用户为什么看到的是进程的概念
+6. 一直想要 express 的内容 : 线程其实和之间的是一个连续的变化过程，但是用户为什么看到的是进程的概念
 https://stackoverflow.com/questions/9305992/if-threads-share-the-same-pid-how-can-they-be-identified
-7. 实现迁移task 的方法
-8. 当wakeup 一个线程的时候，如何确定其被加载哪一个rq 中间的 ?
+7. 实现迁移 task 的方法
+8. 当 wakeup 一个线程的时候，如何确定其被加载哪一个 rq 中间的 ?
 9. 总结一下状态的变迁内容。
-10. 一个进程如何确定自己的优先级，是不是rt的 ?
+10. 一个进程如何确定自己的优先级，是不是 rt 的 ?
 
-调度器的原则: 选择下一个ready 的进程执行以及决定执行的tick 数目 ?
+调度器的原则: 选择下一个 ready 的进程执行以及决定执行的 tick 数目 ?
 
-1. 几个很怪异的地方: policy常量 和 (sched_class sched_entity rq) 的数量不是对应的啊!
+1. 几个很怪异的地方: policy 常量 和 (sched_class sched_entity rq) 的数量不是对应的啊!
 2. pid 和 tgid 的各自使用的地方
 
 
 | Filename            | blank | comment | code | explanation                                                                                                                                                                                            |
 |---------------------|-------|---------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | fair.c              | 1659  | 2975    | 5572 |                                                                                                                                                                                                        |
-| core.c              | 1033  | 1986    | 4036 | 其实，我们没有core 这一个调度器 ，Core kernel scheduler code and related syscalls                                                                                                                      |
+| core.c              | 1033  | 1986    | 4036 | 其实，我们没有 core 这一个调度器 ，Core kernel scheduler code and related syscalls                                                                                                                      |
 | rt.c                | 515   | 504     | 1712 |                                                                                                                                                                                                        |
 | deadline.c          | 406   | 858     | 1493 |                                                                                                                                                                                                        |
 | sched.h             | 365   | 445     | 1436 |                                                                                                                                                                                                        |
 | topology.c          | 315   | 446     | 1164 | numa 系统                                                                                                                                                                                              |
-| debug.c             | 166   | 36      | 804  | 看来，只要含有不确定性的东西(sched lock 之类的)，那么就必定含有debug的内容                                                                                                                             |
-| cputime.c           | 142   | 229     | 524  | 利用kernel/timer 测量cpu 执行的时间                                                                                                                                                                    |
+| debug.c             | 166   | 36      | 804  | 看来，只要含有不确定性的东西(sched lock 之类的)，那么就必定含有 debug 的内容                                                                                                                             |
+| cputime.c           | 142   | 229     | 524  | 利用 kernel/timer 测量 cpu 执行的时间                                                                                                                                                                    |
 | cpufreq_schedutil.c | 156   | 206     | 523  |                                                                                                                                                                                                        |
 | idle.c              | 78    | 134     | 270  | idle 进程的实现 ? 空转 ? 低功耗模式 ?                                                                                                                                                                  |
-| cpuacct.c           | 65    | 41      | 269  | 统计cpu时间                                                                                                                                                                                            |
-| wait.c              | 59    | 138     | 245  | wait queue 实现，被大量的驱动使用，应该不是workqueue 的实现基础                                                                                                                                        |
+| cpuacct.c           | 65    | 41      | 269  | 统计 cpu 时间                                                                                                                                                                                            |
+| wait.c              | 59    | 138     | 245  | wait queue 实现，被大量的驱动使用，应该不是 workqueue 的实现基础                                                                                                                                        |
 | clock.c             | 71    | 176     | 234  | @todo                                                                                                                                                                                                  |
 | autogroup.c         | 51    | 40      | 179  | 没有配置                                                                                                                                                                                               |
 | wait_bit.c          | 41    | 31      | 177  | 新的等待机制?                                                                                                                                                                                          |
@@ -43,18 +43,18 @@ https://stackoverflow.com/questions/9305992/if-threads-share-the-same-pid-how-ca
 | pelt.c              | 50    | 194     | 155  | Per Entity Load Tracking                                                                                                                                                                               |
 | loadavg.c           | 48    | 202     | 150  | hhhh loadavg 找到 average 时间                                                                                                                                                                         |
 | completion.c        | 28    | 157     | 144  | completion 机制                                                                                                                                                                                        |
-| isolation.c         | 26    | 10      | 117  | 不知道为什么取名字叫做isolation 听到这个东西就烦! Housekeeping management. Manage the targets for routine code that can run on any CPU: unbound workqueues, timers, kthreads and any offloadable work. |
+| isolation.c         | 26    | 10      | 117  | 不知道为什么取名字叫做 isolation 听到这个东西就烦! Housekeeping management. Manage the targets for routine code that can run on any CPU: unbound workqueues, timers, kthreads and any offloadable work. |
 | stats.h             | 20    | 41      | 106  |                                                                                                                                                                                                        |
 | stop_task.c         | 30    | 21      | 94   | Simple, special scheduling class for the per-CPU stop tasks 最简单的调度器了，是认识架构的好入口，@todo 所以，谁会使用这一个蛇皮。                                                                     |
 | swait.c             | 21    | 18      | 93   | simple wait queue 又一个 wait 机制 ?                                                                                                                                                                   |
 | cpupri.c            | 31    | 118     | 92   | numa 系统 ?，cpu                                                                                                                                                                                       |
 | stats.c             | 19    | 19      | 90   | /proc/sys/kernel/sched_schedstats 相关的内容                                                                                                                                                           |
-| pelt.h              | 14    | 9       | 49   | Per Entity Load Tracking 各种调度器的loadavg                                                                                                                                                           |
+| pelt.h              | 14    | 9       | 49   | Per Entity Load Tracking 各种调度器的 loadavg                                                                                                                                                           |
 | autogroup.h         | 13    | 6       | 41   |                                                                                                                                                                                                        |
 | features.h          | 14    | 54      | 24   |                                                                                                                                                                                                        |
 | cpudeadline.h       | 4     | 1       | 21   |                                                                                                                                                                                                        |
 | Makefile            | 4     | 8       | 19   |                                                                                                                                                                                                        |
-| cpufreq.c           | 5     | 38      | 19   | Scheduler code and data structures related to cpufreq  @todo 并不是非常清楚cpufreq f                                                                                                                   |
+| cpufreq.c           | 5     | 38      | 19   | Scheduler code and data structures related to cpufreq  @todo 并不是非常清楚 cpufreq f                                                                                                                   |
 | cpupri.h            | 5     | 2       | 18   |                                                                                                                                                                                                        |
 | sched-pelt.h        | 2     | 2       | 10   |                                                                                                                                                                                                        |
 
@@ -81,7 +81,7 @@ task_struct 中间持有:
 
 ```c
 // 存在 rq ，cfs_rq ，
-// sched_entity 
+// sched_entity
 
 
 
@@ -172,22 +172,22 @@ extern const struct sched_class fair_sched_class;
 extern const struct sched_class idle_sched_class;
 ```
 
-1. stop_sched_class优先级最高的任务会使用这种策略，会中断所有其他线程，且不会被其他任务打断； // TODO 有这个
+1. stop_sched_class 优先级最高的任务会使用这种策略，会中断所有其他线程，且不会被其他任务打断； // TODO 有这个
 
-1. dl_sched_class就对应上面的deadline调度策略；
-1. rt_sched_class就对应RR算法或者FIFO算法的调度策略，具体调度策略由进程的`task_struct->policy`指定；
+1. dl_sched_class 就对应上面的 deadline 调度策略；
+1. rt_sched_class 就对应 RR 算法或者 FIFO 算法的调度策略，具体调度策略由进程的`task_struct->policy`指定；
 
-1. fair_sched_class就是普通进程的调度策略；
-1. idle_sched_class就是空闲进程的调度策略。
+1. fair_sched_class 就是普通进程的调度策略；
+1. idle_sched_class 就是空闲进程的调度策略。
 
-对于调度策略，其中SCHED_FIFO、SCHED_RR、SCHED_DEADLINE是实时进程的调度策略。
+对于调度策略，其中 SCHED_FIFO、SCHED_RR、SCHED_DEADLINE 是实时进程的调度策略。
 
 SCHED_NORMAL、SCHED_BATCH、SCHED_IDLE。
 
 > 调度策略和调度常量不一致
 
 两个关键函数 :
-> scheduele 进入到ready 的状态，被 semaphore 捕获，成为不是ready 的状态。
+> scheduele 进入到 ready 的状态，被 semaphore 捕获，成为不是 ready 的状态。
 
 
 # http://www.ece.ubc.ca/~sasha/papers/eurosys16-final29.pdf
@@ -208,7 +208,7 @@ The rest of the paper is organized as follows.
 - Section 2 describes the architecture of the Linux scheduler.
 - Section 3 introduces the bugs we discovered, analyzes their root causes
 and reports their effect on performance.
-- Section 4 presents the tools. 
+- Section 4 presents the tools.
 - In Section 5 we reflect on the lessons learned as a result of this study and identify open research problems.
 - Section 6 discusses related work.
 - Section 7 summarizesour finding.
@@ -246,7 +246,7 @@ procedure often.
 
 So in addition to **periodic** loadbalancing, the scheduler also invokes “emergency” load balancing when a core becomes idle, and implements some
 load-balancing logic upon placement of *newly created* or
-newly awoken threads. 
+newly awoken threads.
 
 A basic load balancing
 algorithm would compare the load of all cores and then
@@ -265,4 +265,3 @@ Algorithm 1:
 
 # https://en.wikipedia.org/wiki/Completely_Fair_Scheduler
 > @todo read the doc
-

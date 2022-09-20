@@ -2,58 +2,57 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-- [introduction](#introduction)
-- [task_struct](#task_struct)
-- [sched class and policy](#sched-class-and-policy)
-- [runqueue](#runqueue)
-- [task_group](#task_group)
-- [rt](#rt)
-- [schedule](#schedule)
-- [load](#load)
-    - [pelt](#pelt)
-- [process state](#process-state)
-- [process relation](#process-relation)
-- [vfork](#vfork)
-- [clone](#clone)
-- [signal](#signal)
-    - [signal fork](#signal-fork)
-    - [send signal](#send-signal)
-    - [do signal](#do-signal)
-- [idle](#idle)
-    - [ptrace](#ptrace)
-- [waitqueue](#waitqueue)
-- [design](#design)
-- [fork](#fork)
-    - [copy_process](#copy_process)
-    - [copy_thread](#copy_thread)
-    - [stack's copy](#stacks-copy)
-- [stack](#stack)
-    - [x86 stack](#x86-stack)
-- [pidfd](#pidfd)
-- [pid](#pid)
-- [green thread](#green-thread)
-- [cpp thread keyword](#cpp-thread-keyword)
-- [cpu](#cpu)
-- [syscall](#syscall)
-    - [x86 syscall(merge)](#x86-syscallmerge)
-    - [syscall int](#syscall-int)
-    - [syscall vsyscall](#syscall-vsyscall)
-    - [syscall getcpu](#syscall-getcpu)
-- [daemon](#daemon)
-- [user group](#user-group)
-- [smp](#smp)
-- [`__schedule`](#__schedule)
-- [kthread](#kthread)
-- [first user process](#first-user-process)
-- [TODO](#todo)
-- [process group](#process-group)
-- [sched_class ops](#sched_class-ops)
-    - [enqueue](#enqueue)
-- [runtime vruntime](#runtime-vruntime)
-- [cfs](#cfs)
-- [pt_regs](#pt_regs)
-- [ipc](#ipc)
-- [zombie 和 orphan](#zombie-和-orphan)
+* [introduction](#introduction)
+* [task_struct](#task_struct)
+* [sched class and policy](#sched-class-and-policy)
+* [runqueue](#runqueue)
+* [task_group](#task_group)
+* [rt](#rt)
+* [schedule](#schedule)
+* [load](#load)
+* [process state](#process-state)
+* [process relation](#process-relation)
+* [vfork](#vfork)
+* [clone](#clone)
+* [signal](#signal)
+    * [signal fork](#signal-fork)
+    * [send signal](#send-signal)
+    * [do signal](#do-signal)
+* [idle](#idle)
+    * [ptrace](#ptrace)
+* [waitqueue](#waitqueue)
+* [design](#design)
+* [fork](#fork)
+    * [copy_process](#copy_process)
+    * [copy_thread](#copy_thread)
+    * [stack's copy](#stacks-copy)
+* [stack](#stack)
+    * [x86 stack](#x86-stack)
+* [pidfd](#pidfd)
+* [pid](#pid)
+* [green thread](#green-thread)
+* [cpp thread keyword](#cpp-thread-keyword)
+* [cpu](#cpu)
+* [syscall](#syscall)
+    * [x86 syscall(merge)](#x86-syscallmerge)
+    * [syscall int](#syscall-int)
+    * [syscall vsyscall](#syscall-vsyscall)
+    * [syscall getcpu](#syscall-getcpu)
+* [daemon](#daemon)
+* [user group](#user-group)
+* [smp](#smp)
+* [`__schedule`](#__schedule)
+* [kthread](#kthread)
+* [first user process](#first-user-process)
+* [TODO](#todo)
+* [process group](#process-group)
+* [sched_class ops](#sched_class-ops)
+    * [enqueue](#enqueue)
+* [runtime vruntime](#runtime-vruntime)
+* [cfs](#cfs)
+* [pt_regs](#pt_regs)
+* [ipc](#ipc)
+* [zombie 和 orphan](#zombie-和-orphan)
 
 <!-- vim-markdown-toc -->
 
@@ -61,24 +60,24 @@
 1. 容器: cgroup 和 namespace
 2. 多用户 : 调度器
     1. 不用的场景存在不同的 exec
-3. 启动 : fork 
+3. 启动 : fork
     1. 第一个进程启动 : ?
     2. 启动第一个用户进程 : ?
     3. Posix 规定的 25个 flags
-4. 执行 : exec 
+4. 执行 : exec
 4. 暂停 : yield
 5. 死亡 : kill exit
-6. 交流 : signal 
+6. 交流 : signal
 
 
-进入调度器之前 : 
-1. exit.c 
+进入调度器之前 :
+1. exit.c
 2. pidfd
 3. pidnamespace : 据说 namespace 下，可以没有 pid = 1
 .....
 
 - [ ] How to make so many policy work together ?
-    - bandwidth : 
+    - bandwidth :
     - cgroup
     - every process should run in the period
     - different scheduler : dead rt
@@ -105,7 +104,7 @@
 ```c
 struct task_struct {
     /* ... */
-    
+
     /* 进程状态 */
     volatile long			state;
 
@@ -115,7 +114,7 @@ struct task_struct {
 	int				normal_prio;
 	unsigned int			rt_priority;
   unsigned int			policy;
-    
+
   /* 调度类，调度实体相关，任务组相关等 */
   const struct sched_class	*sched_class;
 	struct sched_entity		se;
@@ -124,7 +123,7 @@ struct task_struct {
 	struct task_group		*sched_task_group;
 #endif
 	struct sched_dl_entity		dl;
-    
+
   /* 进程之间的关系相关 */
   /* Real parent process: */
 	struct task_struct __rcu	*real_parent;
@@ -138,7 +137,7 @@ struct task_struct {
 	struct list_head		children;
 	struct list_head		sibling;
 	struct task_struct		*group_leader;
-    
+
     /* ... */
 }
 ```
@@ -214,7 +213,7 @@ struct rq {
 	 * remote CPUs use both these fields when doing load calculation.
 	 */
 	unsigned int nr_running;
-    
+
     /* 三个调度队列：CFS调度，RT调度，DL调度 */
 	struct cfs_rq cfs;
 	struct rt_rq rt;
@@ -222,9 +221,9 @@ struct rq {
 
     /* stop指向迁移内核线程， idle指向空闲内核线程 */
     struct task_struct *curr, *idle, *stop;
-    
+
     /* ... */
-}  
+}
 ```
 
 ## task_group
@@ -286,7 +285,7 @@ notes from [^8]:
 1. 主动调度 - schedule()
 
 ![](https://img2018.cnblogs.com/blog/1771657/202002/1771657-20200201170715768-1838632136.png)
-    
+
 2. 周期调度 - schedule_tick()
     - 时钟中断处理程序中，调用schedule_tick()函数；
     - 时钟中断是调度器的脉搏，内核依靠周期性的时钟来处理器CPU的控制权；
@@ -296,7 +295,7 @@ notes from [^8]:
 ![](https://img2018.cnblogs.com/blog/1771657/202002/1771657-20200201170736505-296291185.png)
 
 3. hrtick()
-![](https://img2018.cnblogs.com/blog/1771657/202002/1771657-20200201170755832-1551335560.png) 
+![](https://img2018.cnblogs.com/blog/1771657/202002/1771657-20200201170755832-1551335560.png)
 
 
 4. wake_up_process()
@@ -307,133 +306,6 @@ notes from [^8]:
 
 ## load
   - [ ] calc_group_shares
-
-#### pelt 
-[Per-entity load tracking](https://lwn.net/Articles/531853/)
-
-
-[Load tracking in the scheduler](https://lwn.net/Articles/639543/)
-- The CFS algorithm defines a time duration called the "scheduling period," during which every runnable task on the CPU should run at least once. 
-- A group of tasks is called a "scheduling entity" in the kernel.
-
-*If a CPU is associated with a number C that represents its ability to process tasks (let's call it "capacity"), then the load of a process is a metric that is expressed in units of C, indicating the number of such CPUs required to make satisfactory progress on its job. This number could also be a fraction of C, in which case it indicates that a single such CPU is good enough. The load of a process is important in scheduling because, besides influencing the time that a task spends running on the CPU, it helps to estimate overall CPU load, which is required during load balancing.
-
-The question is how to estimate the load of a process. Should it be set statically or should it be set dynamically at run time based on the behavior of the process? Either way, how should it be calculated? There have been significant efforts at answering these questions in the recent past. As a consequence, the number of load-tracking metrics has grown significantly and load estimation itself has gotten quite complex.*
-
-- [ ] what's relation with `load`, `priority` , `weight` and `share` ?
-
-how and when groups of tasks are created:
-1. Users may use the control group ("cgroup") infrastructure to partition system resources between tasks. Tasks belonging to a cgroup are associated with a group in the scheduler (if the scheduler controller is attached to the group).
-2. When a new session is created through the `set_sid()` system call. All tasks belonging to a specific session also belong to the same scheduling group. This feature is enabled when CONFIG_SCHED_AUTOGROUP is set in the kernel configuration.
-3. a single task becomes a scheduling entity on its own. 
-
-**Each scheduling entity contains a run queue**, the parent run queue on which a scheduling entity is queued is represented by `cfs_rq`, while the run queue that it owns is represented by `my_rq` in the `sched_entity` data structure. 
-```c
-struct sched_entity {
-	/* rq on which this entity is (to be) queued: */
-	struct cfs_rq			*cfs_rq;
-	/* rq "owned" by this entity/group: */
-	struct cfs_rq			*my_q;
-```
-For every CPU c, a given `task_group` tg has a `sched_entity` called se and a run queue `cfs_rq` associated with it. 
-
-Any given task's time slice is dependent on its priority and the number of tasks on the run queue. The priority of a task is a number that represents its importance; **it is represented in the kernel by a number between zero and 139.**
-
-But the priority value by itself is not helpful to the scheduler, *which also needs to know the load of the task to estimate its time slice.*
-As mentioned above, the load must be the multiple of the capacity of a standard CPU that is required to make satisfactory progress on the task. Hence this priority number must be mapped to such a value; this is done in the array `prio_to_weight[]`.
-
-A priority number of 120, which is the priority of a normal task, is mapped to a load of 1024, which is the value that the kernel uses to represent the capacity of a single standard CPU.
-```c
-/*
- * Nice levels are multiplicative, with a gentle 10% change for every
- * nice level changed. I.e. when a CPU-bound task goes from nice 0 to
- * nice 1, it will get ~10% less CPU time than another CPU-bound task
- * that remained on nice 0.
- *
- * The "10% effect" is relative and cumulative: from _any_ nice level,
- * if you go up 1 level, it's -10% CPU usage, if you go down 1 level
- * it's +10% CPU usage. (to achieve that we use a multiplier of 1.25.
- * If a task goes up by ~10% and another task goes down by ~10% then
- * the relative distance between them is ~25%.)
- */
-const int sched_prio_to_weight[40] = {
- /* -20 */     88761,     71755,     56483,     46273,     36291,
- /* -15 */     29154,     23254,     18705,     14949,     11916,
- /* -10 */      9548,      7620,      6100,      4904,      3906,
- /*  -5 */      3121,      2501,      1991,      1586,      1277,
- /*   0 */      1024,       820,       655,       526,       423,
- /*   5 */       335,       272,       215,       172,       137,
- /*  10 */       110,        87,        70,        56,        45,
- /*  15 */        36,        29,        23,        18,        15,
-};
-```
-
-```c
-/*
- * Task weight (visible to users) and its load (invisible to users) have
- * independent resolution, but they should be well calibrated. We use
- * scale_load() and scale_load_down(w) to convert between them. The
- * following must be true:
- *
- *  scale_load(sched_prio_to_weight[USER_PRIO(NICE_TO_PRIO(0))]) == NICE_0_LOAD
- *
- */
-#define NICE_0_LOAD		(1L << NICE_0_LOAD_SHIFT)
-
-/*
- * 'User priority' is the nice value converted to something we
- * can work with better when scaling various scheduler parameters,
- * it's a [ 0 ... 39 ] range.
- */
-#define USER_PRIO(p)		((p)-MAX_RT_PRIO)
-
-/*
- * Convert user-nice values [ -20 ... 0 ... 19 ]
- * to static priority [ MAX_RT_PRIO..MAX_PRIO-1 ],
- * and back.
- */
-#define NICE_TO_PRIO(nice)	((nice) + DEFAULT_PRIO)
-```
-- [x] It's reasonable, nice value is friendly to user, but it doesn't provide proper granularity.
-
-> man nice(2)
-> with -20 being the highest priority and 19 being the lowest priority.
-
-- [ ] what's nice of rt thread ?
-
-A run queue (struct cfs_rq) is also characterized by a "weight" value that is the accumulation of weights of all tasks on its run queue.
-
-The lowest vruntime found in the queue is stored in `cfs_rq.min_vruntime`. When a new task is picked to run, the leftmost node of the red-black tree is chosen since that task has had the least running time on the CPU. *Each time a new task forks or a task wakes up, its vruntime is assigned to a value that is the maximum of its last updated value and cfs_rq.min_vruntime.* If not for this, its vruntime would be very small as an effect of not having run for a long time (or at all) and would take an unacceptably long time to catch up to the vruntime of its sibling tasks and hence starve them of CPU time.
-
-Every periodic tick, the vruntime of the currently-running task is updated as follows:
-```c
-    vruntime += delta_exec * (NICE_0_LOAD/curr->load.weight);
-```
-
-
-The load of a CPU could have simply been the sum of the load of all the scheduling entities running on its run queue.
-In fact, that was once all there was to it.
-This approach has a disadvantage, though, in that tasks are associated with load values based only on their priorities.
-This approach does not take into account the nature of a task, such as whether it is a bursty or a steady task, or whether it is a CPU-intensive or an I/O-bound task.
-*While this does not matter for scheduling within a CPU, it does matter when load balancing across CPUs because it helps estimate the CPU load more accurately.*
-
-
-Therefore the per-entity load tracking metric was introduced to estimate the nature of a task numerically.
-**This metric calculates task load as the amount of time that the task was runnable during the time that it was alive.**
-This is kept track of in the `sched_avg` data structure (stored in the `sched_entity` structure):
-
-Given a task p, if the `sched_entity` associated with it is se and the `sched_avg` of se is sa, then:
-```
-sa.load_avg_contrib = (sa.runnable_sum * se.load.weight) / sa.runnable_period;
-```
-where `runnable_sum` is the amount of time that the task was runnable, `runnable_period` is the period during which the task could have been runnable.
-
-The load on a CPU is the sum of the `load_avg_contrib` of all the scheduling entities on its run queue;
-it is accumulated in a field called `runnable_load_avg` in the `cfs_rq` data structure.
-This is roughly a measure of how heavily contended the CPU is. The kernel also tracks the load associated with blocked tasks. When a task gets blocked, its load is accumulated in the blocked_load_avg metric of the cfs_rq structure.
-
-- [ ] [Per-entity load tracking in presence of task groups](https://lwn.net/Articles/639543/) : Continue the reading if other parts finished.
-
 
 ## process state
 ```c
@@ -496,11 +368,11 @@ This is roughly a measure of how heavily contended the CPU is. The kernel also t
   - https://stackoverflow.com/questions/223644/what-is-an-uninterruptible-process
   - https://lwn.net/Articles/288056/
 
-> A process which is placed in the TASK_INTERRUPTIBLE state will sleep until either (1) something explicitly wakes it up, or (2) a non-masked signal is received. The TASK_UNINTERRUPTIBLE state, instead, ignores signals; processes in that state will require an explicit wakeup before they can run again. 
+> A process which is placed in the TASK_INTERRUPTIBLE state will sleep until either (1) something explicitly wakes it up, or (2) a non-masked signal is received. The TASK_UNINTERRUPTIBLE state, instead, ignores signals; processes in that state will require an explicit wakeup before they can run again.
 
 > so Matthew created a new sleeping state, called TASK_KILLABLE; it behaves like TASK_UNINTERRUPTIBLE with the exception that fatal signals will interrupt the sleep.
 
-- [ ] find a example to understand the difference between `TASK_UNINTERRUPTIBLE` and `TASK_INTERRUPTIBLE` 
+- [ ] find a example to understand the difference between `TASK_UNINTERRUPTIBLE` and `TASK_INTERRUPTIBLE`
   - [ ] Not all syscall will lead to `TASK_UNINTERRUPTIBLE`, find a example to lead to `TASK_INTERRUPTIBLE` and it has to do that.
 
 
@@ -544,23 +416,23 @@ Man clone(2)
 - [ ] CLONE_PARENT && CLONE_THREAD
 
 > Man clone(2)
-> 
-> section CLONE_THREAD 
-> 
-> If `CLONE_THREAD` is set, the child is placed in the same thread group as the calling process.  
+>
+> section CLONE_THREAD
+>
+> If `CLONE_THREAD` is set, the child is placed in the same thread group as the calling process.
 >
 > A new thread created with CLONE_THREAD has the same parent process as the process that made the clone call (i.e., like CLONE_PARENT), so that calls to getppid(2) return the same value for all of the threads in a thread group.  When a CLONE_THREAD thread terminates, the thread that created it is not sent a SIGCHLD (or other termination) signal; nor can the status of such a thread be obtained using wait(2).  (The thread is said to be detached.)
-> 
+>
 > After **all** of the threads in a thread group **terminate** the parent process of the thread group is sent a SIGCHLD (or other termination) signal.
-> 
+>
 > If any of the threads in a thread group performs an execve(2), then all threads other than the thread group leader are terminated, and the new program is executed in the thread group leader.
-> 
+>
 > If one of the threads in a thread group creates a child using fork(2), then any thread in the group can wait(2) for that child.
 >
 > Since Linux 2.5.35, the flags mask must also include CLONE_SIGHAND if CLONE_THREAD is specified (and note that, since Linux 2.6.0, CLONE_SIGHAND also requires CLONE_VM to be included).
 >
 > Signal dispositions and actions are process-wide: if an unhandled signal is delivered to a thread, then it will affect (terminate, stop, continue, be ignored in) all members of the thread group.
-> 
+>
 > Each thread has its own signal mask, as set by sigprocmask(2).
 >
 > A signal may be process-directed or thread-directed.  A process-directed signal is targeted at a thread group (i.e., a TGID), and is delivered to an arbitrarily selected thread from among those that are not blocking the signal.  A signal may be process-directed because it was generated by the kernel for reasons other than a hardware exception, or because it was sent using kill(2) or sigqueue(3).  A thread-directed signal is targeted at (i.e., delivered to) a specific thread.  A signal may be thread directed because it was sent using tgkill(2) or pthread_sigqueue(3), or because the thread executed a machine language instruction that triggered a hardware exception (e.g., invalid memory access triggering SIGSEGV or a floating-point exception triggering SIGFPE).
@@ -644,14 +516,14 @@ irqentry_exit_to_user_mode 和 syscall_exit_to_user_mode
 	};
 ```
 
-> Man vfork(2) 
+> Man vfork(2)
 >
 > A call to vfork() is equivalent to calling clone(2) with flags specified as:
 >
 >     CLONE_VM | CLONE_VFORK | SIGCHLD
-> 
+>
 > Man clone(2)
-> 
+>
 > If this signal is specified as anything other than SIGCHLD, then the parent process must specify the `__WALL` or `__WCLONE` options when waiting for the child with wait(2).  If no signal (i.e., zero) is specified, then the parent process is not signaled when the child terminates.
 
 - signal 在 copy_process 的時候，使用兩個 CLONE_SIGHAND 和 CLONE_THREAD 來控制 signal 和 sighand 的拷貝
@@ -697,7 +569,7 @@ exit_to_usermode_loop => do_signal() => handle_signal()
     - copy_process 对于 pid=0 的判断
 
 
-#### ptrace 
+#### ptrace
 https://blog.0x972.info/?d=2014/11/13/10/40/50-how-does-a-debugger-work
 
 https://github.com/x64dbg/x64dbg
@@ -717,11 +589,11 @@ http://longwei.github.io/How-Debuger-Works/
 			ptrace_event_pid(PTRACE_EVENT_VFORK_DONE, pid);
 	}
 ```
-> fork 工作完成之后，通知一下 tracer 
+> fork 工作完成之后，通知一下 tracer
 
 signal.c :
 ```
-ptrace_notify 
+ptrace_notify
   ptrace_stop
     do_notify_parent_cldstop
 ```
@@ -747,7 +619,7 @@ wake up : do_notify_parent_cldstop 和 do_notify_parent
 
 
 ## design
-1. 阅读一个那个 fork paper 
+1. 阅读一个那个 fork paper
 
 如何创建第一个线程进程之类的问题理解了可以加深对于操作系统的代码的理解，关键的是:
 
@@ -949,7 +821,7 @@ https://github.com/pop-os/pidfd
 1. pid 在 namespace 的层次结构，需要在上层每一个都需分配一个 pid，
 2. thread group, process group, session group 都存在對應的 id
 3. task_struct::pid, task_struct::tgid 是顶层 namespace 的对应 pid tgid 的快捷表示, 具體代碼可以看 copy_process 對於 pid 的賦值
-4. task_struct::thread_pid 是該 threadk  
+4. task_struct::thread_pid 是該 threadk
 
 那么剩下的都很简单了:
 
@@ -959,7 +831,7 @@ struct task_struct {
 	pid_t				tgid; // global thread group pid
 
 	/* PID/PID hash table linkage. */
-	struct pid			*thread_pid; 
+	struct pid			*thread_pid;
 	struct hlist_node		pid_links[PIDTYPE_MAX];
 	struct list_head		thread_group;
 	struct list_head		thread_node; // TODO
@@ -1257,7 +1129,7 @@ COLLECT_GCC_OPTIONS='-v' '-mtune=generic' '-march=x86-64'
 ```
 我们会发现，直接 ld `gcc -c a.c`产生的.o 是没用的，但是如果使用上面结果的倒数第二行的内容，
 将 /tmp/ 的 .o 替换为 `gcc -c a.c` 产生.o 就可以了, 参考 [^22]
-但是如果是 nasm 编译的，ld 就不需要任何特别的参数，可能是因为不需要依赖外部库吧! 
+但是如果是 nasm 编译的，ld 就不需要任何特别的参数，可能是因为不需要依赖外部库吧!
 参考 compiler/programmer/extra/write.asm
 
 关于 syscall 的参数传递，可以 system V abi 的内容: [^23] [^24] (其实只有 100 多页)
@@ -1279,7 +1151,7 @@ TODO 分别找到 legacy 和 sysenter 的注册位置(初始化 handler) 的方�
 syscall_64.c:sys_call_table : 持有所有的 syscall
 
 x86/common.c:do_syscall_64 : 从 sys_call_table 中简单的选择函数，进行调用
-  1. syscall_enter_from_user_mode  
+  1. syscall_enter_from_user_mode
   2. syscall_exit_from_user_mode
 
 entry_64.S : entry_SYSCALL_64 是 syscall 的入口，这个入口的初始化 x86/kernel/cpu/common.c:syscall_init 中
@@ -1323,7 +1195,7 @@ idt_setup_traps ==> def_idts ==> entry_INT80_compat
  */
 SYM_CODE_START(entry_INT80_compat)
 ```
-- [ ] int 80 处理了特殊的事情，相对于其他的 int 
+- [ ] int 80 处理了特殊的事情，相对于其他的 int
 
 #### syscall vsyscall
 
@@ -1332,7 +1204,7 @@ SYM_CODE_START(entry_INT80_compat)
 为了消除将来的变动带来的影响，用户程序使用一个叫 `__kernel_vsyscall` 的函数，它在内核实现，但每个用户进程启动的时候它会映射到用户进程。这颇为怪异，它 是内核函数，但在用户空间运行。其实，`__kernel_vsyscall` 是一种被称为虚拟动态共享库（virtual Dynamic Shared Object, vDSO）的一部分，这种技术允许在用户空间 执行内核代码。我们后面会深入介绍 vDSO 的原理和用途。现在，先看 `__kernel_vsyscall` 的实现。
 
 [getauxval() and the auxiliary vector](https://lwn.net/Articles/519085/)
-> There are many mechanisms for communicating information between user-space applications and the kernel. 
+> There are many mechanisms for communicating information between user-space applications and the kernel.
 > 1. syscall
 > 2. pseudo fs
 > 3. signal
@@ -1536,7 +1408,7 @@ https://phoenixnap.com/kb/create-a-sudo-user-on-debian : 首先搞清楚这种�
   - [ ] **https://kernel.blog.csdn.net/** : dozens of blog
   - [ ] LoyenWang
 
-疑问: 
+疑问:
 1. ucore lab1 的附加题的说明，实现地址空间切换的方法
     1. 似乎调整一下一个寄存器的属性就可以了，那么，syscall 是如何调整这些属性的
 2. 似乎虚拟机利用中间层次的 ring  ?
@@ -1545,34 +1417,34 @@ https://phoenixnap.com/kb/create-a-sudo-user-on-debian : 首先搞清楚这种�
 1. 第一个用户进程是如何产生的 ?
     1. idle 和 init 进程如何产生的 ?
 3. IPC 和 signal 各自的适用范围是什么 ?
-4. preemption 
+4. preemption
 5. 为什么需要维持 parent child 的树状关系 ?
     1. exit 回收资源 ?
-    2. 部分信号机制总是只是出现在 child 和 parent 
+    2. 部分信号机制总是只是出现在 child 和 parent
 6. 一个 thread group 都是 group leader 的 children 吗 ?
 
 整理一下
 > # ptrace 的代价是什么 ?
-> 1. 为了支持ptrace syscall的努力是什么 
+> 1. 为了支持ptrace syscall的努力是什么
 > 2. ptrace 是不是实现debug 的基础
 > 3. fork 等机制做出了何种支持
-> 
-> 
+>
+>
 > # 内核和用户态之间拷贝数据
 > 1. 用户读写文件　文件内容　是如何传递到达用户的 ?　显然不可能是通过copy_to_user 之类的函数
 > 2. copy_to_user 的两个参数，都是虚拟地址，但是实际上，但是这两个地址是位于不同的pgdir 中间的
-> 3. copy_to_user 检查内容是看该addr 是不是在对应用户的地址空间的 segment 而且保证没有segment fault，这一个函数从哪里获取的 mm_struct 
-> 
-> 
+> 3. copy_to_user 检查内容是看该addr 是不是在对应用户的地址空间的 segment 而且保证没有segment fault，这一个函数从哪里获取的 mm_struct
+>
+>
 > # 到底如何实现context switch
-> 
+>
 > 1. http://www.maizure.org/projects/evolution_x86_context_switch_linux/
 > > 绝对清晰的讲解
 > Many of these tasks float between the `switch_to()` and the scheduler across kernel versions. All I can guarantee is that we'll always see stack swaps and FPU switching in every version
-> 
+>
 > 2. https://eli.thegreenplace.net/2018/measuring-context-switching-and-memory-overheads-for-linux-threads/　
 > > 分析context switch 的代价是什么 ?
-> 
+>
 > 3. https://stackoverflow.com/questions/2711044/why-doesnt-linux-use-the-hardware-context-switch-via-the-tss
 > > 再次印证TSS 在 context switch 中间并没有什么作用，但是 @todo TSS 中间存储了ESP0 和 SS0 用于实现interrupt
 
@@ -1658,7 +1530,7 @@ With post of [LoyenWang](https://www.cnblogs.com/LoyenWang/p/12495319.html), we 
 ## runtime vruntime
 
 
-## cfs 
+## cfs
 - [ ] 运行时间runtime可以转换成虚拟运行时间vruntime；
 - [ ] what if vruntime overflow ?
 
@@ -1742,7 +1614,7 @@ https://stackoverflow.com/questions/20688982/zombie-process-vs-orphan-process
 - zombie : 因为 parent 需要利用 wait 来获取 child 的状态，如果 child 挂掉了, parent 不回收，那就出现问题
 
 
-[^2]: https://man7.org/linux/man-pages/man7/signal.7.html 
+[^2]: https://man7.org/linux/man-pages/man7/signal.7.html
 [^3]: https://0xax.gitbooks.io/linux-insides/content/SysCall/linux-syscall-2.html
 [^4]: https://blog.packagecloud.io/eng/2016/04/05/the-definitive-guide-to-linux-system-calls/#64-bit-f
 [^5]: https://www.kernel.org/doc/html/latest/x86/kernel-stacks.html

@@ -4,7 +4,7 @@
 ## sched_attr
 > TODO
 
-## 各种prio的计算方法
+## 各种 prio 的计算方法
 > nice
 > 算了，看书吧!
 > 始终搞不清楚啊 !
@@ -61,7 +61,7 @@
 ```c
 // 一共存在四个prio
 	int				prio; // prio 是可以动态变化的 ?
-	int				static_prio;  
+	int				static_prio;
 	int				normal_prio; // 为normal policy 设置的 ?
 	unsigned int			rt_priority; // TODO 唯独这一个是unsigned ?
 
@@ -148,7 +148,7 @@ static void do_sched_yield(void)
 
 	local_irq_disable();
 	rq = this_rq();
-	rq_lock(rq, &rf); // rq 上锁的含义 TODO 
+	rq_lock(rq, &rf); // rq 上锁的含义 TODO
 
 	schedstat_inc(rq->yld_count); // 统计信息吗?
 	current->sched_class->yield_task(rq);  // 做一下准备工作吗 ?
@@ -278,7 +278,7 @@ sched_getscheduler // return task_struct->policy
 
 ## rt 如何区分 fifo rr
 
-`rt_sched_class`就对应RR算法或者FIFO算法的调度策略，具体调度策略由进程的`task_struct->policy`指定；
+`rt_sched_class`就对应 RR 算法或者 FIFO 算法的调度策略，具体调度策略由进程的`task_struct->policy`指定；
 
 SCHED_FIFO
 

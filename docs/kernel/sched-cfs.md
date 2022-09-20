@@ -151,7 +151,7 @@ enum group_type {
       - find_idlest_group
       - find_idlest_group_cpu
 
-- [ ] SD_WAKE_AFFINE 标志位 : 表示运行唤醒进程的CPU可以运行这个被唤醒的进程。
+- [ ] SD_WAKE_AFFINE 标志位 : 表示运行唤醒进程的 CPU 可以运行这个被唤醒的进程。
 
 ## load
 ```c
@@ -394,7 +394,7 @@ struct task_group {
 As two comments suggests, `tg->load_avg := \Sum tg->cfs_rq[]->avg.load_avg.`, tg_load_avg_contrib is used for lock efficiency.
 
 - cfs_rq 上挂在的 node 可能是 se, 可能是 tg
-  - task_group会为每个CPU再维护一个cfs_rq，这个cfs_rq用于组织挂在这个任务组上的任务以及子任务组
+  - task_group 会为每个 CPU 再维护一个 cfs_rq，这个 cfs_rq 用于组织挂在这个任务组上的任务以及子任务组
 
 - 一个 task_group 并不会限制其 task 都是运行在哪一个 cpu 上
   - 一个 task_group 的 load_avg 就是其所在 cpu 的 load_avg 的总和
@@ -411,7 +411,7 @@ As two comments suggests, `tg->load_avg := \Sum tg->cfs_rq[]->avg.load_avg.`, tg
 第一件事情，当我们试图调整 share 的时候，是不是最终会影响到每一个所有人 task 的 weight ?
   - 这样是不是太慢了，甚至那些没有处于就绪队列的 task 的 weight 都需要重新计算
   - 但是 vruntime 的计算是靠 除以 weight 来的
-  - 实际上的策略是，将整个 group 当做一asdfa 个 se, 当 share 调整之后，只是需要重新调整这个 group 的 weight 的
+  - 实际上的策略是，将整个 group 当做一 asdfa 个 se, 当 share 调整之后，只是需要重新调整这个 group 的 weight 的
   - 其实所有的 process 都是放到 group 中间的
     - weight 不是直接算到每一个 se 上的
     - 感觉 share 就是 weight 啊
@@ -419,19 +419,19 @@ As two comments suggests, `tg->load_avg := \Sum tg->cfs_rq[]->avg.load_avg.`, tg
   - 而 cfs_rq 中间选择其最佳的 se 的时候，显然是从当前的 se 中间选择的
     - 如果 cpu A, B 中间都有进程，并且 A 中间有 tg 的 weight 为 1000, B 中间为 10, 那么 tg 在 A, B 对应的 se 的 weight 调整显然不同
 
-```
+```plain
                  tg->weight * grq->load.weight
 e->load.weight = -----------------------------               (1)
       \Sum grq->load.weight
 ```
-    - 恐怖注释中间的，`tg->weight` 实际上是 `tg->shares`, 而 `tg->shares` 的数值就是普通的 weight
+- 恐怖注释中间的，`tg->weight` 实际上是 `tg->shares`, 而 `tg->shares` 的数值就是普通的 weight
 
 ## bandwidth
 利用接口
 - /sys/fs/cgroup/cpu/cpu.cfs_quota_us
 - /sys/fs/cgroup/cpu/cpu.cfs_period_us
 
-`period`表示周期，`quota`表示限额，也就是在period期间内，用户组的CPU限额为quota值，当超过这个值的时候，用户组将会被限制运行（throttle），等到下一个周期开始被解除限制（unthrottle）；
+`period`表示周期，`quota`表示限额，也就是在 period 期间内，用户组的 CPU 限额为 quota 值，当超过这个值的时候，用户组将会被限制运行（throttle），等到下一个周期开始被解除限制（unthrottle）；
 - [ ] 还是一个 task_group 作为对象来限制吗 ?
   - [ ] 是一个 cpu 还是总的 cpu ?
 
@@ -488,7 +488,7 @@ struct cfs_rq {
 2. check_enqueue_throttle :
 3. set_next_task_fair : This routine is mostly called to set `cfs_rq->curr` field when a task migrates between groups/classes.
 
-- slack_timer定时器，slack_period周期默认为5ms，在该定时器函数中也会调用distribute_cfs_runtime从全局运行时间中分配runtime；
+- slack_timer 定时器，slack_period 周期默认为 5ms，在该定时器函数中也会调用 distribute_cfs_runtime 从全局运行时间中分配 runtime；
 - slack_timer : 一个用于将未用完的时间再返回到时间池中
 
 
@@ -525,7 +525,7 @@ unsigned int sysctl_sched_cfs_bandwidth_slice       = 5000UL;
 
 - [x] 可是，我还是无法理解 slack_timer
   - slack_timer：延迟定时器，在任务出列时，将**剩余的运行时间**返回到全局池里；
-  - slack_timer定时器，slack_period周期默认为5ms，在该定时器函数中也会调用distribute_cfs_runtime从全局运行时间中分配runtime；
+  - slack_timer 定时器，slack_period 周期默认为 5ms，在该定时器函数中也会调用 distribute_cfs_runtime 从全局运行时间中分配 runtime；
   - 好吧，还是理解的，当存在 task 将自己的时间返回给 runtime pool 的时候，不要立刻进行 distribute, 因为还有可能其他的 task 也在返回，所以等
 
 - dequeue_entity
@@ -592,7 +592,7 @@ man sched(7)
 clamped utilization
 
 ## wait_queue
-wait_queue 的机制 : 将自己加入到队列，然后睡眠，之后其他的 thread 利用 wake up将队列出队, 并且执行事先注册好的函数，这个函数一般就是 try_to_wake_up, 从而达到 wait 事件的过程自己在睡眠
+wait_queue 的机制 : 将自己加入到队列，然后睡眠，之后其他的 thread 利用 wake up 将队列出队, 并且执行事先注册好的函数，这个函数一般就是 try_to_wake_up, 从而达到 wait 事件的过程自己在睡眠
 
 - [x] wait_event : sleep until a condition gets true
 - [x] add_wait_queue  : 加入队列， 当 wake_up 的时候会调用被 init_waitqueue_func_entry 初始化的函数
@@ -608,7 +608,6 @@ wait_queue 的机制 : 将自己加入到队列，然后睡眠，之后其他的
   - `__wait_event`
 
 ```c
-
 #define ___wait_event(wq_head, condition, state, exclusive, ret, cmd)       \
 ({                                      \
     __label__ __out;                            \
@@ -634,6 +633,3 @@ __out:  __ret;                                  \
 })
 // 其中的，init_wait_entry 将会设置被移动出来队列的时候，设置的 function 导致其被自动运行
 ```
-
-## cpu_idle_poll
-- https://vstinner.github.io/intel-cpus.html : cstate pstate 的介绍

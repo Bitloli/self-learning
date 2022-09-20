@@ -1,3 +1,0 @@
-# kernel/sched/autogroup.c
-
-

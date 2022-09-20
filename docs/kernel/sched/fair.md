@@ -2,9 +2,9 @@
 
 
 > 1. 从 1000 ~ 2700 config_numa_balancing
-> 2. 3700 计算load avg 以及处理 tg 等东西
+> 2. 3700 计算 load avg 以及处理 tg 等东西
 > 3. 4000 dequeue_entity 各种 entity_tick 之类的
-> 4. 5000 作用的位置，处理bandwidth
+> 4. 5000 作用的位置，处理 bandwidth
 > 5. 后面也许都是在处理 cpu attach 的吧
 
 
@@ -56,11 +56,11 @@ struct task_group {
 ```
 
 1. task_group 也是划分为含有 parent 机制的
-2. tg 是参数，外部malloc 将其各个部分初始化
+2. tg 是参数，外部 malloc 将其各个部分初始化
 3. task_group 通过 parent siblings 以及 chilren 将其中的各个部分形成网状结构
 4. CONFIG_CFS_BANDWIDTH 中间的部分:
   1. task_group 不依赖于 fair_group_sched ，而是总是存在的，用于形成
-  2. cfs_bandwidth 为什么和 fair_group_sched 的关系到底是什么 ?　本以为其子集呀，现在bandwidth 似乎用于保证 task_group 中间保证最多使用，fair_group_sched 保证内部的公平
+  2. cfs_bandwidth 为什么和 fair_group_sched 的关系到底是什么 ?　本以为其子集呀，现在 bandwidth 似乎用于保证 task_group 中间保证最多使用，fair_group_sched 保证内部的公平
   3. 居然还有 percpu 机制
   4. alloc_fair_sched_group 就是对于 se cfs_rq  cfs_bandwidth 的初始化而已
 
@@ -225,7 +225,7 @@ This option adds support for automatic NUMA aware memory/task placement. The mec
 
 This system will be inactive on UMA systems.
 
-> 似乎是为了处理当其中的NUMA 远程访问，然后直接将CPU 迁移过去的操作。
+> 似乎是为了处理当其中的 NUMA 远程访问，然后直接将 CPU 迁移过去的操作。
 
 
 ```c
@@ -385,7 +385,7 @@ account_entity_dequeue(struct cfs_rq *cfs_rq, struct sched_entity *se)
 		update_load_sub(&rq_of(cfs_rq)->load, se->load.weight);
 #ifdef CONFIG_SMP
 	if (entity_is_task(se)) {
-		account_numa_dequeue(rq_of(cfs_rq), task_of(se)); 
+		account_numa_dequeue(rq_of(cfs_rq), task_of(se));
 		list_del_init(&se->group_node);
 	}
 #endif
@@ -730,7 +730,7 @@ again:
 	put_prev_task(rq, prev); // 释放当前的
 
   // 我猜测其实并不是 rq owned by this group
-  // 
+  //
 	do {
 		se = pick_next_entity(cfs_rq, NULL);
 		set_next_entity(cfs_rq, se);
@@ -766,4 +766,3 @@ done: __maybe_unused;
 #endif
 // 有的 entity 是用于对应的用于管理的，而有的才是真的对应于process 的
 ```
-

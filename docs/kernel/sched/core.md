@@ -3,7 +3,7 @@
 ## TODO
 cgroup 在 7000 line 注册的函数无人使用呀!
 
-rq 内嵌的 cfs_rq 的作用到底是什么 ? 为什么pick_next_task_fair 总是从其中 pick 但是依旧可以到 root_task_group 上，
+rq 内嵌的 cfs_rq 的作用到底是什么 ? 为什么 pick_next_task_fair 总是从其中 pick 但是依旧可以到 root_task_group 上，
 `__sched_init` 中间说明了其结果!
 
 task_group 的 share 的计算方法是什么 ?
@@ -72,9 +72,9 @@ static inline void list_del_leaf_cfs_rq(struct cfs_rq *cfs_rq)
 ```
 
 > 分析 `cfs_rq->tg` 其赋值位置仅仅在 init_tg_cfs_entry 中间
-> 那么cfs 和 tg 总是同时创建的，并且匹配的
+> 那么 cfs 和 tg 总是同时创建的，并且匹配的
 > 但是 rq 中间可能持有不同的 cfs rq 的内容 ? 并不是呀!
-> rq 持有的不是指针啊! 所以现在malloc 出来的一堆 cfs_rq 以及配套的tg 到底是如何使用的呀!
+> rq 持有的不是指针啊! 所以现在 malloc 出来的一堆 cfs_rq 以及配套的 tg 到底是如何使用的呀!
 
 
 ```c
@@ -93,7 +93,7 @@ entity 就是一个 group 的代表
 
 所以通过这种方法就用 rq owned by entity/group 的效果。
 
-现在的问题 : 其他的entitiy 如何添加上来的 ?
+现在的问题 : 其他的 entitiy 如何添加上来的 ?
 
 > attach_entity_cfs_rq
 
@@ -104,7 +104,7 @@ entity 就是一个 group 的代表
 
 
 > 1. malloc 出来的如何关联上去 ?
-> 2. 和rq 中间的关系是什么 ?
+> 2. 和 rq 中间的关系是什么 ?
 
 task_group  CONFIG_FAIR_GROUP_SCHED 以及 CONFIG_CFS_BANDWIDTH 三者逐渐递进的
 
@@ -146,9 +146,10 @@ CONFIG_FAIR_GROUP_SCHED 中间的 FAIR 是和 RT 对应的，所以其作用就�
 
 
 The use of the cgroups(7) CPU controller to place processes in cgroups other than the root CPU cgroup overrides the effect of autogrouping.
-> 当 cgroup 没有被配置的时候，depth 没有任何意义，所有的group 都是放在root 下面
+> 当 cgroup 没有被配置的时候，depth 没有任何意义，所有的 group 都是放在 root 下面
 > 其中，代码分析也可以的出来该结果。
 
+```txt
        cpu (since Linux 2.6.24; CONFIG_CGROUP_SCHED)
               Cgroups can be guaranteed a minimum number of "CPU shares"
               when a system is busy.  This does not limit a cgroup's CPU
@@ -163,12 +164,13 @@ The use of the cgroups(7) CPU controller to place processes in cgroups other tha
               cgroup.  This upper limit applies even if there is no other
               competition for the CPU.  Further information can be found in
               the kernel source file Documentation/scheduler/sched-bwc.txt.
+```
 
 > 两个文档读一下，结果发现都是垃圾
 
 1. 目前的问题，cgroup 形成的多级结构现在无法理解 ?
-> 其实并不难，因为cgroup 可以利用文件的方法构建关系，
-> 那么entity 有的是文件夹，有的是文件一样，文件就是对应正常的process
+> 其实并不难，因为 cgroup 可以利用文件的方法构建关系，
+> 那么 entity 有的是文件夹，有的是文件一样，文件就是对应正常的 process
 > 区分的标准就是 my_q 变量了
 
 
@@ -270,7 +272,7 @@ Hence this priority number must be mapped to such a value; this is done in the a
 
 
 
-A priority number of 120, which is the priority of a normal task, is mapped to a load of 1024, which is the value that the kernel uses to represent the capacity of a single standard CPU. 
+A priority number of 120, which is the priority of a normal task, is mapped to a load of 1024, which is the value that the kernel uses to represent the capacity of a single standard CPU.
 > @todo 为什么会映射到 1024 上，利用 prio_to_weight 吗 ?
 
 A run queue (`struct cfs_rq`) is also characterized by a "weight" value that is the accumulation of weights of all tasks on its run queue.
@@ -293,13 +295,12 @@ struct sched_entity {
 	u64				nr_migrations;
 ```
 > 1. load 和 runnable_weight 之间的关系是什么 ?
-> 2. 
 
 The time slice can now be calculated as:
     time_slice = (sched_period() * se.load.weight) / cfs_rq.load.weight;
 where `sched_period()` returns the scheduling period as a factor of the number of running tasks on the CPU.
 We see that the higher the load, the higher the fraction of the scheduling period that the task gets to run on the CPU.
-> 下面的两个函数似乎说明了 : time_slice 的效果，但是由于group 的存在，其计算过程变成了递归的过程。
+> 下面的两个函数似乎说明了 : time_slice 的效果，但是由于 group 的存在，其计算过程变成了递归的过程。
 > 所以 time_slice 相当于一个 taks 允许运行的时间吗 ?
 
 ```c
@@ -358,7 +359,7 @@ Every periodic tick, the vruntime of the currently-running task is updated as fo
 where delta_exec is the time spent by the task since the last time vruntime was updated, NICE_0_LOAD is the load of a task with normal priority, and curr is the currently-running task. We see that vruntime progresses slowly for tasks of higher priority. It has to, because the time slice for these tasks is large and they cannot be preempted until the time slice is exhausted.
 
 
->  找到了 vruntime 中间的 delta_exec 位置在于何处 ?
+> 找到了 vruntime 中间的 delta_exec 位置在于何处 ?
 
 ```c
 // update_curr 中间的内容:
@@ -409,15 +410,15 @@ static u64 __calc_delta(u64 delta_exec, unsigned long weight, struct load_weight
 
 https://lwn.net/Articles/531853/
 
-放到SMP 中间，就是为了处理其中的 pelt ?
+放到 SMP 中间，就是为了处理其中的 pelt ?
 
 pelt.c 中间是什么个情况 ?
 
 > 问一下蜗壳科技 ?
 
-## sched_entity.avg 是什么情况 ?
+## sched_entity.avg 是什么情况
 
-> 说了这么多，到底和SMP 有什么蛇皮关系呀 ?
+> 说了这么多，到底和 SMP 有什么蛇皮关系呀 ?
 
 ```c
 /*
@@ -481,6 +482,7 @@ int __update_load_avg_se(u64 now, int cpu, struct cfs_rq *cfs_rq, struct sched_e
 
 
 > update_cfs_group 中间的内容和注释中间描述的一致吗 ?
+
 ```c
 /*
  * Recomputes the group entity based on the current state of its group
@@ -517,10 +519,10 @@ static void update_cfs_group(struct sched_entity *se)
 // update_curr 算是 group 发生变化然后更新的方法了
 ```
 
-> 0. 但是我怀疑，其中只有在 涉及到什么的时候 
-> 1. grq 到底是什么 ? group runqueue ? sched:776 并不是rq 中的，就是 task_group 中间的
-> 2. 不如直接搜索 pelt 的内容 ?
-> 3. 如果知道其中的 
+0. 但是我怀疑，其中只有在 涉及到什么的时候
+1. grq 到底是什么 ? group runqueue ? sched:776 并不是 rq 中的，就是 task_group 中间的
+2. 不如直接搜索 pelt 的内容 ?
+3. 如果知道其中的
 
 ## 分析一下 : `static long calc_group_shares(struct cfs_rq *cfs_rq)` 上的注释
 
@@ -531,7 +533,7 @@ static void update_cfs_group(struct sched_entity *se)
  *
  * That is, the weight of a group entity, is the proportional share of the
  * group weight based on the group runqueue weights. That is:
- * 
+ *
  *                     tg->weight * grq->load.weight
  *   ge->load.weight = -----------------------------               (1)
  *			  \Sum grq->load.weight
@@ -602,7 +604,6 @@ static void update_cfs_group(struct sched_entity *se)
 ```
 1. task_group 和 cfs_rq 都有 weight 吗 ? 并不是，所以 weight 在什么地方 ?
 2. 观察一下　calc_group_shares 中间的内容吧!
-3. 
 
 
 
@@ -691,7 +692,7 @@ static inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force)
 }
 ```
 
-> 忽然，意识到，其实，tg 其实所有的cpu 的 rq 的总和
+> 忽然，意识到，其实，tg 其实所有的 cpu 的 rq 的总和
 > this function 'ensures': `tg->load_avg := \sum tg->cfs_rq[]->avg.load`.
 
 This metric calculates task load as the amount of time that the task was runnable during the time that it was alive.
@@ -700,13 +701,12 @@ This is kept track of in the sched_avg data structure (stored in the sched_entit
 
 ## per-entity load tracking : https://lwn.net/Articles/531853/
 1. 不使用 per-entity load tracking 的问题是什么 ?
-2. 
 
 ```c
 /*
  * // 1. 为什么计算方法是几何级数 ?
  * // 2. __update_load_avg() 中间的具体的内容是什么 ?
- * 
+ *
  * The load_avg/util_avg accumulates an infinite geometric series
  * (see __update_load_avg() in kernel/sched/fair.c).
  *
@@ -894,6 +894,7 @@ cfs_rq::propagate_runnable_sum 的访问位置:
 
 
 > @todo 配合研究一下两个函数
+
 ```c
 static inline void
 update_tg_cfs_runnable(struct cfs_rq *cfs_rq, struct sched_entity *se, struct cfs_rq *gcfs_rq)
@@ -926,20 +927,19 @@ static inline int propagate_entity_load_avg(struct sched_entity *se)
 
 propagate_entity_load_avg 被 update_load_avg 唯一调用，其实并没有
 
-## 触发 rebalance 的方法和位置是什么 ?
+## 触发 rebalance 的方法和位置是什么
 1. domain 的概念是什么 ?
-2. 
 
-```
+```txt
 idle_balance : schedule() 调用，应该是最容易分析了
 rebalance_domains:
   load_balance : 核心业务 ?
 
 _nohz_idle_balance()
-run_rebalance_domains : 被注册到 softirq 中间了 
+run_rebalance_domains : 被注册到 softirq 中间了
   rebalance_domains
 
-nohz_idle_balance(): 被run_rebalance_domains 唯一调用
+nohz_idle_balance(): 被 run_rebalance_domains 唯一调用
 nohz_newidle_balance(): 被 idle_balance 唯一调用
   __nohz_idle_balance():
 
@@ -954,17 +954,12 @@ scheduler_tick()
 
 
 
-## Nohz 的影响是什么 ?
+## Nohz 的影响是什么
 
-## load_balance 的实现 ?
+## load_balance 的实现
 kernel/sched/fair.c:6798 的注释
 
 > 了解一下其中的函数
-
-```c
-
-```
-
 
 
 ## attach 和 detach 三个函数
@@ -991,7 +986,7 @@ static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 ```
 
 
-1. `static void attach_tasks(struct lb_env *env)` 
+1. `static void attach_tasks(struct lb_env *env)`
 
 利用 lb_env (load_balance environment ?) 将 task 一个一个的从 链表中间迁移。
 
@@ -1094,7 +1089,6 @@ static int select_idle_sibling(struct task_struct *p, int prev, int target)
 ```
 调用位置
 
-1. 
 ```c
 /*
  * select_task_rq_fair: Select target runqueue for the waking task in domains
@@ -1137,7 +1131,7 @@ select_idle_sibling 中间的部分片段:
 
 
 ## affine
-都是 select_task_rq_fair 的辅助函数，task 开始执行需要选择最佳的rq
+都是 select_task_rq_fair 的辅助函数，task 开始执行需要选择最佳的 rq
 
 wake_affine
     - wake_affine_idle
@@ -1174,7 +1168,7 @@ struct cfs_rq 中间的支持 :
 #endif /* CONFIG_CFS_BANDWIDTH */
 ```
 
-## `tg_set_cfs_*`
+## tg_set_cfs_
 
 调用者 : 都是来自于 cgroup 机制的
 - tg_set_cfs_cpu
@@ -1224,7 +1218,7 @@ static enum hrtimer_restart sched_cfs_slack_timer(struct hrtimer *timer)
 void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b) // 上述函数注册的位置
 ```
 
-## rq_offline_fair 和 rq_online_fair 的作用是什么 ?
+## rq_offline_fair 和 rq_online_fair 的作用是什么
 
 online 和 offline 表示 cpu 的添加和去除。
 
@@ -1251,4 +1245,3 @@ static void dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int f
         static void __return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
             static void start_cfs_slack_bandwidth(struct cfs_bandwidth *cfs_b)
 ```
-

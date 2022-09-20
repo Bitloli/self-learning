@@ -2,7 +2,7 @@
 
 
 ## try_to_wake_up
-> 想象 : 将当前设置为 task 为RUNABLE 就像 semaphore 的 unlock 一样 !
+> 想象 : 将当前设置为 task 为 RUNABLE 就像 semaphore 的 unlock 一样 !
 > 实际 : 想要立刻执行 ?
 
 
@@ -12,7 +12,7 @@ asmlinkage __visible void __sched schedule(void)
 {
 	struct task_struct *tsk = current;
 
-  // TODO 
+  // TODO
 	sched_submit_work(tsk);
 	do {
 		preempt_disable();
@@ -26,7 +26,7 @@ asmlinkage __visible void __sched schedule(void)
 抢占的含义 :
 1. 用户确定决定自己的放弃的时机 ?
 2. 时间片执行完成之后，放弃 ?
-3. 时间片没有执行完被打断 ?  
+3. 时间片没有执行完被打断 ?
 
 
 1. 所以内核中间，为什么有的工作不能被 preempt ，被 preempt 会发生什么情况 ?
@@ -34,7 +34,7 @@ asmlinkage __visible void __sched schedule(void)
 
 
 抢占和多核的关系:
-1. 是否允许抢占是多个core独立管理的
+1. 是否允许抢占是多个 core 独立管理的
 
 
 > 当发现当前进程应该被抢占，
@@ -43,17 +43,17 @@ asmlinkage __visible void __sched schedule(void)
 
 ucore 为何可以如此简单: 设置一个标志即可 !
 
-真正抢占的实际: 用户和kernel区分。
+真正抢占的实际: 用户和 kernel 区分。
 
 函数主动调用 schedule 函数，然后放弃。
 
 所有进程的调用最终都会走`__schedule`函数。那这个定律在这一节还是要继续起作用。
 
-1. scheduler_tick 导致的最后还是会进入到　`__schedule` 中间，其实 tick 就是内核态的时钟，所以其实tick 一旦觉得GG，tick 结束返回，进程就被切换了。
+1. scheduler_tick 导致的最后还是会进入到　`__schedule` 中间，其实 tick 就是内核态的时钟，所以其实 tick 一旦觉得 GG，tick 结束返回，进程就被切换了。
 2. try_to_wake_up() // 加入高优先级的线程的时候，低优先级的被标记。
 
-1. 对内核态的执行中，被抢占的时机一般发生在在preempt_enable()中。
-2. 在内核态也会遇到中断的情况，当中断返回的时候，返回的仍然是内核态。这个时候也是一个执行抢占的时机，现在我们再来上面中断返回的代码中返回内核的那部分代码，调用的是preempt_schedule_irq
+1. 对内核态的执行中，被抢占的时机一般发生在在 preempt_enable()中。
+2. 在内核态也会遇到中断的情况，当中断返回的时候，返回的仍然是内核态。这个时候也是一个执行抢占的时机，现在我们再来上面中断返回的代码中返回内核的那部分代码，调用的是 preempt_schedule_irq
 
 ```c
 // 那么如果，不调用这一个函数，岂不是内核就不会放弃时钟吗 ?
@@ -201,7 +201,7 @@ static void __sched notrace __schedule(bool preempt)
   // ...
   // TODO 看到 preempt 脑袋痛啊 !
 
-	next = pick_next_task(rq, prev, &rf); // 
+	next = pick_next_task(rq, prev, &rf); //
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 
@@ -225,7 +225,7 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 		   rq->nr_running == rq->cfs.h_nr_running)) {
 
     // TODO 似乎 rq 和 sched_class 是分开的 ?
-    // 不然这个参数根本没有必要使用rq 
+    // 不然这个参数根本没有必要使用rq
     // 但是 rq 中间持有 rbtree
 		p = fair_sched_class.pick_next_task(rq, prev, rf);
 ```

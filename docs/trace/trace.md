@@ -285,6 +285,13 @@ dpdk 测试工具
 
 ## mpstat -P 0-16
 
+## fgprof
+- https://github.com/felixge/fgprof
+
+其实一直没有搞懂，为什么会存在语言相关的 profiler 的
+
+## depmod -a / -A
+
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)
 [^7]: [kernelshark](https://www.cnblogs.com/arnoldlu/p/9014365.html)

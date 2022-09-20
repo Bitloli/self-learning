@@ -1,5 +1,5 @@
 # sched/stop_task.c
-> 绝大多数内容为core.c的
+> 绝大多数内容为 core.c 的
 
 ```c
 // stop_sched_class 调用者
@@ -156,7 +156,7 @@ int sched_cpu_dying(unsigned int cpu)
 static void __sched notrace __schedule(bool preempt)
 ```
 
-## 如何设置新的进程的各种。。。
+## 如何设置新的进程的各种
 
 ```c
 /*
@@ -222,7 +222,7 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
 			   const struct sched_attr *attr, bool keep_boost)
 ```
 
-## cpu 如何使用idle
+## cpu 如何使用 idle
 
 ```c
 /**
