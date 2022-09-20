@@ -1,28 +1,24 @@
 # kernel/sched/fair.md
 有点怀疑，cgroup 会将一组的 thread 的所有的资源统一管理的 ? 而不是存在一个 cgroup for mem , cgroup for cpu 之类的 ?
 
+## 构建一些 backtrace 吧
+
+#### pick_next_task_fair
+
+```txt
+#0  pick_next_task_fair (rq=rq@entry=0xffff88807dc2b2c0, prev=prev@entry=0xffffffff82a149c0 <init_task>, rf=rf@entry=0xffffffff82a03e90) at kernel/sched/fair.c:7363
+#1  0xffffffff81f3fea6 in __pick_next_task (rf=0xffffffff82a03e90, prev=0xffffffff82a149c0 <init_task>, rq=0xffff88807dc2b2c0) at kernel/sched/core.c:5804
+#2  pick_next_task (rf=0xffffffff82a03e90, prev=0xffffffff82a149c0 <init_task>, rq=0xffff88807dc2b2c0) at kernel/sched/core.c:6313
+#3  __schedule (sched_mode=sched_mode@entry=0) at kernel/sched/core.c:6458
+#4  0xffffffff81f40595 in schedule () at kernel/sched/core.c:6570
+```
+
+
 
 ## 整理一下 kernel 的 doc
 > A group’s unassigned quota is globally tracked, being refreshed back to cfs_quota units at each period boundary. As threads consume this bandwidth it is transferred to cpu-local “silos” on a demand basis. The amount transferred within each of these updates is tunable and described as the “slice”.
 
 > For efficiency run-time is transferred between the global pool and CPU local “silos” in a batch fashion.
-
-
-```c
-static int cpu_stat_show(struct seq_file *seq, void *v)
-{
-	struct cgroup __maybe_unused *cgrp = seq_css(seq)->cgroup;
-	int ret = 0;
-
-	cgroup_base_stat_cputime_show(seq);
-#ifdef CONFIG_CGROUP_SCHED
-	ret = cgroup_extra_stat_show(seq, cgrp, cpu_cgrp_id);
-#endif
-	return ret;
-}
-```
-
-
 
 ## pick_next_task 分析
 1. CONFIG_FAIR_GROUP_SCHED 如果不考虑 !
@@ -32,194 +28,9 @@ static int cpu_stat_show(struct seq_file *seq, void *v)
 1. se 特指给 cfs_rq 使用 ?
 2. 如果真的是仅仅作为 rb tree 中间的一个 node 显然没有必要高处三个来！
 
-```c
-  // 所以entity 其实应该
-	struct sched_entity		se;
-	struct sched_rt_entity		rt;
-	struct sched_dl_entity		dl;
-```
-
-```c
-struct sched_entity {
-	/* For load-balancing: */
-	struct load_weight		load;
-	unsigned long			runnable_weight;　// 和 prio 的关系
-	struct rb_node			run_node; // 本来以为的全部内容 !
-	struct list_head		group_node;
-	unsigned int			on_rq;
-
-  // 时间统计
-	u64				exec_start;
-	u64				sum_exec_runtime;
-	u64				vruntime;
-	u64				prev_sum_exec_runtime;
-
-	u64				nr_migrations;
-
-	struct sched_statistics		statistics;
-
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	int				depth;
-	struct sched_entity		*parent;
-	/* rq on which this entity is (to be) queued: */
-	struct cfs_rq			*cfs_rq;
-	/* rq "owned" by this entity/group: */
-	struct cfs_rq			*my_q;
-#endif
-
-#ifdef CONFIG_SMP
-	/*
-	 * Per entity load average tracking.
-	 *
-	 * Put into separate cache line so it does not
-	 * collide with read-mostly values above.
-	 */
-	struct sched_avg		avg;
-#endif
-};
-
-// TODO 附加内容，还是说这就是全部的rt所需的
-struct sched_rt_entity {
-	struct list_head		run_list;
-	unsigned long			timeout;
-	unsigned long			watchdog_stamp;
-	unsigned int			time_slice;
-	unsigned short			on_rq;
-	unsigned short			on_list;
-
-	struct sched_rt_entity		*back;
-  // TODO group 的含义不是给thread group
-#ifdef CONFIG_RT_GROUP_SCHED
-	struct sched_rt_entity		*parent;
-	/* rq on which this entity is (to be) queued: */
-	struct rt_rq			*rt_rq;
-	/* rq "owned" by this entity/group: */
-	struct rt_rq			*my_q;
-#endif
-} __randomize_layout;
-```
-
-
-## 为什么只有三个 rq
-> stop 和 idle 过于蛇皮，所以其实 rq 和 sched_class 是对应的!
-
-```c
-	struct cfs_rq		cfs;
-	struct rt_rq		rt;
-	struct dl_rq		dl;
-
-```
-
-
-```c
-static struct task_struct * pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf) {
-	struct cfs_rq *cfs_rq = &rq->cfs;
-
-static struct task_struct * pick_next_task_dl(struct rq *rq, struct task_struct *prev, struct rq_flags *rf) {
-	struct sched_dl_entity *dl_se;
-	struct task_struct *p;
-	struct dl_rq *dl_rq;
-
-	dl_rq = &rq->dl;
-
-// stop 利用 rq 中间的特定 task_struct
-static struct task_struct * pick_next_task_stop(struct rq *rq, struct task_struct *prev, struct rq_flags *rf) {
-	struct task_struct *stop = rq->stop;
-
-	if (!stop || !task_on_rq_queued(stop))
-		return NULL;
-
-	put_prev_task(rq, prev);
-
-	stop->se.exec_start = rq_clock_task(rq);
-
-	return stop;
-}
-
-// 连rq->idle 都没有使用 ?
-static struct task_struct * pick_next_task_idle(struct rq *rq, struct task_struct *prev, struct rq_flags *rf) {
-	put_prev_task(rq, prev);
-	update_idle_core(rq);
-	schedstat_inc(rq->sched_goidle);
-
-	return rq->idle;
-}
-```
-
-
-
 ## 浏览一下所有的函数的作用
 1. 为什么这些函数中间都需要持有的参数 rq ? 难道不能通过 task_struct 找到 rq 吗 ?
 2. 会不会一个 rq 中间持有多个 cfs_rq
-
-```c
-struct sched_class {
-	const struct sched_class *next;
-
-	void (*enqueue_task) (struct rq *rq, struct task_struct *p, int flags);
-	void (*dequeue_task) (struct rq *rq, struct task_struct *p, int flags);
-
-  // 支持yield的内容
-	void (*yield_task)   (struct rq *rq);
-	bool (*yield_to_task)(struct rq *rq, struct task_struct *p, bool preempt);
-
-	void (*check_preempt_curr)(struct rq *rq, struct task_struct *p, int flags);
-
-	/*
-	 * It is the responsibility of the pick_next_task() method that will
-	 * return the next task to call put_prev_task() on the @prev task or
-	 * something equivalent.
-	 *
-	 * May return RETRY_TASK when it finds a higher prio class has runnable
-	 * tasks.
-	 */
-	struct task_struct * (*pick_next_task)(struct rq *rq,
-					       struct task_struct *prev,
-					       struct rq_flags *rf);
-	void (*put_prev_task)(struct rq *rq, struct task_struct *p);
-
-#ifdef CONFIG_SMP
-	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);
-	void (*migrate_task_rq)(struct task_struct *p, int new_cpu);
-
-	void (*task_woken)(struct rq *this_rq, struct task_struct *task);
-
-	void (*set_cpus_allowed)(struct task_struct *p,
-				 const struct cpumask *newmask);
-
-  // 神奇的函数
-	void (*rq_online)(struct rq *rq);
-	void (*rq_offline)(struct rq *rq);
-#endif
-
-	void (*set_curr_task)(struct rq *rq);
-	void (*task_tick)(struct rq *rq, struct task_struct *p, int queued);
-	void (*task_fork)(struct task_struct *p);
-	void (*task_dead)(struct task_struct *p);
-
-	/*
-	 * The switched_from() call is allowed to drop rq->lock, therefore we
-	 * cannot assume the switched_from/switched_to pair is serliazed by
-	 * rq->lock. They are however serialized by p->pi_lock.
-	 */
-	void (*switched_from)(struct rq *this_rq, struct task_struct *task);
-	void (*switched_to)  (struct rq *this_rq, struct task_struct *task);
-	void (*prio_changed) (struct rq *this_rq, struct task_struct *task,
-			      int oldprio);
-
-	unsigned int (*get_rr_interval)(struct rq *rq,
-					struct task_struct *task);
-
-	void (*update_curr)(struct rq *rq);
-
-#define TASK_SET_GROUP		0
-#define TASK_MOVE_GROUP		1
-
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	void (*task_change_group)(struct task_struct *p, int type);
-#endif
-};
-```
 
 ```c
 // dequeue_task 整个指针仅仅使用在一个位置:

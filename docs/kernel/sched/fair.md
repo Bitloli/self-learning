@@ -217,8 +217,6 @@ period.
 > 所以，如何确定 quota 又是如何检测其中的是否超过设置的数值的
 
 
-
-
 ## CONFIG_NUMA_BALANCING
 
 This option adds support for automatic NUMA aware memory/task placement. The mechanism is quite primitive and is based on migrating memory when it has references to the node the task is running on.
@@ -234,10 +232,6 @@ void init_numa_balancing(unsigned long clone_flags, struct task_struct *p)
 
 struct numa_group{
 ```
-
-
-##
-
 
 ## 详细内容
 

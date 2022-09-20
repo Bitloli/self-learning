@@ -21,6 +21,7 @@ https://stackoverflow.com/questions/9305992/if-threads-share-the-same-pid-how-ca
 2. pid 和 tgid 的各自使用的地方
 
 
+
 | Filename            | blank | comment | code | explanation                                                                                                                                                                                            |
 |---------------------|-------|---------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | fair.c              | 1659  | 2975    | 5572 |                                                                                                                                                                                                        |
@@ -28,7 +29,7 @@ https://stackoverflow.com/questions/9305992/if-threads-share-the-same-pid-how-ca
 | rt.c                | 515   | 504     | 1712 |                                                                                                                                                                                                        |
 | deadline.c          | 406   | 858     | 1493 |                                                                                                                                                                                                        |
 | sched.h             | 365   | 445     | 1436 |                                                                                                                                                                                                        |
-| topology.c          | 315   | 446     | 1164 | numa 系统                                                                                                                                                                                              |
+| topology.c          | 315   | 446     | 1164 | SMT，多核和 NUMA                                                                                                                                                                                              |
 | debug.c             | 166   | 36      | 804  | 看来，只要含有不确定性的东西(sched lock 之类的)，那么就必定含有 debug 的内容                                                                                                                             |
 | cputime.c           | 142   | 229     | 524  | 利用 kernel/timer 测量 cpu 执行的时间                                                                                                                                                                    |
 | cpufreq_schedutil.c | 156   | 206     | 523  |                                                                                                                                                                                                        |
@@ -194,7 +195,7 @@ SCHED_NORMAL、SCHED_BATCH、SCHED_IDLE。
 Our recent experience with the Linux scheduler revealed
 that the pressure to work around the challenging properties
 of modern hardware, such as non-uniform memory access
-latencies (NUMA), high costs of cache coherency and synchronization, and diverging CPU and memory latencies, resulted in a scheduler with an incredibly complex implementation. As a result, the very basic function of the scheduler,
+latencies (NUMA), high costs of cache coherency and synchronization, and diverging CPU and memory latencies, resulted in a scheduler with an incredibly complex implementation. As a result, the very basic function of the scheduler,
 which is to make sure that runnable threads use idle cores,
 fell through the cracks.
 
@@ -205,10 +206,10 @@ waiting in runqueues.
 
 
 The rest of the paper is organized as follows.
-- Section 2 describes the architecture of the Linux scheduler.
-- Section 3 introduces the bugs we discovered, analyzes their root causes
+- Section 2 describes the architecture of the Linux scheduler.
+- Section 3 introduces the bugs we discovered, analyzes their root causes
 and reports their effect on performance.
-- Section 4 presents the tools.
+- Section 4 presents the tools.
 - In Section 5 we reflect on the lessons learned as a result of this study and identify open research problems.
 - Section 6 discusses related work.
 - Section 7 summarizesour finding.
@@ -222,7 +223,7 @@ is divided among threads proportionally to their weights.
 *The resulting interval (after division) is what we call the
 timeslice*. A thread’s weight is essentially its priority, or
 niceness in UNIX parlance.
-> 随着进程数量的增加，timeslice 是不是越来越小。会不会进而导致timeslice 小到连context switch 的时间都没，如果没有设置限制的话!
+> 随着进程数量的增加，timeslice 是不是越来越小。会不会进而导致 timeslice 小到连 context switch 的时间都没，如果没有设置限制的话!
 > 不会吧 ! 至少也会运行一个时钟周期。
 
 Context switches are on a critical path, so they
@@ -230,12 +231,13 @@ must be fast. Accessing only a core-local queue prevents the
 scheduler from making potentially expensive synchronized
 accesses, which would be required if it accessed a globally
 shared runqueue.
-> 由于context switch 导致需要在local queue 中间获取 !
+
+> 由于 context switch 导致需要在 local queue 中间获取 !
 
 However, in order for the scheduling algorithm to still
 work correctly and efficiently in the presence of per-core
 runqueues, the runqueues must be kept balanced.
-> 周期性的balance 算法，但是问题是: 确定balance的标准是什么，balance 的过程是什么 ?
+> 周期性的 balance 算法，但是问题是: 确定 balance 的标准是什么， balance 的过程是什么 ?
 
 Load balancing is an
 expensive procedure on today’s systems, both computationwise, because it requires iterating over dozens of runqueues,
@@ -251,14 +253,13 @@ newly awoken threads.
 A basic load balancing
 algorithm would compare the load of all cores and then
 transfer tasks from the most loaded core to the least loaded
-core. Unfortunately this would result in threads being migrated across the machine without considering cache locality or NUMA. Instead, the load balancer uses a hierarchical
+core. Unfortunately this would result in threads being migrated across the machine without considering cache locality or NUMA. Instead, the load balancer uses a hierarchical
 strategy.
 > @todo load : how to calculate it ?
 
 The load balancing algorithm is summarized in Algorithm 1. Load balancing is run for each scheduling domain,
 starting from the bottom to the top.
-> 自底向上计算 load 来实现balance
-
+> 自底向上计算 load 来实现 balance
 
 Algorithm 1:
 > scheduling group && sched domain ?
