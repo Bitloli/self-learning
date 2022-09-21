@@ -11,7 +11,9 @@
 
 - [ ] 在代码中找到 device page table 的内容，以及 IOMMU 防护恶意驱动
 
-- [ ] QEMU 中存在 3000 行处理这个的
+- [ ] QEMU 中存在 3000 行处理 Intel IOMMU 的模拟
+
+- [ ] 据说 IOMMU 对于性能会存在影响。
 
 ## https://events19.linuxfoundation.cn/wp-content/uploads/2017/11/Shared-Virtual-Addressing_Yisheng-Xie-_-Bob-Liu.pdf
 

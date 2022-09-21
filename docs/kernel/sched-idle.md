@@ -1,9 +1,12 @@
 # Linux scheduelr
 
+
 - https://mp.weixin.qq.com/s/0LM25OrpFCCcokSCMv--Mg
   - 大致分析 idle driver 的作用已经整个 idle 代码的流程
 
 - https://vstinner.github.io/intel-cpus.html : cstate pstate 的介绍
+
+- 关键的内核文档: https://docs.kernel.org/admin-guide/pm/working-state.html
 
 - cpuidle.off = 1
 
@@ -13,7 +16,6 @@
 - hlt which just goes into the lightest sleep
 - but user-space versions umonitor / umwait were added recently to Tremont (next-gen Goldmont atom)
 - The idle kernel parameter is used, which takes one of the following values: poll, halt, nomwait.
-
 
 ## [ ] 为什么 firmware 可以修改 cstate 的状态
 
@@ -48,25 +50,25 @@
 
 ```c
 struct cpuidle_device {
-	unsigned int		registered:1;
-	unsigned int		enabled:1;
-	unsigned int		poll_time_limit:1;
-	unsigned int		cpu;
-	ktime_t			next_hrtimer;
+    unsigned int        registered:1;
+    unsigned int        enabled:1;
+    unsigned int        poll_time_limit:1;
+    unsigned int        cpu;
+    ktime_t         next_hrtimer;
 
-	int			last_state_idx;
-	u64			last_residency_ns;
-	u64			poll_limit_ns;
-	u64			forced_idle_latency_limit_ns;
-	struct cpuidle_state_usage	states_usage[CPUIDLE_STATE_MAX];
-	struct cpuidle_state_kobj *kobjs[CPUIDLE_STATE_MAX];
-	struct cpuidle_driver_kobj *kobj_driver;
-	struct cpuidle_device_kobj *kobj_dev;
-	struct list_head 	device_list;
+    int         last_state_idx;
+    u64         last_residency_ns;
+    u64         poll_limit_ns;
+    u64         forced_idle_latency_limit_ns;
+    struct cpuidle_state_usage  states_usage[CPUIDLE_STATE_MAX];
+    struct cpuidle_state_kobj *kobjs[CPUIDLE_STATE_MAX];
+    struct cpuidle_driver_kobj *kobj_driver;
+    struct cpuidle_device_kobj *kobj_dev;
+    struct list_head    device_list;
 
 #ifdef CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED
-	cpumask_t		coupled_cpus;
-	struct cpuidle_coupled	*coupled;
+    cpumask_t       coupled_cpus;
+    struct cpuidle_coupled  *coupled;
 #endif
 ```
 
@@ -74,21 +76,21 @@ struct cpuidle_device {
 
 ```c
 struct cpuidle_driver {
-	const char		*name;
-	struct module 		*owner;
+    const char      *name;
+    struct module       *owner;
 
         /* used by the cpuidle framework to setup the broadcast timer */
-	unsigned int            bctimer:1;
-	/* states array must be ordered in decreasing power consumption */
-	struct cpuidle_state	states[CPUIDLE_STATE_MAX];
-	int			state_count;
-	int			safe_state_index;
+    unsigned int            bctimer:1;
+    /* states array must be ordered in decreasing power consumption */
+    struct cpuidle_state    states[CPUIDLE_STATE_MAX];
+    int         state_count;
+    int         safe_state_index;
 
-	/* the driver handles the cpus in cpumask */
-	struct cpumask		*cpumask;
+    /* the driver handles the cpus in cpumask */
+    struct cpumask      *cpumask;
 
-	/* preferred governor to switch at register time */
-	const char		*governor;
+    /* preferred governor to switch at register time */
+    const char      *governor;
 };
 ```
 
@@ -104,32 +106,32 @@ struct cpuidle_driver {
 
 ```c
 static struct cpuidle_governor menu_governor = {
-	.name =		"menu",
-	.rating =	20,
-	.enable =	menu_enable_device,
-	.select =	menu_select,
-	.reflect =	menu_reflect,
+    .name =     "menu",
+    .rating =   20,
+    .enable =   menu_enable_device,
+    .select =   menu_select,
+    .reflect =  menu_reflect,
 };
 ```
 
 ```c
 static struct cpuidle_governor ladder_governor = {
-	.name =		"ladder",
-	.rating =	10,
-	.enable =	ladder_enable_device,
-	.select =	ladder_select_state,
-	.reflect =	ladder_reflect,
+    .name =     "ladder",
+    .rating =   10,
+    .enable =   ladder_enable_device,
+    .select =   ladder_select_state,
+    .reflect =  ladder_reflect,
 };
 ```
 
 ```c
 
 static struct cpuidle_governor haltpoll_governor = {
-	.name =			"haltpoll",
-	.rating =		9,
-	.enable =		haltpoll_enable_device,
-	.select =		haltpoll_select,
-	.reflect =		haltpoll_reflect,
+    .name =         "haltpoll",
+    .rating =       9,
+    .enable =       haltpoll_enable_device,
+    .select =       haltpoll_select,
+    .reflect =      haltpoll_reflect,
 };
 ```
 
@@ -137,12 +139,12 @@ static struct cpuidle_governor haltpoll_governor = {
 
 ```c
 config HALTPOLL_CPUIDLE
-	tristate "Halt poll cpuidle driver"
-	depends on X86 && KVM_GUEST
-	default y
-	help
-	 This option enables halt poll cpuidle driver, which allows to poll
-	 before halting in the guest (more efficient than polling in the
-	 host via halt_poll_ns for some scenarios).
+    tristate "Halt poll cpuidle driver"
+    depends on X86 && KVM_GUEST
+    default y
+    help
+     This option enables halt poll cpuidle driver, which allows to poll
+     before halting in the guest (more efficient than polling in the
+     host via halt_poll_ns for some scenarios).
 
 ```

@@ -3,9 +3,12 @@
 ## TODO
 - [ ] 和 UEFI 的关系
 - [ ] 和 PCIe 的关系
+- [ ] ACPI 实现电源管理是通过什么硬件做到的，硬件需要何种适配
 
 ## 基本内容
 - https://en.wikipedia.org/wiki/Advanced_Configuration_and_Power_Interface
+
+ACPI 的一个关键功能就是处理电源管理，为此分别定义了 Global State，Device State, C State 和 P state
 
 > Internally, ACPI advertises the available components and their functions to the operating system kernel using instruction lists ("methods") provided through the system firmware (UEFI or BIOS), which the kernel parses. ACPI then executes the desired operations written in ACPI Machine Language (such as the initialization of hardware components) using an embedded minimal virtual machine.
 

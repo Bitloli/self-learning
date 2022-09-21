@@ -23,7 +23,6 @@ cat /proc/interrupt 中可以看到这一行:
 
 进一步的检查 docs/qemu/interrupt.md 的文档，找到 acpi 调用 `acpi_os_install_interrupt_handler` 将 `acpi_irq` 注册为中断。
 
-
 真的是对于 workqueue 使用的行云流水啊:
 ```txt
 #0  acpi_hotplug_schedule (adev=adev@entry=0xffff888003b64800, src=src@entry=1) at include/linux/slab.h:600
@@ -60,3 +59,6 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 
 ## 其他
 - [ ] https://unix.stackexchange.com/questions/242013/disable-gpe-acpi-interrupts-on-boot
+
+
+## [ ] 在物理机上 hotplug usb 的 backtrace 是什么样子的
