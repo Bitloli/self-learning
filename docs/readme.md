@@ -61,7 +61,7 @@
 - [VFIO : 利用设备直通将 GPU 提供给 Guest 使用](./lol/vfio.md)
 
 <!-- ## 淦，装一个机不可能这么难 -->
-<!-- - [基本的思路](./hw/machine.md) -->
+<!-- - [需求分析](./hw/machine.md) -->
 <!-- - [关于超频和休眠](.) -->
 <!-- - [如何刷入自己的 bios 的]() -->
 
@@ -96,7 +96,7 @@
 
 ## Tools
 - [My Linux Config](https://martins3.github.io/My-Linux-Config/)
-- [Mac，将就这用吧](./mac.md)
+- [Mac，将就着用吧](./mac.md)
 
 ## Linux Environment Programming
 - 🚧 [musl 阅读笔记](./linux/musl.md)

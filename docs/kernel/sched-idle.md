@@ -7,7 +7,15 @@
 
 - cpuidle.off = 1
 
-## [ ] 为什么 firmware 可以修改
+## https://stackoverflow.com/questions/57471862/uses-of-the-monitor-mwait-instructions
+
+- cpuidle.off=1 : 用于关闭 idle 的 subsystem 的
+- hlt which just goes into the lightest sleep
+- but user-space versions umonitor / umwait were added recently to Tremont (next-gen Goldmont atom)
+- The idle kernel parameter is used, which takes one of the following values: poll, halt, nomwait.
+
+
+## [ ] 为什么 firmware 可以修改 cstate 的状态
 
 ## 虚拟机为什么是这个 idle 选择，不能进入到 acpi_idle_enter 中
 ```txt

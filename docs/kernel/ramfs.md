@@ -160,6 +160,11 @@ This is all driven off of device availability.  Therefore, instead of scripts ha
 various things, we depend on udev to create device nodes for us and
 then when we have the rootfs's device node, we mount and carry on.
 
+- https://www.suse.com/support/kb/doc/?id=000019945 : drucut
+- https://unix.stackexchange.com/questions/453263/how-to-find-modules-used-in-initrd : 检查其中的内容
+- [How to unpack/uncompress and repack/re-compress an initial ramdisk (initrd/initramfs) boot image file on RHEL 5,6 ?](https://access.redhat.com/solutions/24029)
+
+
 
 ## mkinit
 https://salsa.debian.org/kernel-team/initramfs-tools
