@@ -8,22 +8,22 @@
 ## https://lwn.net/Articles/454795/
 
 Exactly how the kernel talks to tmem will be described in **Part 2**,
-but there are certain classes of data maintained by the kernel that are suitable. 
+but there are certain classes of data maintained by the kernel that are suitable.
 Two of these are known to kernel developers as "clean pagecache pages" and "swap pages".
 
 > 两种类型的适合 tmem
 
-Collectively these sources of suitable data for tmem can be referred to as "frontends" for tmem 
+Collectively these sources of suitable data for tmem can be referred to as "frontends" for tmem
 and we will detail them in **Part 3**.
 
 The two basic operations of tmem are "put" and "get".
 If the kernel wishes to save a chunk of data in tmem, it uses the "put" operation, providing a pool id, a handle, and the location of the data;
-if the put returns success, tmem has copied the data. 
+if the put returns success, tmem has copied the data.
 
 within a pool, the kernel chooses a unique "handle" to represent the equivalent of an address for the chunk of data.
 When the kernel requests the creation of a pool, it specifies **certain attributes** to be described below.
 If pool creation is successful, tmem provides a "pool id".
-Handles are unique within pools, not across pools, and consist of a 192-bit "object id" and a 32-bit "index." 
+Handles are unique within pools, not across pools, and consist of a 192-bit "object id" and a 32-bit "index."
 The rough equivalent of an object is a "file" and the index is the rough equivalent of a page offset into the file.
 > handle 来描述 equivalent of an address for ...
 > handle 等价于 地址
@@ -50,5 +50,3 @@ These two frontends are complementary:
 2. **frontswap handles (dirty) anonymous pages that would otherwise be swapped out by the kernel.**
 
 > clean 和 dirty 的含义是什么 ?
-
-

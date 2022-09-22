@@ -46,7 +46,7 @@ int try_to_free_swap(struct page *page)
 		return 0;
 	if (PageWriteback(page))
 		return 0;
-	if (page_swapped(page)) 
+	if (page_swapped(page))
 		return 0;
 
 	/*
@@ -79,7 +79,7 @@ static bool page_swapped(struct page *page) // 判断是否还有该 page 还有
 	struct swap_info_struct *si;
 
   // THP_SWAP 居然是 TransParentHugePage swap 的意思
-	if (!IS_ENABLED(CONFIG_THP_SWAP) || likely(!PageTransCompound(page))) // 一般是非 huge 
+	if (!IS_ENABLED(CONFIG_THP_SWAP) || likely(!PageTransCompound(page))) // 一般是非 huge
 		return page_swapcount(page) != 0;
 
 	page = compound_head(page);
@@ -323,7 +323,7 @@ out:
 
 
 ## swapon : 对于 swapfile 终极理解(2)
-1. specialfile 是一个字符串，这里是文件还是 dev 有没有区分处理 
+1. specialfile 是一个字符串，这里是文件还是 dev 有没有区分处理
 2. priority 体现在什么地方 ?
 
 ```c
@@ -356,7 +356,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 		return -ENOMEM;
 
   // swap_info_struct 持有 swap cache 的基本信息
-	p = alloc_swap_info(); 
+	p = alloc_swap_info();
 	if (IS_ERR(p))
 		return PTR_ERR(p);
 
@@ -384,7 +384,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 
   // 设置 p->bdev，对于文件和 block dev 区别处理
 	/* If S_ISREG(inode->i_mode) will do inode_lock(inode); */
-	error = claim_swapfile(p, inode); 
+	error = claim_swapfile(p, inode);
 	if (unlikely(error))
 		goto bad_swap;
 
@@ -404,7 +404,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 	swap_header = kmap(page);
 
   // 解析 swap_header
-	maxpages = read_swap_header(p, swap_header, inode); 
+	maxpages = read_swap_header(p, swap_header, inode);
 	if (unlikely(!maxpages)) {
 		error = -EINVAL;
 		goto bad_swap;
@@ -471,7 +471,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 		goto bad_swap;
 
   // 初始化 cluster 和 extents
-	nr_extents = setup_swap_map_and_extents(p, swap_header, swap_map, 
+	nr_extents = setup_swap_map_and_extents(p, swap_header, swap_map,
 		cluster_info, maxpages, &span);
 	if (unlikely(nr_extents < 0)) {
 		error = nr_extents;
@@ -512,10 +512,10 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 					p, err);
 		}
 	}
-    
+
   // 初始化 address_space
   // p->type 就是编号
-	error = init_swap_address_space(p->type, maxpages); 
+	error = init_swap_address_space(p->type, maxpages);
 	if (error)
 		goto bad_swap;
 
@@ -538,7 +538,7 @@ SYSCALL_DEFINE2(swapon, const char __user *, specialfile, int, swap_flags)
 
 　// 设置权限以及加入到 global list 中间
   // 分析其中的  _enable_swap_info 和 setup_swap_info
-	enable_swap_info(p, prio, swap_map, cluster_info, frontswap_map); 
+	enable_swap_info(p, prio, swap_map, cluster_info, frontswap_map);
 
 	pr_info("Adding %uk swap on %s.  Priority:%d extents:%d across:%lluk %s%s%s%s%s\n",
 		p->pages<<(PAGE_SHIFT-10), name->name, p->prio,
@@ -1102,7 +1102,7 @@ static inline pgoff_t swp_offset(swp_entry_t entry)
 // 非常的人性化，前面存储 offset ，后面存储 type
 ```
 
-## reuse_swap_page : gp fault 辅助函数，reuse 没有 references 的 page 
+## reuse_swap_page : gp fault 辅助函数，reuse 没有 references 的 page
 ```c
 /*
  * We can write to an anon page without COW if there are no other references
@@ -1155,11 +1155,11 @@ bool reuse_swap_page(struct page *page, int *total_map_swapcount)
 ## setup_swap_map_and_extents
 
 ```c
-static int setup_swap_map_and_extents(struct swap_info_struct *p, 
+static int setup_swap_map_and_extents(struct swap_info_struct *p,
 					union swap_header *swap_header, // swapfile 中间读入的基本信息
 					unsigned char *swap_map,  // swap_map = vzalloc(maxpages)
 					struct swap_cluster_info *cluster_info, // 上层分配的一组 swap_cluster_info，其中的 lock 被初始化，另外的两个变量需要被初始化
-					unsigned long maxpages, // 从 swap_header 中间读取的，反映了容量的大小 
+					unsigned long maxpages, // 从 swap_header 中间读取的，反映了容量的大小
 					sector_t *span) // 返回值
 {
 	unsigned int j, k;
@@ -1193,7 +1193,7 @@ static int setup_swap_map_and_extents(struct swap_info_struct *p,
 
   // 将由于多余的 page 清理掉
 	/* Haven't marked the cluster free yet, no list operation involved */
-	for (i = maxpages; i < round_up(maxpages, SWAPFILE_CLUSTER); i++) 
+	for (i = maxpages; i < round_up(maxpages, SWAPFILE_CLUSTER); i++)
 		inc_cluster_info_page(p, cluster_info, i);
 
 	if (nr_good_pages) {
@@ -1229,7 +1229,7 @@ static int setup_swap_map_and_extents(struct swap_info_struct *p,
 	 */
 	for (k = 0; k < SWAP_CLUSTER_COLS; k++) { // 单个
 		j = (k + col) % SWAP_CLUSTER_COLS;
-		for (i = 0; i < DIV_ROUND_UP(nr_clusters, SWAP_CLUSTER_COLS); i++) { // 所有的 cluster 
+		for (i = 0; i < DIV_ROUND_UP(nr_clusters, SWAP_CLUSTER_COLS); i++) { // 所有的 cluster
 			idx = i * SWAP_CLUSTER_COLS + j;
 			if (idx >= nr_clusters) // idx 越界
 				continue;
@@ -1244,9 +1244,9 @@ static int setup_swap_map_and_extents(struct swap_info_struct *p,
 }
 
 // 一个 L1_CACHE_BYTES 存储的 swap_cluster_info 的个数
+// 一个 address_space 存储的 cluster 的数量
 #define SWAP_CLUSTER_INFO_COLS						\
 	DIV_ROUND_UP(L1_CACHE_BYTES, sizeof(struct swap_cluster_info))
-// 一个 address_space 存储的 cluster 的数量
 #define SWAP_CLUSTER_SPACE_COLS						\
 	DIV_ROUND_UP(SWAP_ADDRESS_SPACE_PAGES, SWAPFILE_CLUSTER)
 #define SWAP_CLUSTER_COLS						\
