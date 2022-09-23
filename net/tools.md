@@ -3,6 +3,20 @@
 
 - [ ] 在我的印象中，一直都是 ip 和 ifconfig 是不是存在一些冲突啊
 
+
+## TODO
+- [ ] 测试延迟
+
+## iperf
+- 测试带宽
+
+## hping3
+https://linux.die.net/man/8/hping3
+
+## wrk
+测试 http 的性能
+https://github.com/wg/wrk
+
 ## tcpdump
 - [tcpdump](https://jvns.ca/tcpdump-zine.pdf)
 - [ ] https://blog.cloudflare.com/bpf-the-forgotten-bytecode/ : bpf, the kernel counterpart of tcpdump
@@ -14,6 +28,13 @@
 ## nc
 
 https://www.kawabangga.com/posts/4515 中间提到 nc -l  9999 的操作可以了解一下 nc 的含义
+
+## traceroute
+- [ ] traceroute
+
+## mtr
+
+主要参考 [使用 mtr 检查网络问题，以及注意事项](https://www.kawabangga.com/posts/4275)
 
 ## netstat
 

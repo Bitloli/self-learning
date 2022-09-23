@@ -7,11 +7,14 @@ abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json
 
 QEMU=$(jq -r ".qemu" <"$configuration")
+QEMU=qemu-system-x86_64
 KERNEL=$(jq -r ".kernel" <"$configuration")
 workstation=$(jq -r ".workstation" <"$configuration")
-iso="$workstation/ubuntu.iso"
-img="$workstation/ubuntu.img"
-snap_img="$workstation/ubuntu_bak.img"
+workstation=/home/maritns3/hack/vm/
+
+iso="$workstation/ubuntu-20.04-server.iso"
+img="$workstation/ubuntu-20.04-server.img"
+snap_img="$workstation/ubuntu_bak-20.04-server.img"
 
 if [[ ! -f ${iso} ]]; then
   wget https://releases.ubuntu.com/22.04/ubuntu-22.04-desktop-amd64.iso -O "${iso}"

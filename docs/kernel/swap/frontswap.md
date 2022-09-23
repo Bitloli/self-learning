@@ -5,6 +5,11 @@
 3. 涉及到硬件了吗 ?
 5. 前端和后端之间的接口是什么 ?
 
+
+
+- http://www.wowotech.net/memory_management/zram.html : 就是这个吗 ?
+  - https://github.com/maximumadmin/zramd
+
 ## https://lwn.net/Articles/454795/
 
 Exactly how the kernel talks to tmem will be described in **Part 2**,

@@ -46,6 +46,8 @@ Working hard is not just a dial you turn up to 11. It's a complicated, dynamic s
 
 Absence of a signal is itself a signal.[^15]
 
+稳定压倒一切[^16]
+
 [^1]: https://www.zhihu.com/question/443850977/answer/1754327421
 [^2]: https://mp.weixin.qq.com/s/4kN65Eu_mYKmC-GLig082g
 [^3]: https://github.com/cdk8s/cdk8s-team-style/blob/master/other/read-write.md
@@ -61,3 +63,4 @@ Absence of a signal is itself a signal.[^15]
 [^13]: https://www.bilibili.com/video/BV1cG411W7dx
 [^14]: https://thorstenball.com/blog/2022/05/17/professional-programming-the-first-10-years/
 [^15]: https://www.netmeister.org/blog/ops-lessons.html
+[^16]: https://github.com/shengcaishizhan/kkndme_tianya

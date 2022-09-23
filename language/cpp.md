@@ -14,6 +14,7 @@ https://github.com/sharkdp/dbg-macro/blob/master/dbg.h : 1000 行的更好的pri
 
 - [ ] https://abseil.io/tips/ : 一个 cpp 社区，提供 weekly news 之类的
 
+- https://www.zhihu.com/column/c_1306966457508118528
 
 ## 阅读
 1. [快速浏览](https://github.com/changkun/modern-cpp-tutorial/blob/master/book/zh-cn/03-runtime.md)
