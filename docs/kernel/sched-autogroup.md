@@ -17,17 +17,17 @@ An autogroup is automatically destroyed when the last process in the group termi
 /* Allocates GFP_KERNEL, cannot be called under any spinlock: */
 void sched_autogroup_create_attach(struct task_struct *p)
 {
-	struct autogroup *ag = autogroup_create();
+    struct autogroup *ag = autogroup_create();
 
-	autogroup_move_group(p, ag);
+    autogroup_move_group(p, ag);
 
-	/* Drop extra reference added by autogroup_create(): */
-	autogroup_kref_put(ag);
+    /* Drop extra reference added by autogroup_create(): */
+    autogroup_kref_put(ag);
 }
 EXPORT_SYMBOL(sched_autogroup_create_attach);
 
 static inline struct autogroup *autogroup_create(void)
-	/* tg = sched_create_group(&root_task_group); */
+    /* tg = sched_create_group(&root_task_group); */
   // 所有的总是默认使用的为 sched_create_group 中间的内容
 ```
 
@@ -66,16 +66,16 @@ The use of the cgroups(7) CPU controller to place processes in cgroups other tha
 
 ```c
 config SCHED_AUTOGROUP
-	bool "Automatic process group scheduling"
-	select CGROUPS
-	select CGROUP_SCHED
-	select FAIR_GROUP_SCHED
-	help
-	  This option optimizes the scheduler for common desktop workloads by
-	  automatically creating and populating task groups.  This separation
-	  of workloads isolates aggressive CPU burners (like build jobs) from
-	  desktop applications.  Task group autogeneration is currently based
-	  upon task session.
+    bool "Automatic process group scheduling"
+    select CGROUPS
+    select CGROUP_SCHED
+    select FAIR_GROUP_SCHED
+    help
+      This option optimizes the scheduler for common desktop workloads by
+      automatically creating and populating task groups.  This separation
+      of workloads isolates aggressive CPU burners (like build jobs) from
+      desktop applications.  Task group autogeneration is currently based
+      upon task session.
 ```
 > @todo 所以为什么通过 autogroup 将 CPU burner 和 desktop 之间划分开 ?
 
@@ -100,3 +100,8 @@ man sched(7)
 因为 task_group 是 cgroup 机制下，所以将 task_group 加入到机制中间:
 - sched_online_group
 - sched_offline_group
+
+how and when groups of tasks are created:
+1. Users may use the control group ("cgroup") infrastructure to partition system resources between tasks. Tasks belonging to a cgroup are associated with a group in the scheduler (if the scheduler controller is attached to the group).
+2. When a new session is created through the `set_sid()` system call. All tasks belonging to a specific session also belong to the same scheduling group. This feature is enabled when `CONFIG_SCHED_AUTOGROUP` is set in the kernel configuration.
+3. a single task becomes a scheduling entity on its own.

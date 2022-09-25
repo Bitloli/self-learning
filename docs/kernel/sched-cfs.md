@@ -83,9 +83,15 @@
 
 - update_curr 中
   - curr->vruntime += calc_delta_fair(delta_exec, curr);
-  - update_min_vruntime : 似乎是防止数值溢出之类的
+  - update_min_vruntime : Each time a new task forks or a task wakes up, its vruntime is assigned to a value that is the maximum of its last updated value and cfs_rq.min_vruntime.
+
+> The lowest vruntime found in the queue is stored in `cfs_rq.min_vruntime`. When a new task is picked to run, the leftmost node of the red-black tree is chosen since that task has had the least running time on the CPU. *Each time a new task forks or a task wakes up, its vruntime is assigned to a value that is the maximum of its last updated value and cfs_rq.min_vruntime.* If not for this, its vruntime would be very small as an effect of not having run for a long time (or at all) and would take an unacceptably long time to catch up to the vruntime of its sibling tasks and hence starve them of CPU time.
+
+
 
 使用的 rb_tree 的比较函数为 `__entity_less`，使用 sched_entity::vruntime 实现的
+
+
 
 ## [ ]  如何实现在 sysctl_sched_latency 时间内中所有的程序都可以运行的
 

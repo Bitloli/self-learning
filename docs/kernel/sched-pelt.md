@@ -1,17 +1,54 @@
 # pelt
 
+- weight 的计算, share 的计算， load avg 的计算是两个事情吧
+  - weight : 就是将
+- 如果 pelt 不是必须的，其替代是什么?
+  - 是必须的，将原来的 per-run-queue 的统计替代了
+- 不使用 per-entity load tracking 的问题是什么 ?
+  - [Per-entity load tracking](https://lwn.net/Articles/531853/)
+
 ## 主要参考
 
-https://www.cnblogs.com/LoyenWang/p/12316660.html
+- https://www.cnblogs.com/LoyenWang/p/12316660.html
 
-## per-entity load tracking : https://lwn.net/Articles/531853/
-1. 不使用 per-entity load tracking 的问题是什么 ?
+## 基本流程
 
+更新  update_load_avg 的位置非常多，具体可以参考: https://img2018.cnblogs.com/blog/1771657/202002/1771657-20200216135939689-531768656.png
+```txt
+#0  ___update_load_avg (load=1024, sa=0xffff88814a11afc0) at kernel/sched/pelt.h:44
+#1  __update_load_avg_se (now=now@entry=48878086392862, cfs_rq=cfs_rq@entry=0xffff888148fa5e00, se=se@entry=0xffff88814a11af00) at kernel/sched/build_policy.c:4239
+#2  0xffffffff8114393c in update_load_avg (cfs_rq=0xffff888148fa5e00, se=0xffff88814a11af00, flags=5) at kernel/sched/fair.c:4018
+#3  0xffffffff81144fc0 in enqueue_entity (cfs_rq=cfs_rq@entry=0xffff888148fa5e00, se=se@entry=0xffff88814a11af00, flags=9) at kernel/sched/fair.c:4442
+#4  0xffffffff81145461 in enqueue_task_fair (rq=0xffff888333c2b2c0, p=<optimized out>, flags=<optimized out>) at kernel/sched/fair.c:5757
+#5  0xffffffff8113c53f in enqueue_task (flags=9, p=0xffff88814a11ae80, rq=0xffff888333c2b2c0) at kernel/sched/core.c:2066
+```
+
+```txt
+#0  update_tg_cfs_runnable (gcfs_rq=0xffff888145898c00, gcfs_rq=0xffff888145898c00, se=0xffff888145898a00, cfs_rq=0xffff888333c2b3c0) at kernel/sched/fair.c:3584
+#1  propagate_entity_load_avg (se=0xffff888145898a00) at kernel/sched/fair.c:3700
+#2  update_load_avg (cfs_rq=0xffff888333c2b3c0, se=0xffff888145898a00, flags=1) at kernel/sched/fair.c:4021
+#3  0xffffffff81146254 in propagate_entity_cfs_rq (se=0xffff888145898a00, se=0xffff888145898a00) at kernel/sched/fair.c:11538
+#4  propagate_entity_cfs_rq (se=<optimized out>) at kernel/sched/fair.c:11522
+#5  0xffffffff8113edda in wake_up_new_task (p=p@entry=0xffff888100219740) at kernel/sched/core.c:4678
+#6  0xffffffff811039b4 in kernel_clone (args=args@entry=0xffffc90000753eb0) at kernel/fork.c:2695
+#7  0xffffffff81103de6 in __do_sys_clone (clone_flags=<optimized out>, newsp=<optimized out>, parent_tidptr=<optimized out>, child_tidptr=<optimized out>, tls=<optimized out>) at kernel/fork.c:2805
+#8  0xffffffff81f3d6e8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90000753f58) at arch/x86/entry/common.c:50
+#9  do_syscall_64 (regs=0xffffc90000753f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#10 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
+- update_load_avg
+  - update_cfs_rq_load_avg
+    - `__update_load_avg_cfs_rq`
+      - `___update_load_sum`
+  - propagate_entity_load_avg
+
+
+## 记录
+
+使用 struct sched_avg 来记录:
 ```c
 /*
- * // 1. 为什么计算方法是几何级数 ?
- * // 2. __update_load_avg() 中间的具体的内容是什么 ?
- *
  * The load_avg/util_avg accumulates an infinite geometric series
  * (see __update_load_avg() in kernel/sched/fair.c).
  *
@@ -77,11 +114,7 @@ struct sched_avg {
 } ____cacheline_aligned;
 ```
 
-
-## 问题
-- [ ] 如果 pelt 不是必须的，其替代是什么?
-
-计算 /proc/loadavg 的方法:
+## 计算 /proc/loadavg 的方法
 
 1. 两个函数来统计，分别处理 hz 和 nohz 的情况，使用 calc_load_fold_active
 ```txt
@@ -151,106 +184,8 @@ struct sched_avg {
 #15 0xffffffff81f371fd in sysvec_apic_timer_interrupt (regs=0xffffc900014e3b28) at arch/x86/kernel/apic/apic.c:1106
 ```
 
-- [Per-entity load tracking](https://lwn.net/Articles/531853/)
 
 [Load tracking in the scheduler](https://lwn.net/Articles/639543/)
-- The CFS algorithm defines a time duration called the "scheduling period," during which every runnable task on the CPU should run at least once.
-- A group of tasks is called a "scheduling entity" in the kernel.
-
-*If a CPU is associated with a number C that represents its ability to process tasks (let's call it "capacity"), then the load of a process is a metric that is expressed in units of C, indicating the number of such CPUs required to make satisfactory progress on its job. This number could also be a fraction of C, in which case it indicates that a single such CPU is good enough. The load of a process is important in scheduling because, besides influencing the time that a task spends running on the CPU, it helps to estimate overall CPU load, which is required during load balancing.
-
-The question is how to estimate the load of a process. Should it be set statically or should it be set dynamically at run time based on the behavior of the process? Either way, how should it be calculated? There have been significant efforts at answering these questions in the recent past. As a consequence, the number of load-tracking metrics has grown significantly and load estimation itself has gotten quite complex.*
-
-- [ ] what's relation with `load`, `priority` , `weight` and `share` ?
-
-how and when groups of tasks are created:
-1. Users may use the control group ("cgroup") infrastructure to partition system resources between tasks. Tasks belonging to a cgroup are associated with a group in the scheduler (if the scheduler controller is attached to the group).
-2. When a new session is created through the `set_sid()` system call. All tasks belonging to a specific session also belong to the same scheduling group. This feature is enabled when CONFIG_SCHED_AUTOGROUP is set in the kernel configuration.
-3. a single task becomes a scheduling entity on its own.
-
-**Each scheduling entity contains a run queue**, the parent run queue on which a scheduling entity is queued is represented by `cfs_rq`, while the run queue that it owns is represented by `my_rq` in the `sched_entity` data structure.
-```c
-struct sched_entity {
-	/* rq on which this entity is (to be) queued: */
-	struct cfs_rq			*cfs_rq;
-	/* rq "owned" by this entity/group: */
-	struct cfs_rq			*my_q;
-```
-For every CPU c, a given `task_group` tg has a `sched_entity` called se and a run queue `cfs_rq` associated with it.
-
-Any given task's time slice is dependent on its priority and the number of tasks on the run queue. The priority of a task is a number that represents its importance; **it is represented in the kernel by a number between zero and 139.**
-
-But the priority value by itself is not helpful to the scheduler, *which also needs to know the load of the task to estimate its time slice.*
-As mentioned above, the load must be the multiple of the capacity of a standard CPU that is required to make satisfactory progress on the task. Hence this priority number must be mapped to such a value; this is done in the array `prio_to_weight[]`.
-
-A priority number of 120, which is the priority of a normal task, is mapped to a load of 1024, which is the value that the kernel uses to represent the capacity of a single standard CPU.
-```c
-/*
- * Nice levels are multiplicative, with a gentle 10% change for every
- * nice level changed. I.e. when a CPU-bound task goes from nice 0 to
- * nice 1, it will get ~10% less CPU time than another CPU-bound task
- * that remained on nice 0.
- *
- * The "10% effect" is relative and cumulative: from _any_ nice level,
- * if you go up 1 level, it's -10% CPU usage, if you go down 1 level
- * it's +10% CPU usage. (to achieve that we use a multiplier of 1.25.
- * If a task goes up by ~10% and another task goes down by ~10% then
- * the relative distance between them is ~25%.)
- */
-const int sched_prio_to_weight[40] = {
- /* -20 */     88761,     71755,     56483,     46273,     36291,
- /* -15 */     29154,     23254,     18705,     14949,     11916,
- /* -10 */      9548,      7620,      6100,      4904,      3906,
- /*  -5 */      3121,      2501,      1991,      1586,      1277,
- /*   0 */      1024,       820,       655,       526,       423,
- /*   5 */       335,       272,       215,       172,       137,
- /*  10 */       110,        87,        70,        56,        45,
- /*  15 */        36,        29,        23,        18,        15,
-};
-```
-
-```c
-/*
- * Task weight (visible to users) and its load (invisible to users) have
- * independent resolution, but they should be well calibrated. We use
- * scale_load() and scale_load_down(w) to convert between them. The
- * following must be true:
- *
- *  scale_load(sched_prio_to_weight[USER_PRIO(NICE_TO_PRIO(0))]) == NICE_0_LOAD
- *
- */
-#define NICE_0_LOAD		(1L << NICE_0_LOAD_SHIFT)
-
-/*
- * 'User priority' is the nice value converted to something we
- * can work with better when scaling various scheduler parameters,
- * it's a [ 0 ... 39 ] range.
- */
-#define USER_PRIO(p)		((p)-MAX_RT_PRIO)
-
-/*
- * Convert user-nice values [ -20 ... 0 ... 19 ]
- * to static priority [ MAX_RT_PRIO..MAX_PRIO-1 ],
- * and back.
- */
-#define NICE_TO_PRIO(nice)	((nice) + DEFAULT_PRIO)
-```
-- [x] It's reasonable, nice value is friendly to user, but it doesn't provide proper granularity.
-
-> man nice(2)
-> with -20 being the highest priority and 19 being the lowest priority.
-
-- [ ] what's nice of rt thread ?
-
-A run queue (struct cfs_rq) is also characterized by a "weight" value that is the accumulation of weights of all tasks on its run queue.
-
-The lowest vruntime found in the queue is stored in `cfs_rq.min_vruntime`. When a new task is picked to run, the leftmost node of the red-black tree is chosen since that task has had the least running time on the CPU. *Each time a new task forks or a task wakes up, its vruntime is assigned to a value that is the maximum of its last updated value and cfs_rq.min_vruntime.* If not for this, its vruntime would be very small as an effect of not having run for a long time (or at all) and would take an unacceptably long time to catch up to the vruntime of its sibling tasks and hence starve them of CPU time.
-
-Every periodic tick, the vruntime of the currently-running task is updated as follows:
-```c
-    vruntime += delta_exec * (NICE_0_LOAD/curr->load.weight);
-```
-
 
 The load of a CPU could have simply been the sum of the load of all the scheduling entities running on its run queue.
 In fact, that was once all there was to it.
@@ -274,122 +209,3 @@ it is accumulated in a field called `runnable_load_avg` in the `cfs_rq` data str
 This is roughly a measure of how heavily contended the CPU is. The kernel also tracks the load associated with blocked tasks. When a task gets blocked, its load is accumulated in the blocked_load_avg metric of the cfs_rq structure.
 
 - [ ] [Per-entity load tracking in presence of task groups](https://lwn.net/Articles/639543/) : Continue the reading if other parts finished.
-
-# pelt.c
-
-## 首先，找到这些注释的证据是什么
-1. runnable_sum 是不是可以替换掉 runnable_load_sum 和 load_sum (根本没有 runnable_sum )
-2. sched_avg: avg sum runnable 四个变量
-
-
-```c
-//
-// sched_entity:
-//
-//   task:
-//     se_runnable() == se_weight() // 对于 task 而言，是该结果!
-//
-//   group: [ see update_cfs_group() ]
-//     se_weight()   = tg->weight * grq->load_avg / tg->load_avg // 将 tg->weight 切换为 shares，其他的两个近似也需要考察一下
-//     se_runnable() = se_weight(se) * grq->runnable_load_avg / grq->load_avg  // 似乎是得到其 权重的 runnable 部分
-//
-//   TODO 下面四个内容在何处？
-//   对于 task group 成立 ?
-//   load_sum := runnable_sum
-//   load_avg = se_weight(se) * runnable_avg // TODO load_avg 的计算方法是这个 ?
-//
-//   runnable_load_sum := runnable_sum
-//   runnable_load_avg = se_runnable(se) * runnable_avg
-//
-// XXX collapse load_sum and runnable_load_sum
-//
-// 似乎下面才是两个函数计算的部分
-// 更新 cfs_rq 中的 sched_avg 成员:
-// avg 不用求和
-// cfq_rq:
-//
-//   load_sum = \Sum se_weight(se) * se->avg.load_sum
-//   load_avg = \Sum se->avg.load_avg
-//
-//   runnable_load_sum = \Sum se_runnable(se) * se->avg.runnable_load_sum
-//   runnable_load_avg = \Sum se->avg.runable_load_avg
-
-int __update_load_avg_blocked_se(u64 now, int cpu, struct sched_entity *se)
-{
-  // FIXME 似乎就是 runable weight 对于 task 而言，就是 load.weight
-  // 但是对于 task group 而言不同
-	if (entity_is_task(se))
-		se->runnable_weight = se->load.weight;
-
-	if (___update_load_sum(now, cpu, &se->avg, 0, 0, 0)) {
-		___update_load_avg(&se->avg, se_weight(se), se_runnable(se));
-		return 1;
-	}
-
-	return 0;
-}
-
-int __update_load_avg_se(u64 now, int cpu, struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	if (entity_is_task(se))
-		se->runnable_weight = se->load.weight;
-
-	if (___update_load_sum(now, cpu, &se->avg, !!se->on_rq, !!se->on_rq,
-				cfs_rq->curr == se)) {
-
-		___update_load_avg(&se->avg, se_weight(se), se_runnable(se));
-		cfs_se_util_change(&se->avg);
-		return 1;
-	}
-
-	return 0;
-}
-```
-
-```c
-static inline void
-enqueue_runnable_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	cfs_rq->runnable_weight += se->runnable_weight;
-
-	cfs_rq->avg.runnable_load_avg += se->avg.runnable_load_avg;
-	cfs_rq->avg.runnable_load_sum += se_runnable(se) * se->avg.runnable_load_sum;
-}
-
-static inline void
-dequeue_runnable_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	cfs_rq->runnable_weight -= se->runnable_weight;
-
-	sub_positive(&cfs_rq->avg.runnable_load_avg, se->avg.runnable_load_avg);
-	sub_positive(&cfs_rq->avg.runnable_load_sum,
-		     se_runnable(se) * se->avg.runnable_load_sum);
-}
-
-static inline void
-enqueue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	cfs_rq->avg.load_avg += se->avg.load_avg;
-	cfs_rq->avg.load_sum += se_weight(se) * se->avg.load_sum;
-}
-
-static inline void
-dequeue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
-{
-	sub_positive(&cfs_rq->avg.load_avg, se->avg.load_avg);
-	sub_positive(&cfs_rq->avg.load_sum, se_weight(se) * se->avg.load_sum);
-}
-```
-
-## load_avg 的作用是什么
-> 计算 tg 的 share 吗 ?
-
-
-
-## load_sum 的作用是不是为了计算 load_avg 的
-是的，只有一个位置有点可疑.
-
-```c
-static inline void
-update_tg_cfs_runnable(struct cfs_rq *cfs_rq, struct sched_entity *se, struct cfs_rq *gcfs_rq)
-```

@@ -1,4 +1,4 @@
-## try_to_wake_up 的辅助函数 `ttwu_
+# 为什么感觉 try_to_wake_up 非常复杂的样子，是因为考虑到什么特殊的东西吗
 
 一个有趣的 backtrace :
 ```txt
@@ -39,65 +39,90 @@
 #34 0xffffffff81001a6f in ret_from_fork () at arch/x86/entry/entry_64.S:306
 ```
 
+- try_to_wake_up : 这个函数存在特别多的注释
+  - select_task_rq
+  - ttwu_queue
+    - ttwu_queue_wakelist
+    - ttwu_do_activate
 
-1. remote 的概念 ?
+## 使用 perf 观测一下的
 
-```c
-static void ttwu_queue(struct task_struct *p, int cpu, int wake_flags)
-{
-	struct rq *rq = cpu_rq(cpu);
-	struct rq_flags rf;
+sudo bpftrace -e "kprobe:try_to_wake_up {  @[kstack] = count(); }"
 
-#if defined(CONFIG_SMP)
-	if (sched_feat(TTWU_QUEUE) && !cpus_share_cache(smp_processor_id(), cpu)) {
-		sched_clock_cpu(cpu); /* Sync clocks across CPUs */
-		ttwu_queue_remote(p, cpu, wake_flags);
-		return;
-	}
-#endif
+```txt
+@[
+    try_to_wake_up+1
+    wake_up_q+74
+    futex_wake+333
+    do_futex+185
+    __x64_sys_futex+115
+    do_syscall_64+59
+    entry_SYSCALL_64_after_hwframe+68
+]: 1723
+@[
+    try_to_wake_up+1
+    hrtimer_wakeup+30
+    __hrtimer_run_queues+298
+    hrtimer_interrupt+262
+    __sysvec_apic_timer_interrupt+127
+    sysvec_apic_timer_interrupt+157
+    asm_sysvec_apic_timer_interrupt+18
+    native_safe_halt+11
+    default_idle+10
+    default_idle_call+50
+    do_idle+478
+    cpu_startup_entry+25
+    start_secondary+278
+    secondary_startup_64_no_verify+213
+]: 3855
+```
+- 这个 3855 次被唤醒的，东西到底是什么，我猜测是 swapper
 
-	rq_lock(rq, &rf);
-	update_rq_clock(rq);
-	ttwu_do_activate(rq, p, wake_flags, &rf);
-	rq_unlock(rq, &rf);
-}
+
+sudo bpftrace -e "kprobe:try_to_wake_up {  @[comm] = count(); }"
+
+```txt
+@[syncthing]: 155
+@[swapper/15]: 191
+@[swapper/13]: 249
+@[swapper/2]: 261
+@[swapper/5]: 286
+@[swapper/17]: 624
+@[nvim]: 894
 ```
 
-```c
-/*
- * Called in case the task @p isn't fully descheduled from its runqueue,
- * in this case we must do a remote wakeup. Its a 'light' wakeup though,
- * since all we need to do is flip p->state to TASK_RUNNING, since
- * the task is still ->on_rq.
- */
-static int ttwu_remote(struct task_struct *p, int wake_flags)
-{
-	struct rq_flags rf;
-	struct rq *rq;
-	int ret = 0;
-
-	rq = __task_rq_lock(p, &rf);
-	if (task_on_rq_queued(p)) {
-		/* check_preempt_curr() may use rq clock */
-		update_rq_clock(rq);
-		ttwu_do_wakeup(rq, p, wake_flags, &rf);
-		ret = 1;
-	}
-	__task_rq_unlock(rq, &rf);
-
-	return ret;
-}
-```
-
-activate_task : 既然就是一个加入到队列中间 ?
+## activate_task
 ```c
 void activate_task(struct rq *rq, struct task_struct *p, int flags)
 {
-	if (task_contributes_to_load(p))
-		rq->nr_uninterruptible--;
+    if (task_contributes_to_load(p))
+        rq->nr_uninterruptible--;
 
-	enqueue_task(rq, p, flags);
+    enqueue_task(rq, p, flags);
 }
+```
+
+```txt
+#0  activate_task (flags=8, p=0xffff888100219740, rq=0xffff888333c2b2c0) at kernel/sched/core.c:2091
+#1  wake_up_new_task (p=p@entry=0xffff888100219740) at kernel/sched/core.c:4680
+#2  0xffffffff811039b4 in kernel_clone (args=args@entry=0xffffc90000753eb0) at kernel/fork.c:2695
+#3  0xffffffff81103de6 in __do_sys_clone (clone_flags=<optimized out>, newsp=<optimized out>, parent_tidptr=<optimized out>, child_tidptr=<optimized out>, tls=<optimized out>) at kernel/fork.c:2805
+#4  0xffffffff81f3d6e8 in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90000753f58) at arch/x86/entry/common.c:50
+#5  do_syscall_64 (regs=0xffffc90000753f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#6  0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
+```txt
+0  activate_task (flags=9, p=0xffff88814a10c5c0, rq=0xffff888333c2b2c0) at kernel/sched/core.c:2091
+#1  ttwu_do_activate (rq=rq@entry=0xffff888333c2b2c0, p=p@entry=0xffff88814a10c5c0, wake_flags=wake_flags@entry=0, rf=<optimized out>) at kernel/sched/core.c:3670
+#2  0xffffffff8113d0e0 in ttwu_queue (wake_flags=0, cpu=<optimized out>, p=0xffff88814a10c5c0) at kernel/sched/core.c:3875
+#3  try_to_wake_up (p=0xffff88814a10c5c0, state=state@entry=3, wake_flags=wake_flags@entry=0) at kernel/sched/core.c:4198
+#4  0xffffffff8113d3cc in wake_up_process (p=<optimized out>) at kernel/sched/core.c:4314
+#5  0xffffffff8119b859 in hrtimer_wakeup (timer=<optimized out>) at kernel/time/hrtimer.c:1939
+#6  0xffffffff8119bde2 in __run_hrtimer (flags=130, now=0xffffc9000086be90, timer=0xffffc9000080be90, base=0xffff888333c1e0c0, cpu_base=0xffff888333c1e080) at kernel/time/hrtimer.c:1685
+#7  __hrtimer_run_queues (cpu_base=cpu_base@entry=0xffff888333c1e080, now=48944931561680, flags=flags@entry=130, active_mask=active_mask@entry=15) at kernel/time/hrtimer.c:1749
+#8  0xffffffff8119ca71 in hrtimer_interrupt (dev=<optimized out>) at kernel/time/hrtimer.c:1811
+#9  0xffffffff810e25d7 in local_apic_timer_interrupt () at arch/x86/kernel/apic/apic.c:1095
 ```
 
 > 下面两个顶层函数
@@ -124,24 +149,22 @@ void activate_task(struct rq *rq, struct task_struct *p, int flags)
 ```c
 void sched_ttwu_pending(void)
 {
-	struct rq *rq = this_rq();
-	struct llist_node *llist = llist_del_all(&rq->wake_list);
-	struct task_struct *p, *t;
-	struct rq_flags rf;
+    struct rq *rq = this_rq();
+    struct llist_node *llist = llist_del_all(&rq->wake_list);
+    struct task_struct *p, *t;
+    struct rq_flags rf;
 
-	if (!llist)
-		return;
+    if (!llist)
+        return;
 
-	rq_lock_irqsave(rq, &rf);
-	update_rq_clock(rq);
+    rq_lock_irqsave(rq, &rf);
+    update_rq_clock(rq);
 
-	llist_for_each_entry_safe(p, t, llist, wake_entry)
-		ttwu_do_activate(rq, p, p->sched_remote_wakeup ? WF_MIGRATED : 0, &rf);
+    llist_for_each_entry_safe(p, t, llist, wake_entry)
+        ttwu_do_activate(rq, p, p->sched_remote_wakeup ? WF_MIGRATED : 0, &rf);
 
-	rq_unlock_irqrestore(rq, &rf);
+    rq_unlock_irqrestore(rq, &rf);
 }
 ```
 
 ![](../../img/source/sched_ttwu_pending.png)
-
-> @todo 分析其中的调用位置是什么 ?
