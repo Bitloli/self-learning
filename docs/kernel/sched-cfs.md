@@ -633,3 +633,379 @@ __out:  __ret;                                  \
 })
 // 其中的，init_wait_entry 将会设置被移动出来队列的时候，设置的 function 导致其被自动运行
 ```
+
+
+# fair.c 源码分析
+
+
+> 1. 从 1000 ~ 2700 config_numa_balancing
+> 2. 3700 计算 load avg 以及处理 tg 等东西
+> 3. 4000 dequeue_entity 各种 entity_tick 之类的
+> 4. 5000 作用的位置，处理 bandwidth
+> 5. 后面也许都是在处理 cpu attach 的吧
+
+update_cfs_group : shares runable 然后利用 reweight_entity 分析
+
+
+- pick_next_task_fair
+  - check_cfs_rq_runtime
+    - cfs_rq_throttled
+
+- pick_next_entity_fair
+  - put_prev_entity
+  - set_next_entity
+
+- set_curr_task_fair
+  - set_next_entity
+
+```txt
+#0  migrate_task_rq_fair (p=0xffff888100225d00, new_cpu=0) at kernel/sched/fair.c:7088
+#1  0xffffffff8113c6fe in set_task_cpu (p=p@entry=0xffff888100225d00, new_cpu=new_cpu@entry=0) at kernel/sched/core.c:3128
+#2  0xffffffff8113d090 in try_to_wake_up (p=0xffff888100225d00, state=state@entry=3, wake_flags=32, wake_flags@entry=0) at kernel/sched/core.c:4192
+#3  0xffffffff8113d3cc in wake_up_process (p=<optimized out>) at kernel/sched/core.c:4314
+#4  0xffffffff81158289 in swake_up_locked (q=<optimized out>, q=<optimized out>) at kernel/sched/build_utility.c:3928
+#5  swake_up_locked (q=0xffffffff82b4e918 <rcu_state+3288>) at kernel/sched/build_utility.c:3920
+#6  swake_up_one (q=0xffffffff82b4e918 <rcu_state+3288>) at kernel/sched/build_utility.c:3951
+#7  0xffffffff81189d03 in rcu_report_qs_rdp (rdp=0xffff888333c2c0c0) at kernel/rcu/tree.c:2047
+#8  rcu_check_quiescent_state (rdp=0xffff888333c2c0c0) at kernel/rcu/tree.c:2090
+#9  rcu_core () at kernel/rcu/tree.c:2489
+#10 0xffffffff822000e1 in __do_softirq () at kernel/softirq.c:571
+#11 0xffffffff8110b3aa in invoke_softirq () at kernel/softirq.c:445
+#12 __irq_exit_rcu () at kernel/softirq.c:650
+#13 0xffffffff81f41382 in sysvec_apic_timer_interrupt (regs=0xffffc9000086be88) at arch/x86/kernel/apic/apic.c:1106
+```
+
+- select_task_rq_fair
+
+## taks group
+> 1. root_task_group 在 sched_init 中间被初始化 ?
+
+```c
+// init_tg_cfs_entry 的两个调用者
+int alloc_fair_sched_group(struct task_group *tg, struct task_group *parent)
+void __init sched_init(void)
+
+    void init_tg_cfs_entry(struct task_group *tg, struct cfs_rq *cfs_rq,
+          struct sched_entity *se, int cpu,
+          struct sched_entity *parent)
+
+// @todo 找到，缺少加入 task_group 离开 task_group 之类的操作
+// 调用的地方太少了
+```
+
+```c
+int alloc_fair_sched_group(struct task_group *tg, struct task_group *parent)
+
+struct task_group {
+// 部分字段被省略
+
+#ifdef CONFIG_FAIR_GROUP_SCHED
+	/* schedulable entities of this group on each CPU */
+	struct sched_entity	**se;
+	/* runqueue "owned" by this group on each CPU */
+	struct cfs_rq		**cfs_rq;
+	unsigned long		shares;
+#endif
+
+	struct rcu_head		rcu;
+	struct list_head	list;
+
+	struct task_group	*parent;
+	struct list_head	siblings;
+	struct list_head	children;
+
+	struct cfs_bandwidth	cfs_bandwidth;
+};
+```
+
+1. task_group 也是划分为含有 parent 机制的
+2. tg 是参数，外部 malloc 将其各个部分初始化
+3. task_group 通过 parent siblings 以及 chilren 将其中的各个部分形成网状结构
+4. CONFIG_CFS_BANDWIDTH 中间的部分:
+  1. task_group 不依赖于 fair_group_sched ，而是总是存在的，用于形成
+  2. cfs_bandwidth 为什么和 fair_group_sched 的关系到底是什么 ?　本以为其子集呀，现在 bandwidth 似乎用于保证 task_group 中间保证最多使用，fair_group_sched 保证内部的公平
+  3. 居然还有 percpu 机制
+  4. alloc_fair_sched_group 就是对于 se cfs_rq  cfs_bandwidth 的初始化而已
+
+
+> 还是 init_tg_cfs_entry 含有一些有意思的东西。
+
+## 详细内容
+
+```c
+static inline void update_load_add(struct load_weight *lw, unsigned long inc)
+static inline void update_load_sub(struct load_weight *lw, unsigned long dec)
+static inline void update_load_set(struct load_weight *lw, unsigned long w)
+// 辅助函数，@todo load_weight 中间 inv_weight 到底如何使用 ?
+
+
+// 利用load weight 计算 @todo 计算什么来着 ?
+static void __update_inv_weight(struct load_weight *lw)
+static u64 __calc_delta(u64 delta_exec, unsigned long weight, struct load_weight *lw)
+
+// 为 CONFIG_FAIR_GROUP_SCHED 而配置的各种辅助函数
+static inline struct rq *rq_of(struct cfs_rq *cfs_rq)
+static inline struct task_struct *task_of(struct sched_entity *se)
+static inline struct rq *rq_of(struct cfs_rq *cfs_rq)
+static inline struct cfs_rq *task_cfs_rq(struct task_struct *p)
+static inline struct cfs_rq *cfs_rq_of(struct sched_entity *se)
+static inline struct cfs_rq *group_cfs_rq(struct sched_entity *grp)
+static inline void list_add_leaf_cfs_rq(struct cfs_rq *cfs_rq)
+static inline void list_del_leaf_cfs_rq(struct cfs_rq *cfs_rq)
+static inline struct sched_entity *parent_entity(struct sched_entity *se)
+static inline void find_matching_se(struct sched_entity **se, struct sched_entity **pse)
+
+
+
+// Scheduling class tree data structure manipulation methods:
+// @todo 但是 min_vruntime 的含义还是不动呀!
+static inline u64 max_vruntime(u64 max_vruntime, u64 vruntime)
+static inline u64 min_vruntime(u64 min_vruntime, u64 vruntime)
+static void update_min_vruntime(struct cfs_rq *cfs_rq)
+// 还有一堆 __fun 的函数
+
+// Scheduling class statistics methods:
+// 700 line
+
+// 6000 - 10000 用于迁移
+```
+
+```c
+// 6296
+/*
+ * select_task_rq_fair: Select target runqueue for the waking task in domains
+ * that have the 'sd_flag' flag set. In practice, this is SD_BALANCE_WAKE,
+ * SD_BALANCE_FORK, or SD_BALANCE_EXEC.
+ *
+ * Balances load by selecting the idlest CPU in the idlest group, or under
+ * certain conditions an idle sibling CPU if the domain has SD_WAKE_AFFINE set.
+ *
+ * Returns the target CPU number.
+ *
+ * preempt must be disabled.
+ */
+static int select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_flags)
+// selecting the idlest CPU in the idlest group
+  // 文章中间提到的 group 以及 domain 的概念来处理
+
+// 6365
+/*
+ * Called immediately before a task is migrated to a new CPU; task_cpu(p) and
+ * cfs_rq_of(p) references at time of call are still valid and identify the
+ * previous CPU. The caller guarantees p->pi_lock or task_rq(p)->lock is held.
+ */
+static void migrate_task_rq_fair(struct task_struct *p, int new_cpu)
+
+
+
+// 不知道是做什么的，四个辅助的小函数
+static void rq_online_fair(struct rq *rq)
+{
+	update_sysctl();
+
+	update_runtime_enabled(rq);
+}
+
+static void rq_offline_fair(struct rq *rq)
+{
+	update_sysctl();
+
+	/* Ensure any throttled groups are reachable by pick_next_task */
+	unthrottle_offline_cfs_rqs(rq);
+}
+
+static void task_dead_fair(struct task_struct *p)
+{
+	remove_entity_load_avg(&p->se);
+}
+
+/*
+ * sched_class::set_cpus_allowed must do the below, but is not required to
+ * actually call this function.
+ */
+void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask)
+{
+	cpumask_copy(&p->cpus_allowed, new_mask);
+	p->nr_cpus_allowed = cpumask_weight(new_mask);
+}
+```
+
+## dequeue_task_fair
+> 总体来说， dequeue_task_fair 在于和 bandwidth group 相关的更新
+> enqueue_task_fair 和其效果非常的相似
+
+![](../../img/source/update_load_avg.png)
+![](../../img/source/update_cfs_group.png)
+![](../../img/source/dequeue_task_fair.png)
+![](../../img/source/cfs_rq_throttled.png)
+
+
+```c
+//  各种update
+
+// check_buddies 就是为了处理 cfs_rq 中间的四个变量，将其设置为NULL
+
+/* CFS-related fields in a runqueue */
+struct cfs_rq {
+	/*
+	 * 'curr' points to currently running entity on this cfs_rq.
+	 * It is set to NULL otherwise (i.e when none are currently running).
+	 */
+	struct sched_entity	*curr;
+	struct sched_entity	*next;
+	struct sched_entity	*last;
+	struct sched_entity	*skip;
+
+
+// account_entity_dequeue : 另一个调用位置 reweight_entity
+
+static void
+account_entity_dequeue(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+  // 本函数，处理 nr_running 和 load.weight 机制
+	update_load_sub(&cfs_rq->load, se->load.weight);
+	if (!parent_entity(se))
+		update_load_sub(&rq_of(cfs_rq)->load, se->load.weight);
+#ifdef CONFIG_SMP
+	if (entity_is_task(se)) {
+		account_numa_dequeue(rq_of(cfs_rq), task_of(se));
+		list_del_init(&se->group_node);
+	}
+#endif
+	cfs_rq->nr_running--;
+}
+
+// dequeue_runable_load_avg
+```
+
+## yield_task_fair
+> @todo update_rq_clock 相关的内容有点复杂了
+> yield_to_task_fair 简单的利用了 yield_task_fair ，首先设置接下来运行的 task
+> 其实按道理来说，yield_task_fair 这种的，应该就是当前进程直接 schedule 就可以了
+
+```c
+static bool yield_to_task_fair(struct rq *rq, struct task_struct *p, bool preempt)
+{
+	struct sched_entity *se = &p->se;
+
+	/* throttled hierarchies are not runnable */
+	if (!se->on_rq || throttled_hierarchy(cfs_rq_of(se)))
+		return false;
+
+	/* Tell the scheduler that we'd really like pse to run next. */
+	set_next_buddy(se);　// 现在才感觉到，buddy 的作用是什么，rq 的特殊关注对象
+
+	yield_task_fair(rq);
+
+	return true;
+}
+```
+```c
+// 唯一调用地点
+/**
+ * sys_sched_yield - yield the current processor to other threads.
+ *
+ * This function yields the current CPU to other tasks. If there are no
+ * other threads running on this CPU then this function will return.
+ *
+ * Return: 0.
+ */
+static void do_sched_yield(void)
+{
+	struct rq_flags rf;
+	struct rq *rq;
+
+	local_irq_disable();
+	rq = this_rq();
+	rq_lock(rq, &rf);
+
+	schedstat_inc(rq->yld_count);
+	current->sched_class->yield_task(rq); // 所以其中的工作到底是什么 ?
+
+	/*
+	 * Since we are going to call schedule() anyway, there's
+	 * no need to preempt or enable interrupts:
+	 */
+	preempt_disable();
+	rq_unlock(rq, &rf);
+	sched_preempt_enable_no_resched();
+
+	schedule();　// 切换上下文吗 ?
+}
+```
+
+```c
+/*
+ * sched_yield() is very simple
+ *
+ * The magic of dealing with the ->skip buddy is in pick_next_entity.
+ */
+// todo 分析一下 pick_next_entity 中间如何处理 skip 的 ?
+static void yield_task_fair(struct rq *rq)
+{
+	struct task_struct *curr = rq->curr;
+	struct cfs_rq *cfs_rq = task_cfs_rq(curr);
+	struct sched_entity *se = &curr->se;
+
+	/*
+	 * Are we the only task in the tree?
+	 */
+	if (unlikely(rq->nr_running == 1))
+		return;
+
+	clear_buddies(cfs_rq, se);
+
+  // TODO SCHED_BATCH 的作用到底是什么 ?
+	if (curr->policy != SCHED_BATCH) {
+		update_rq_clock(rq);
+		/*
+		 * Update run-time statistics of the 'current'.
+		 */
+		update_curr(cfs_rq);
+		/*
+		 * Tell update_rq_clock() that we've just updated,
+		 * so we don't do microscopic update in schedule()
+		 * and double the fastpath cost.
+		 */
+		rq_clock_skip_update(rq);
+	}
+
+	set_skip_buddy(se); // 实际上，这就是全部的工作
+}
+```
+
+
+> pick_next_task_fair 当去掉各种　CONFIG_FAIR_GROUP_SCHED 的时候的逻辑很简单
+
+```c
+again:
+	if (!cfs_rq->nr_running) // 没有事情做，那么切换一下
+		goto idle;
+
+
+	put_prev_task(rq, prev); // 释放当前的
+
+  // 我猜测其实并不是 rq owned by this group
+	do {
+		se = pick_next_entity(cfs_rq, NULL);
+		set_next_entity(cfs_rq, se);
+		cfs_rq = group_cfs_rq(se);
+	} while (cfs_rq);
+
+	p = task_of(se);
+
+done: __maybe_unused;
+#ifdef CONFIG_SMP
+	/*
+	 * Move the next running task to the front of
+	 * the list, so our cfs_tasks list becomes MRU
+	 * one.
+	 */
+	list_move(&p->se.group_node, &rq->cfs_tasks);
+#endif
+
+	if (hrtick_enabled(rq))
+		hrtick_start_fair(rq, p);
+
+	return p;
+```
