@@ -6,7 +6,6 @@
 3. 调度器的架构:
     1. cpu : rq 管理学 : 对于四个 rq 进行循环使用 next 找到
     2. wake_up 机制中间的内容是什么 ?
-4. context switch 的过程
 5. 优先级数值的计算的方法是什么 ?
 6. 一直想要 express 的内容 : 线程其实和之间的是一个连续的变化过程，但是用户为什么看到的是进程的概念
 https://stackoverflow.com/questions/9305992/if-threads-share-the-same-pid-how-can-they-be-identified
@@ -25,11 +24,11 @@ https://stackoverflow.com/questions/9305992/if-threads-share-the-same-pid-how-ca
 | Filename            | blank | comment | code | explanation                                                                                                                                                                                            |
 |---------------------|-------|---------|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | fair.c              | 1659  | 2975    | 5572 |                                                                                                                                                                                                        |
-| core.c              | 1033  | 1986    | 4036 | 其实，我们没有 core 这一个调度器 ，Core kernel scheduler code and related syscalls                                                                                                                      |
+| core.c              | 1033  | 1986    | 4036 |                                                                                                                       |
 | rt.c                | 515   | 504     | 1712 |                                                                                                                                                                                                        |
 | deadline.c          | 406   | 858     | 1493 |                                                                                                                                                                                                        |
 | sched.h             | 365   | 445     | 1436 |                                                                                                                                                                                                        |
-| topology.c          | 315   | 446     | 1164 | SMT，多核和 NUMA                                                                                                                                                                                              |
+| topology.c          | 315   | 446     | 1164 | 处理负载在核之间的平衡，需要考虑 SMT，多核，NUMA 和大小核                                                                                                                                                                                              |
 | debug.c             | 166   | 36      | 804  | 看来，只要含有不确定性的东西(sched lock 之类的)，那么就必定含有 debug 的内容                                                                                                                             |
 | cputime.c           | 142   | 229     | 524  | 利用 kernel/timer 测量 cpu 执行的时间                                                                                                                                                                    |
 | cpufreq_schedutil.c | 156   | 206     | 523  |                                                                                                                                                                                                        |
@@ -76,79 +75,66 @@ obj-$(CONFIG_MEMBARRIER) += membarrier.o
 obj-$(CONFIG_CPU_ISOLATION) += isolation.o
 ```
 
-task_struct 中间持有:
-1. 调度策略
-2. 各种
-
 ```c
-// 存在 rq ，cfs_rq ，
-// sched_entity
-
-
-
+// 存在 rq ，cfs_rq ，sched_entity
 struct task_struct {
 
-	/* Scheduler bits, serialized by scheduler locks: */
-	unsigned			sched_reset_on_fork:1;
-	unsigned			sched_contributes_to_load:1;
-	unsigned			sched_migrated:1;
-	unsigned			sched_remote_wakeup:1;
-	/* Force alignment to the next boundary: */
-	unsigned			:0;
+    /* Scheduler bits, serialized by scheduler locks: */
+    unsigned            sched_reset_on_fork:1;
+    unsigned            sched_contributes_to_load:1;
+    unsigned            sched_migrated:1;
+    unsigned            sched_remote_wakeup:1;
+    /* Force alignment to the next boundary: */
+    unsigned            :0;
 
 
-	int				on_rq; // 和迁移有关的
+    int             on_rq; // 和迁移有关的
 
-	int				prio;
-	int				static_prio;
-	int				normal_prio;
-	unsigned int			rt_priority;
+    int             prio;
+    int             static_prio;
+    int             normal_prio;
+    unsigned int            rt_priority;
 
-  // TODO 通过这一个sched_class 进行赋值
-	const struct sched_class	*sched_class;
+    // TODO 通过这一个sched_class 进行赋值
+    const struct sched_class    *sched_class;
 
-  // TODO 为什么只有这三个，或者说，为什么会多出来下面两个。
-	struct sched_entity		se;
-	struct sched_rt_entity		rt;
-	struct sched_dl_entity		dl;
+    // TODO 为什么只有这三个，或者说，为什么会多出来下面两个。
+    struct sched_entity     se;
+    struct sched_rt_entity      rt;
+    struct sched_dl_entity      dl;
 #ifdef CONFIG_CGROUP_SCHED
-	struct task_group		*sched_task_group;
+    struct task_group       *sched_task_group;
 #endif
 
 #ifdef CONFIG_PREEMPT_NOTIFIERS
-	/* List of struct preempt_notifier: */
-	struct hlist_head		preempt_notifiers;
+    /* List of struct preempt_notifier: */
+    struct hlist_head       preempt_notifiers;
 #endif
 
 #ifdef CONFIG_BLK_DEV_IO_TRACE
-	unsigned int			btrace_seq;
+    unsigned int            btrace_seq;
 #endif
 
-	unsigned int			policy;
-  // TODO policy 为什么不是和sched class 对应的，
-  // sched_class 成员难道不能成为policy 吗 ?
-  // policy 会形成什么影响
-	int				nr_cpus_allowed;
-	cpumask_t			cpus_allowed;
+    // 同时可以设置 policy 为 : SCHED_NORMAL / SCHED_FIFO / SCHED_RR / SCHED_BATCH
+    unsigned int            policy;
+    int             nr_cpus_allowed;
+    cpumask_t           cpus_allowed;
 
 #ifdef CONFIG_PREEMPT_RCU
-	int				rcu_read_lock_nesting;
-	union rcu_special		rcu_read_unlock_special;
-	struct list_head		rcu_node_entry;
-	struct rcu_node			*rcu_blocked_node;
+    int             rcu_read_lock_nesting;
+    union rcu_special       rcu_read_unlock_special;
+    struct list_head        rcu_node_entry;
+    struct rcu_node         *rcu_blocked_node;
 #endif /* #ifdef CONFIG_PREEMPT_RCU */
 
 #ifdef CONFIG_TASKS_RCU
-	unsigned long			rcu_tasks_nvcsw;
-	u8				rcu_tasks_holdout;
-	u8				rcu_tasks_idx;
-	int				rcu_tasks_idle_cpu;
-	struct list_head		rcu_tasks_holdout_list;
+    unsigned long           rcu_tasks_nvcsw;
+    u8              rcu_tasks_holdout;
+    u8              rcu_tasks_idx;
+    int             rcu_tasks_idle_cpu;
+    struct list_head        rcu_tasks_holdout_list;
 #endif /* #ifdef CONFIG_TASKS_RCU */
 }
-
-
-
 
 static inline int idle_policy(int policy) { return policy == SCHED_IDLE; }
 static inline int fair_policy(int policy) { return policy == SCHED_NORMAL || policy == SCHED_BATCH; } // TODO 为什么使用
@@ -156,8 +142,8 @@ static inline int rt_policy(int policy) { return policy == SCHED_FIFO || policy 
 static inline int dl_policy(int policy) { return policy == SCHED_DEADLINE; }
 
 static inline bool valid_policy(int policy) {
-	return idle_policy(policy) || fair_policy(policy) ||
-		rt_policy(policy) || dl_policy(policy);
+    return idle_policy(policy) || fair_policy(policy) ||
+        rt_policy(policy) || dl_policy(policy);
 }
 
 static inline int task_has_rt_policy(struct task_struct *p) { return rt_policy(p->policy); }
@@ -190,8 +176,15 @@ SCHED_NORMAL、SCHED_BATCH、SCHED_IDLE。
 两个关键函数 :
 > scheduele 进入到 ready 的状态，被 semaphore 捕获，成为不是 ready 的状态。
 
+## [ ] task_struct::policy 到底是做啥的
 
-# http://www.ece.ubc.ca/~sasha/papers/eurosys16-final29.pdf
+- 通过系统调用 sched_setattr 来设置
+
+测试 SCHED_IDLE 的效果:
+
+# The Linux Scheduler: a Decade of Wasted Cores
+- http://www.ece.ubc.ca/~sasha/papers/eurosys16-final29.pdf
+
 Our recent experience with the Linux scheduler revealed
 that the pressure to work around the challenging properties
 of modern hardware, such as non-uniform memory access
@@ -263,6 +256,3 @@ starting from the bottom to the top.
 
 Algorithm 1:
 > scheduling group && sched domain ?
-
-# https://en.wikipedia.org/wiki/Completely_Fair_Scheduler
-> @todo read the doc

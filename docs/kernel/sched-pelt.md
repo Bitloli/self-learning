@@ -4,6 +4,80 @@
 
 https://www.cnblogs.com/LoyenWang/p/12316660.html
 
+## per-entity load tracking : https://lwn.net/Articles/531853/
+1. 不使用 per-entity load tracking 的问题是什么 ?
+
+```c
+/*
+ * // 1. 为什么计算方法是几何级数 ?
+ * // 2. __update_load_avg() 中间的具体的内容是什么 ?
+ *
+ * The load_avg/util_avg accumulates an infinite geometric series
+ * (see __update_load_avg() in kernel/sched/fair.c).
+ *
+ * [load_avg definition]
+ *
+ *   load_avg = runnable% * scale_load_down(load)
+ *
+ * where runnable% is the time ratio that a sched_entity is runnable.
+ * For cfs_rq, it is the aggregated load_avg of all runnable and
+ * blocked sched_entities.
+ *
+ * load_avg may also take frequency scaling into account:
+ *
+ *   load_avg = runnable% * scale_load_down(load) * freq%
+ *
+ * where freq% is the CPU frequency normalized to the highest frequency.
+ *
+ * [util_avg definition]
+ *
+ *   util_avg = running% * SCHED_CAPACITY_SCALE
+ *
+ * where running% is the time ratio that a sched_entity is running on
+ * a CPU. For cfs_rq, it is the aggregated util_avg of all runnable
+ * and blocked sched_entities.
+ *
+ * util_avg may also factor frequency scaling and CPU capacity scaling:
+ *
+ *   util_avg = running% * SCHED_CAPACITY_SCALE * freq% * capacity%
+ *
+ * where freq% is the same as above, and capacity% is the CPU capacity
+ * normalized to the greatest capacity (due to uarch differences, etc).
+ *
+ * N.B., the above ratios (runnable%, running%, freq%, and capacity%)
+ * themselves are in the range of [0, 1]. To do fixed point arithmetics,
+ * we therefore scale them to as large a range as necessary. This is for
+ * example reflected by util_avg's SCHED_CAPACITY_SCALE.
+ *
+ * [Overflow issue]
+ *
+ * The 64-bit load_sum can have 4353082796 (=2^64/47742/88761) entities
+ * with the highest load (=88761), always runnable on a single cfs_rq,
+ * and should not overflow as the number already hits PID_MAX_LIMIT.
+ *
+ * For all other cases (including 32-bit kernels), struct load_weight's
+ * weight will overflow first before we do, because:
+ *
+ *    Max(load_avg) <= Max(load.weight)
+ *
+ * Then it is the load_weight's responsibility to consider overflow
+ * issues.
+ */
+
+struct sched_avg {
+	u64				last_update_time;
+	u64				load_sum;
+	u64				runnable_load_sum;
+	u32				util_sum;
+	u32				period_contrib;
+	unsigned long			load_avg;
+	unsigned long			runnable_load_avg;
+	unsigned long			util_avg;
+	struct util_est			util_est;
+} ____cacheline_aligned;
+```
+
+
 ## 问题
 - [ ] 如果 pelt 不是必须的，其替代是什么?
 
@@ -200,3 +274,122 @@ it is accumulated in a field called `runnable_load_avg` in the `cfs_rq` data str
 This is roughly a measure of how heavily contended the CPU is. The kernel also tracks the load associated with blocked tasks. When a task gets blocked, its load is accumulated in the blocked_load_avg metric of the cfs_rq structure.
 
 - [ ] [Per-entity load tracking in presence of task groups](https://lwn.net/Articles/639543/) : Continue the reading if other parts finished.
+
+# pelt.c
+
+## 首先，找到这些注释的证据是什么
+1. runnable_sum 是不是可以替换掉 runnable_load_sum 和 load_sum (根本没有 runnable_sum )
+2. sched_avg: avg sum runnable 四个变量
+
+
+```c
+//
+// sched_entity:
+//
+//   task:
+//     se_runnable() == se_weight() // 对于 task 而言，是该结果!
+//
+//   group: [ see update_cfs_group() ]
+//     se_weight()   = tg->weight * grq->load_avg / tg->load_avg // 将 tg->weight 切换为 shares，其他的两个近似也需要考察一下
+//     se_runnable() = se_weight(se) * grq->runnable_load_avg / grq->load_avg  // 似乎是得到其 权重的 runnable 部分
+//
+//   TODO 下面四个内容在何处？
+//   对于 task group 成立 ?
+//   load_sum := runnable_sum
+//   load_avg = se_weight(se) * runnable_avg // TODO load_avg 的计算方法是这个 ?
+//
+//   runnable_load_sum := runnable_sum
+//   runnable_load_avg = se_runnable(se) * runnable_avg
+//
+// XXX collapse load_sum and runnable_load_sum
+//
+// 似乎下面才是两个函数计算的部分
+// 更新 cfs_rq 中的 sched_avg 成员:
+// avg 不用求和
+// cfq_rq:
+//
+//   load_sum = \Sum se_weight(se) * se->avg.load_sum
+//   load_avg = \Sum se->avg.load_avg
+//
+//   runnable_load_sum = \Sum se_runnable(se) * se->avg.runnable_load_sum
+//   runnable_load_avg = \Sum se->avg.runable_load_avg
+
+int __update_load_avg_blocked_se(u64 now, int cpu, struct sched_entity *se)
+{
+  // FIXME 似乎就是 runable weight 对于 task 而言，就是 load.weight
+  // 但是对于 task group 而言不同
+	if (entity_is_task(se))
+		se->runnable_weight = se->load.weight;
+
+	if (___update_load_sum(now, cpu, &se->avg, 0, 0, 0)) {
+		___update_load_avg(&se->avg, se_weight(se), se_runnable(se));
+		return 1;
+	}
+
+	return 0;
+}
+
+int __update_load_avg_se(u64 now, int cpu, struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	if (entity_is_task(se))
+		se->runnable_weight = se->load.weight;
+
+	if (___update_load_sum(now, cpu, &se->avg, !!se->on_rq, !!se->on_rq,
+				cfs_rq->curr == se)) {
+
+		___update_load_avg(&se->avg, se_weight(se), se_runnable(se));
+		cfs_se_util_change(&se->avg);
+		return 1;
+	}
+
+	return 0;
+}
+```
+
+```c
+static inline void
+enqueue_runnable_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	cfs_rq->runnable_weight += se->runnable_weight;
+
+	cfs_rq->avg.runnable_load_avg += se->avg.runnable_load_avg;
+	cfs_rq->avg.runnable_load_sum += se_runnable(se) * se->avg.runnable_load_sum;
+}
+
+static inline void
+dequeue_runnable_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	cfs_rq->runnable_weight -= se->runnable_weight;
+
+	sub_positive(&cfs_rq->avg.runnable_load_avg, se->avg.runnable_load_avg);
+	sub_positive(&cfs_rq->avg.runnable_load_sum,
+		     se_runnable(se) * se->avg.runnable_load_sum);
+}
+
+static inline void
+enqueue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	cfs_rq->avg.load_avg += se->avg.load_avg;
+	cfs_rq->avg.load_sum += se_weight(se) * se->avg.load_sum;
+}
+
+static inline void
+dequeue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
+{
+	sub_positive(&cfs_rq->avg.load_avg, se->avg.load_avg);
+	sub_positive(&cfs_rq->avg.load_sum, se_weight(se) * se->avg.load_sum);
+}
+```
+
+## load_avg 的作用是什么
+> 计算 tg 的 share 吗 ?
+
+
+
+## load_sum 的作用是不是为了计算 load_avg 的
+是的，只有一个位置有点可疑.
+
+```c
+static inline void
+update_tg_cfs_runnable(struct cfs_rq *cfs_rq, struct sched_entity *se, struct cfs_rq *gcfs_rq)
+```

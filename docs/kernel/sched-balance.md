@@ -1,3 +1,122 @@
+# balance
+
+## `select_idle_*` 的作用是什么
+
+* ***select_idle_sibling***
+
+```c
+/*
+ * Try and locate an idle core/thread in the LLC cache domain.
+ */
+static int select_idle_sibling(struct task_struct *p, int prev, int target)
+```
+调用位置
+
+```c
+/*
+ * select_task_rq_fair: Select target runqueue for the waking task in domains
+ * that have the 'sd_flag' flag set. In practice, this is SD_BALANCE_WAKE,
+ * SD_BALANCE_FORK, or SD_BALANCE_EXEC.
+ *
+ * Balances load by selecting the idlest CPU in the idlest group, or under
+ * certain conditions an idle sibling CPU if the domain has SD_WAKE_AFFINE set.
+ *
+ * Returns the target CPU number.
+ *
+ * preempt must be disabled.
+ */
+static int
+select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_flags)
+```
+
+2. task_numa_compare
+    - task_numa_find_cpu
+        - task_numa_migrate
+            - numa_migrate_perfer
+              - task_numa_fault : 这个函数调用位置来自于 memory.c huge_memory.c 中的 do_numa_page 之类的函数
+
+select_idle_sibling 中间的部分片段:
+
+```c
+	i = select_idle_core(p, sd, target);
+	if ((unsigned)i < nr_cpumask_bits)
+		return i;
+
+	i = select_idle_cpu(p, sd, target);
+	if ((unsigned)i < nr_cpumask_bits)
+		return i;
+
+	i = select_idle_smt(p, sd, target);
+	if ((unsigned)i < nr_cpumask_bits)
+		return i;
+```
+
+## lb 的关键内容 : find_busiest_group 和 find_busiest_queue
+被 load_balance 唯一调用
+
+```c
+/*
+ * find_busiest_queue - find the busiest runqueue among the CPUs in the group.
+ */
+static struct rq *find_busiest_queue(struct lb_env *env,
+				     struct sched_group *group)
+```
+
+在 group 中间的找到 cfs_rq，因为迁移都是在文件夹中间进行迁移的。
+
+task_group 是描述，
+
+```c
+/**
+ * find_busiest_group - Returns the busiest group within the sched_domain
+ * if there is an imbalance.
+ *
+ * Also calculates the amount of weighted load which should be moved
+ * to restore balance.
+ *
+ * @env: The load balancing environment.
+ *
+ * Return:	- The busiest group if imbalance exists.
+ */
+static struct sched_group *find_busiest_group(struct lb_env *env)
+```
+
+find_busiest_group 的 helper 函数 7000 ~ 8200 。
+
+find_idlest_cpu 和 find_idlest_group : select_task_rq_fair 相关的
+@todo 为什么 lb 只需要 busiest 而不需要 idlest 的
+
+
+## load_balance 的实现
+kernel/sched/fair.c:6798 的注释
+
+> 了解一下其中的函数
+
+## 触发 rebalance 的方法和位置是什么
+1. domain 的概念是什么 ?
+
+```txt
+idle_balance : schedule() 调用，应该是最容易分析了
+rebalance_domains:
+  load_balance : 核心业务 ?
+
+_nohz_idle_balance()
+run_rebalance_domains : 被注册到 softirq 中间了
+  rebalance_domains
+
+nohz_idle_balance(): 被 run_rebalance_domains 唯一调用
+nohz_newidle_balance(): 被 idle_balance 唯一调用
+  __nohz_idle_balance():
+
+
+scheduler_tick()
+  tigger_load_balance
+    nohz_balance_kick() : 值的关注一下，好像和之前的所有的东西都不是一个东西呀!
+```
+
+> 好像就是 softirq 触发的，然后进行整个流程走一下
+> 以及从 timer 中间触发!
+
 # 首先，理解了
 - https://docs.kernel.org/admin-guide/pm/intel-speed-select.html
 

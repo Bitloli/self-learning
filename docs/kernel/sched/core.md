@@ -1,5 +1,44 @@
 # kernel/sched/core.c
 
+- [ ] 没有找到层级式的计算每一个 CPU shared 的地方
+
+## 关键函数
+- scheduler_tick : scheduler 面对始终的 hook
+- resched_curr : 当前 thread 决定释放 CPU
+
+## 基本的分析一下选择过程
+
+```txt
+#0  select_task_rq_fair (p=0xffff88814a11ae80, prev_cpu=0, wake_flags=8) at kernel/sched/fair.c:7015
+#1  0xffffffff8113cff4 in select_task_rq (wake_flags=8, cpu=0, p=0xffff88814a11ae80) at kernel/sched/core.c:3489
+#2  try_to_wake_up (p=0xffff88814a11ae80, state=state@entry=3, wake_flags=wake_flags@entry=0) at kernel/sched/core.c:4183
+#3  0xffffffff8113d3cc in wake_up_process (p=<optimized out>) at kernel/sched/core.c:4314
+#4  0xffffffff8119b859 in hrtimer_wakeup (timer=<optimized out>) at kernel/time/hrtimer.c:1939
+#5  0xffffffff8119bde2 in __run_hrtimer (flags=2, now=0xffffc90000003f48, timer=0xffffc900005bb910, base=0xffff888333c1e0c0, cpu_base=0xffff888333c1e080) at kernel/time/hrtimer.c:1685
+#6  __hrtimer_run_queues (cpu_base=cpu_base@entry=0xffff888333c1e080, now=48626544325410, flags=flags@entry=2, active_mask=active_mask@entry=15) at kernel/time/hrtimer.c:1749
+#7  0xffffffff8119ca71 in hrtimer_interrupt (dev=<optimized out>) at kernel/time/hrtimer.c:1811
+```
+
+- [ ] 在这里， select_task_rq 中，根据当时参数的就直接找到
+
+```txt
+#0  resched_curr (rq=0xffff888333c2b2c0) at kernel/sched/core.c:1027
+#1  0xffffffff8114599b in check_preempt_tick (curr=0xffff888145898a00, cfs_rq=0xffff888333c2b3c0) at kernel/sched/sched.h:1169
+#2  entity_tick (queued=0, curr=0xffff888145898a00, cfs_rq=0xffff888333c2b3c0) at kernel/sched/fair.c:4761
+#3  task_tick_fair (rq=0xffff888333c2b2c0, curr=0xffff888100a22e80, queued=0) at kernel/sched/fair.c:11416
+#4  0xffffffff8113f392 in scheduler_tick () at kernel/sched/core.c:5453
+#5  0xffffffff8119b2b1 in update_process_times (user_tick=0) at kernel/time/timer.c:1844
+#6  0xffffffff811ad85f in tick_sched_handle (ts=ts@entry=0xffff888333c1e5c0, regs=regs@entry=0xffffc9000086be88) at kernel/time/tick-sched.c:243
+#7  0xffffffff811ada3c in tick_sched_timer (timer=0xffff888333c1e5c0) at kernel/time/tick-sched.c:1480
+#8  0xffffffff8119bde2 in __run_hrtimer (flags=130, now=0xffffc90000003f48, timer=0xffff888333c1e5c0, base=0xffff888333c1e0c0, cpu_base=0xffff888333c1e080) at kernel/time/hrtimer.c:1685
+#9  __hrtimer_run_queues (cpu_base=cpu_base@entry=0xffff888333c1e080, now=48647509299866, flags=flags@entry=130, active_mask=active_mask@entry=15) at kernel/time/hrtimer.c:1749
+#10 0xffffffff8119ca71 in hrtimer_interrupt (dev=<optimized out>) at kernel/time/hrtimer.c:1811
+#11 0xffffffff810e25d7 in local_apic_timer_interrupt () at arch/x86/kernel/apic/apic.c:1095
+#12 __sysvec_apic_timer_interrupt (regs=<optimized out>) at arch/x86/kernel/apic/apic.c:1112
+#13 0xffffffff81f4137d in sysvec_apic_timer_interrupt (regs=0xffffc9000086be88) at arch/x86/kernel/apic/apic.c:1106
+```
+- [ ] scheduler_tick : 还是根据 curr 进行确定的
+
 ## TODO
 cgroup 在 7000 line 注册的函数无人使用呀!
 
@@ -10,42 +49,6 @@ task_group 的 share 的计算方法是什么 ?
 
 
 ## analyze
-
-## 才注意到 : cfs_rq 中间持有 tg
-
-```c
-static inline void list_add_leaf_cfs_rq(struct cfs_rq *cfs_rq)
-// 添加比较复杂了，但是 leaf_cfs_rq_list
-//  list_add_leaf_cfs_rq 被 enqueue_entity 使用
-
-	/*
-	 * leaf cfs_rqs are those that hold tasks (lowest schedulable entity in
-	 * a hierarchy). Non-leaf lrqs hold other higher schedulable entities
-	 * (like users, containers etc.)
-	 *
-	 * leaf_cfs_rq_list ties together list of leaf cfs_rq's in a CPU.
-	 * This list is used during load balance.
-	 */
-
-static inline void list_del_leaf_cfs_rq(struct cfs_rq *cfs_rq)
-/* void unregister_fair_sched_group(struct task_group *tg) */
-/* static void update_blocked_averages(int cpu) */
-
-```
-
-> 分析 `cfs_rq->tg` 其赋值位置仅仅在 init_tg_cfs_entry 中间
-> 那么 cfs 和 tg 总是同时创建的，并且匹配的
-> 但是 rq 中间可能持有不同的 cfs rq 的内容 ? 并不是呀!
-> rq 持有的不是指针啊! 所以现在 malloc 出来的一堆 cfs_rq 以及配套的 tg 到底是如何使用的呀!
-
-
-```c
-void init_tg_cfs_entry(struct task_group *tg, struct cfs_rq *cfs_rq,
-			struct sched_entity *se, int cpu,
-			struct sched_entity *parent)
-```
-
-
 
 ## rq 中间的 cfs_rq 的地位
 rq 中间的似乎是根基，然后利用这个实现 group 找到其他的之类的 ?
@@ -69,71 +72,6 @@ entity 就是一个 group 的代表
 > 2. 和 rq 中间的关系是什么 ?
 
 task_group  CONFIG_FAIR_GROUP_SCHED 以及 CONFIG_CFS_BANDWIDTH 三者逐渐递进的
-
-
-2. autogroup 机制的原理
-
-setsid
-
-group scheduling 表示 CONFIG_FAIR_GROUP_SCHED
-
-**A new autogroup is created when a new session is created via setsid(2);
-this happens, for example, when a new terminal window is started.**
-A new process created by fork(2) inherits its parent's autogroup membership.
-Thus, all of the processes in a session are members of the same autogroup.
-An autogroup is automatically destroyed when the last process in the group terminates.
-> process group 和 task group 混为一团
-
-
-```c
-// 在配置了 autogroup 的 setsid 被调用
-/* Allocates GFP_KERNEL, cannot be called under any spinlock: */
-void sched_autogroup_create_attach(struct task_struct *p)
-{
-	struct autogroup *ag = autogroup_create();
-
-	autogroup_move_group(p, ag);
-
-	/* Drop extra reference added by autogroup_create(): */
-	autogroup_kref_put(ag);
-}
-EXPORT_SYMBOL(sched_autogroup_create_attach);
-
-static inline struct autogroup *autogroup_create(void)
-	/* tg = sched_create_group(&root_task_group); */
-  // 所有的总是默认使用的为 sched_create_group 中间的内容
-```
-
-CONFIG_FAIR_GROUP_SCHED 中间的 FAIR 是和 RT 对应的，所以其作用就是为了 group 的效果。
-
-
-The use of the cgroups(7) CPU controller to place processes in cgroups other than the root CPU cgroup overrides the effect of autogrouping.
-> 当 cgroup 没有被配置的时候，depth 没有任何意义，所有的 group 都是放在 root 下面
-> 其中，代码分析也可以的出来该结果。
-
-```txt
-       cpu (since Linux 2.6.24; CONFIG_CGROUP_SCHED)
-              Cgroups can be guaranteed a minimum number of "CPU shares"
-              when a system is busy.  This does not limit a cgroup's CPU
-              usage if the CPUs are not busy.  For further information, see
-              Documentation/scheduler/sched-design-CFS.txt.
-
-              In Linux 3.2, this controller was extended to provide CPU
-              "bandwidth" control.  If the kernel is configured with CON‐
-              FIG_CFS_BANDWIDTH, then within each scheduling period (defined
-              via a file in the cgroup directory), it is possible to define
-              an upper limit on the CPU time allocated to the processes in a
-              cgroup.  This upper limit applies even if there is no other
-              competition for the CPU.  Further information can be found in
-              the kernel source file Documentation/scheduler/sched-bwc.txt.
-```
-
-> 两个文档读一下，结果发现都是垃圾
-
-1. 目前的问题，cgroup 形成的多级结构现在无法理解 ?
-> 其实并不难，因为 cgroup 可以利用文件的方法构建关系，
-> 那么 entity 有的是文件夹，有的是文件一样，文件就是对应正常的 process
-> 区分的标准就是 my_q 变量了
 
 
 ## group 之间如何均衡
@@ -196,43 +134,6 @@ int alloc_fair_sched_group(struct task_group *tg, struct task_group *parent)
 # define SCHED_FIXEDPOINT_SCALE		(1L << SCHED_FIXEDPOINT_SHIFT)
 ```
 > @todo 还有 freq capacity load_avg 等
-
-## https://lwn.net/Articles/639543/
-
-
-
-```c
-config SCHED_AUTOGROUP
-	bool "Automatic process group scheduling"
-	select CGROUPS
-	select CGROUP_SCHED
-	select FAIR_GROUP_SCHED
-	help
-	  This option optimizes the scheduler for common desktop workloads by
-	  automatically creating and populating task groups.  This separation
-	  of workloads isolates aggressive CPU burners (like build jobs) from
-	  desktop applications.  Task group autogeneration is currently based
-	  upon task session.
-```
-> @todo 所以为什么通过 autogroup 将 CPU burner 和 desktop 之间划分开 ?
-
-对于 cgroup 的文件夹的内容， task_group，entity 以及 cfs_rq 三者一组。
-
-> So when a task belonging to tg migrates from CPUx to CPUy, it will be dequeued from tg->cfs_rq[x] and enqueued on tg->cfs_rq[y].
-
-
-But the priority value by itself is not helpful to the scheduler,
-which also needs to know the *load of the task* to estimate its *time slice*.
-As mentioned above, the load must be the multiple of the capacity of a standard CPU that is required to make satisfactory progress on the task.
-Hence this priority number must be mapped to such a value; this is done in the array `prio_to_weight[]`.
-
-> 1. load of the taks 估计 time slice
-> 2. time slice 是 The concept of a time slice was introduced above as the amount of time that a task is allowed to run on a CPU within a scheduling period.
-> 3. @todo 既然存在 struct load_weight , load 和 weight 就是一个东西吗 ?
-
-
-
-
 
 A priority number of 120, which is the priority of a normal task, is mapped to a load of 1024, which is the value that the kernel uses to represent the capacity of a single standard CPU.
 > @todo 为什么会映射到 1024 上，利用 prio_to_weight 吗 ?
@@ -660,122 +561,6 @@ static inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force)
 This metric calculates task load as the amount of time that the task was runnable during the time that it was alive.
 This is kept track of in the sched_avg data structure (stored in the sched_entity structure):
 
-
-## per-entity load tracking : https://lwn.net/Articles/531853/
-1. 不使用 per-entity load tracking 的问题是什么 ?
-
-```c
-/*
- * // 1. 为什么计算方法是几何级数 ?
- * // 2. __update_load_avg() 中间的具体的内容是什么 ?
- *
- * The load_avg/util_avg accumulates an infinite geometric series
- * (see __update_load_avg() in kernel/sched/fair.c).
- *
- * [load_avg definition]
- *
- *   load_avg = runnable% * scale_load_down(load)
- *
- * where runnable% is the time ratio that a sched_entity is runnable.
- * For cfs_rq, it is the aggregated load_avg of all runnable and
- * blocked sched_entities.
- *
- * load_avg may also take frequency scaling into account:
- *
- *   load_avg = runnable% * scale_load_down(load) * freq%
- *
- * where freq% is the CPU frequency normalized to the highest frequency.
- *
- * [util_avg definition]
- *
- *   util_avg = running% * SCHED_CAPACITY_SCALE
- *
- * where running% is the time ratio that a sched_entity is running on
- * a CPU. For cfs_rq, it is the aggregated util_avg of all runnable
- * and blocked sched_entities.
- *
- * util_avg may also factor frequency scaling and CPU capacity scaling:
- *
- *   util_avg = running% * SCHED_CAPACITY_SCALE * freq% * capacity%
- *
- * where freq% is the same as above, and capacity% is the CPU capacity
- * normalized to the greatest capacity (due to uarch differences, etc).
- *
- * N.B., the above ratios (runnable%, running%, freq%, and capacity%)
- * themselves are in the range of [0, 1]. To do fixed point arithmetics,
- * we therefore scale them to as large a range as necessary. This is for
- * example reflected by util_avg's SCHED_CAPACITY_SCALE.
- *
- * [Overflow issue]
- *
- * The 64-bit load_sum can have 4353082796 (=2^64/47742/88761) entities
- * with the highest load (=88761), always runnable on a single cfs_rq,
- * and should not overflow as the number already hits PID_MAX_LIMIT.
- *
- * For all other cases (including 32-bit kernels), struct load_weight's
- * weight will overflow first before we do, because:
- *
- *    Max(load_avg) <= Max(load.weight)
- *
- * Then it is the load_weight's responsibility to consider overflow
- * issues.
- */
-
-struct sched_avg {
-	u64				last_update_time;
-	u64				load_sum;
-	u64				runnable_load_sum;
-	u32				util_sum;
-	u32				period_contrib;
-	unsigned long			load_avg;
-	unsigned long			runnable_load_avg;
-	unsigned long			util_avg;
-	struct util_est			util_est;
-} ____cacheline_aligned;
-```
-
-##  resched_curr 分析 todo
-考虑 `static void entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)` 中间的调用
-内容，为什么是 se 不断查找其 parent 的过程呀，所以到时候还可以知道谁需要被调用离开吗 ?
-
-
-```c
-/*
- * resched_curr - mark rq's current task 'to be rescheduled now'.
- *
- * On UP this means the setting of the need_resched flag, on SMP it
- * might also involve a cross-CPU call to trigger the scheduler on
- * the target CPU.
- */
-void resched_curr(struct rq *rq)
-{
-	struct task_struct *curr = rq->curr;
-	int cpu;
-
-	lockdep_assert_held(&rq->lock);
-
-	if (test_tsk_need_resched(curr))
-		return;
-
-	cpu = cpu_of(rq);
-
-	if (cpu == smp_processor_id()) {
-		set_tsk_need_resched(curr);
-		set_preempt_need_resched();
-		return;
-	}
-
-	if (set_nr_and_not_polling(curr))
-		smp_send_reschedule(cpu);
-	else
-		trace_sched_wake_idle_without_ipi(cpu);
-}
-```
-
-
-
-
-
 ## reweight_entity 内容分析
 1. runnable_avg 和 avg 的关系是什么 ?
 2. reweight_entity 其实就是直接对于 se 的 runnable_weight 和 load.weight 进行赋值。
@@ -851,78 +636,7 @@ dequeue_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 }
 ```
 
-## propagate 传播机制
-cfs_rq::propagate_runnable_sum 的访问位置:
-
-
-> @todo 配合研究一下两个函数
-
-```c
-static inline void
-update_tg_cfs_runnable(struct cfs_rq *cfs_rq, struct sched_entity *se, struct cfs_rq *gcfs_rq)
-
-
-/* Update task and its cfs_rq load average */
-static inline int propagate_entity_load_avg(struct sched_entity *se)
-{
-	struct cfs_rq *cfs_rq, *gcfs_rq;
-
-	if (entity_is_task(se))
-		return 0;
-
-	gcfs_rq = group_cfs_rq(se);
-	if (!gcfs_rq->propagate)
-		return 0;
-
-	gcfs_rq->propagate = 0;
-
-	cfs_rq = cfs_rq_of(se);
-
-	add_tg_cfs_propagate(cfs_rq, gcfs_rq->prop_runnable_sum);
-
-	update_tg_cfs_util(cfs_rq, se, gcfs_rq);
-	update_tg_cfs_runnable(cfs_rq, se, gcfs_rq);
-
-	return 1;
-}
-```
-
-propagate_entity_load_avg 被 update_load_avg 唯一调用，其实并没有
-
-## 触发 rebalance 的方法和位置是什么
-1. domain 的概念是什么 ?
-
-```txt
-idle_balance : schedule() 调用，应该是最容易分析了
-rebalance_domains:
-  load_balance : 核心业务 ?
-
-_nohz_idle_balance()
-run_rebalance_domains : 被注册到 softirq 中间了
-  rebalance_domains
-
-nohz_idle_balance(): 被 run_rebalance_domains 唯一调用
-nohz_newidle_balance(): 被 idle_balance 唯一调用
-  __nohz_idle_balance():
-
-
-scheduler_tick()
-  tigger_load_balance
-    nohz_balance_kick() : 值的关注一下，好像和之前的所有的东西都不是一个东西呀!
-```
-
-> 好像就是 softirq 触发的，然后进行整个流程走一下
-> 以及从 timer 中间触发!
-
-
-
 ## Nohz 的影响是什么
-
-## load_balance 的实现
-kernel/sched/fair.c:6798 的注释
-
-> 了解一下其中的函数
-
 
 ## attach 和 detach 三个函数
 
@@ -1004,94 +718,6 @@ attach_task_cfs_rq 最后 switch_to_fair 以及 task_move_group_fair (task_chang
 
 其实 attach_tasks 和 其他的各种蛇皮是两个体系
 
-## lb 的关键内容 : find_busiest_group 和 find_busiest_queue
-被 load_balance 唯一调用
-
-```c
-/*
- * find_busiest_queue - find the busiest runqueue among the CPUs in the group.
- */
-static struct rq *find_busiest_queue(struct lb_env *env,
-				     struct sched_group *group)
-```
-
-在 group 中间的找到 cfs_rq，因为迁移都是在文件夹中间进行迁移的。
-
-task_group 是描述，
-
-```c
-/**
- * find_busiest_group - Returns the busiest group within the sched_domain
- * if there is an imbalance.
- *
- * Also calculates the amount of weighted load which should be moved
- * to restore balance.
- *
- * @env: The load balancing environment.
- *
- * Return:	- The busiest group if imbalance exists.
- */
-static struct sched_group *find_busiest_group(struct lb_env *env)
-```
-
-find_busiest_group 的 helper 函数 7000 ~ 8200 。
-
-find_idlest_cpu 和 find_idlest_group : select_task_rq_fair 相关的
-@todo 为什么 lb 只需要 busiest 而不需要 idlest 的
-
-## `select_idle_*` 的作用是什么
-
-* ***select_idle_sibling***
-
-```c
-/*
- * Try and locate an idle core/thread in the LLC cache domain.
- */
-static int select_idle_sibling(struct task_struct *p, int prev, int target)
-```
-调用位置
-
-```c
-/*
- * select_task_rq_fair: Select target runqueue for the waking task in domains
- * that have the 'sd_flag' flag set. In practice, this is SD_BALANCE_WAKE,
- * SD_BALANCE_FORK, or SD_BALANCE_EXEC.
- *
- * Balances load by selecting the idlest CPU in the idlest group, or under
- * certain conditions an idle sibling CPU if the domain has SD_WAKE_AFFINE set.
- *
- * Returns the target CPU number.
- *
- * preempt must be disabled.
- */
-static int
-select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_flags)
-```
-
-2. task_numa_compare
-    - task_numa_find_cpu
-        - task_numa_migrate
-            - numa_migrate_perfer
-              - task_numa_fault : 这个函数调用位置来自于 memory.c huge_memory.c 中的 do_numa_page 之类的函数
-
-select_idle_sibling 中间的部分片段:
-
-```c
-	i = select_idle_core(p, sd, target);
-	if ((unsigned)i < nr_cpumask_bits)
-		return i;
-
-	i = select_idle_cpu(p, sd, target);
-	if ((unsigned)i < nr_cpumask_bits)
-		return i;
-
-	i = select_idle_smt(p, sd, target);
-	if ((unsigned)i < nr_cpumask_bits)
-		return i;
-```
-
-
-
 ## affine
 都是 select_task_rq_fair 的辅助函数，task 开始执行需要选择最佳的 rq
 
@@ -1100,110 +726,3 @@ wake_affine
     - wake_affine_weight
 
 wake_wide :
-
-## bandwidth 机制
-1. 基本机制是什么 ?
-    1. 和 time_period time_slice 之间的关系是什么 ?
-
-2. 问题:
-    1. 我怎么知道我的时间超过了 ?
-    2. 超过之后的措施是什么 ?
-
-cfs_bandwith_used() 简单的辅助函数，用于开关 bandwidth 机制。
-和 `void cfs_bandwidth_usage_inc(void)` 和 `void cfs_bandwidth_usage_dec(void)` 配合使用。
-
-struct cfs_rq 中间的支持 :
-
-```c
-#ifdef CONFIG_CFS_BANDWIDTH
-	int			runtime_enabled;
-	int			expires_seq;
-	u64			runtime_expires; // 和 sched_avg 的 runtime 相区分
-	s64			runtime_remaining;
-
-	u64			throttled_clock;
-	u64			throttled_clock_task;
-	u64			throttled_clock_task_time;
-	int			throttled;
-	int			throttle_count;
-	struct list_head	throttled_list;
-#endif /* CONFIG_CFS_BANDWIDTH */
-```
-
-## tg_set_cfs_
-
-调用者 : 都是来自于 cgroup 机制的
-- tg_set_cfs_cpu
-- tg_set_cfs_period
-- cpu_max_write
-
-## unthrottle_cfs_rq 和 throttle_cfs_rq
-
-```c
-// 这就是两个检查是否超过 bandwidth 的时机:
-check_enqueue_throttle : 被 enqueue_entity 唯一处理
-check_cfs_rq_runtime
-  static void throttle_cfs_rq(struct cfs_rq *cfs_rq) // todo 观察其中，就可以知道到底如何实现控制 bandwidth
-
-
-void unthrottle_cfs_rq(struct cfs_rq *cfs_rq)
-```
-
-![](../../img/source/check_cfs_rq_runtime.png)
-
-> put_prev_entity 为什么需要 check_cfs_rq_runtime ? 都已经离开队列了，为什么还是需要处理 ?
-
-![](../../img/source/unthrottle_cfs_rq.png)
-
-
-分析一下:
-```c
-/*
- * Responsible for refilling a task_group's bandwidth and unthrottling its
- * cfs_rqs as appropriate. If there has been no activity within the last
- * period the timer is deactivated until scheduling resumes; cfs_b->idle is
- * used to track this state.
- */
-static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
-
-
-/*
- * This is done with a timer (instead of inline with bandwidth return) since
- * it's necessary to juggle rq->locks to unthrottle their respective cfs_rqs.
- */
-static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
-
-
-static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
-static enum hrtimer_restart sched_cfs_slack_timer(struct hrtimer *timer)
-
-void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b) // 上述函数注册的位置
-```
-
-## rq_offline_fair 和 rq_online_fair 的作用是什么
-
-online 和 offline 表示 cpu 的添加和去除。
-
-```c
-static void rq_online_fair(struct rq *rq)
-{
-	update_sysctl();
-
-	update_runtime_enabled(rq);
-}
-```
-
-利用 此处的 git blame 可以找到当时添加此函数的原因是什么东西 ?
-
-## cfs_bandwidth::period_timer 和 cfs_bandwidth::slack_timer
-
-start_cfs_bandwidth : 似乎是开始计时的函数。
-
-slack_timer 的作用似乎是: 用于计算没有用完的时间的。
-```c
-static void dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
-    static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
-        /* we know any runtime found here is valid as update_curr() precedes return */
-        static void __return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
-            static void start_cfs_slack_bandwidth(struct cfs_bandwidth *cfs_b)
-```

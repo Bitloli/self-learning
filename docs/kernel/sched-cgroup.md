@@ -8,6 +8,8 @@
 
 - [ ] bandwidth 和 share 如何协同工作
 
+
+
 ## 如何切换 cgroup v2 来测试
 检测当前是那个版本: https://kubernetes.io/docs/concepts/architecture/cgroups/
 
@@ -53,7 +55,28 @@ autoconf
 ./configure; make; make install
 ```
 
+### 基本操作
+- list_add_leaf_cfs_rq
+- list_add_leaf_cfs_rq
+- [ ] init_tg_cfs_entry
+
 ### CONFIG_CFS_BANDWIDTH
+
+参考资料:
+- https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt
+
+> CFS bandwidth control is a `CONFIG_FAIR_GROUP_SCHED` extension which allows the
+> specification of the maximum CPU bandwidth available to a group or hierarchy.
+>
+> The bandwidth allowed for a group is specified using a quota and period. Within
+> each given "period" (microseconds), a group is allowed to consume only up to
+> "quota" microseconds of CPU time.  When the CPU bandwidth consumption of a
+> group exceeds this limit (for that period), the tasks belonging to its
+> hierarchy will be throttled and are not allowed to run again until the next
+> period.
+
+总结到位。
+
 ## 创建
 - sudo cgcreate -g cpu:A
 
@@ -175,3 +198,86 @@ period 时钟注册的 hook : sched_cfs_period_timer -> do_sched_cfs_period_time
 ```
 
 应该是将 weight 更新，从而导致让 weight 小的使用量更小。
+
+## cfs_bandwidth::period_timer 和 cfs_bandwidth::slack_timer
+
+start_cfs_bandwidth : 似乎是开始计时的函数。
+
+slack_timer 的作用似乎是: 用于计算没有用完的时间的。
+```c
+static void dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
+    static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+        /* we know any runtime found here is valid as update_curr() precedes return */
+        static void __return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+            static void start_cfs_slack_bandwidth(struct cfs_bandwidth *cfs_b)
+```
+
+## unthrottle_cfs_rq 和 throttle_cfs_rq 利用上 timer 机制
+
+```c
+// 这就是两个检查是否超过 bandwidth 的时机:
+check_enqueue_throttle : 被 enqueue_entity 唯一处理
+check_cfs_rq_runtime
+  static void throttle_cfs_rq(struct cfs_rq *cfs_rq) // todo 观察其中，就可以知道到底如何实现控制 bandwidth
+
+
+void unthrottle_cfs_rq(struct cfs_rq *cfs_rq)
+```
+
+![](../../img/source/check_cfs_rq_runtime.png)
+
+> put_prev_entity 为什么需要 check_cfs_rq_runtime ? 都已经离开队列了，为什么还是需要处理 ?
+
+![](../../img/source/unthrottle_cfs_rq.png)
+
+
+分析一下:
+```c
+/*
+ * Responsible for refilling a task_group's bandwidth and unthrottling its
+ * cfs_rqs as appropriate. If there has been no activity within the last
+ * period the timer is deactivated until scheduling resumes; cfs_b->idle is
+ * used to track this state.
+ */
+static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
+
+
+/*
+ * This is done with a timer (instead of inline with bandwidth return) since
+ * it's necessary to juggle rq->locks to unthrottle their respective cfs_rqs.
+ */
+static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
+
+
+static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+static enum hrtimer_restart sched_cfs_slack_timer(struct hrtimer *timer)
+
+void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b) // 上述函数注册的位置
+```
+
+## 需要分析的一些细节
+
+cfs_bandwith_used() 简单的辅助函数，用于开关 bandwidth 机制。
+和 `void cfs_bandwidth_usage_inc(void)` 和 `void cfs_bandwidth_usage_dec(void)` 配合使用。
+
+## tg_set_cfs_
+
+调用者 : 都是来自于 cgroup 机制的
+- tg_set_cfs_cpu
+- tg_set_cfs_period
+- cpu_max_write
+
+## rq_offline_fair 和 rq_online_fair 的作用是什么
+
+online 和 offline 表示 cpu 的添加和去除。
+
+```c
+static void rq_online_fair(struct rq *rq)
+{
+	update_sysctl();
+
+	update_runtime_enabled(rq);
+}
+```
+
+利用 此处的 git blame 可以找到当时添加此函数的原因是什么东西 ?

@@ -9,9 +9,6 @@
 
 update_cfs_group : shares runable 然后利用 reweight_entity 分析
 
-## CONFIG_CFS_BANDWIDTH
-- Documentation/scheduler/sched-bwc.rst
-
 ## taks group
 > 1. root_task_group 在 sched_init 中间被初始化 ?
 
@@ -24,10 +21,8 @@ void __init sched_init(void)
           struct sched_entity *se, int cpu,
           struct sched_entity *parent)
 
-
-// todo 和我想象的不同，缺少加入 task_group 离开 task_group 之类的操作
+// @todo 找到，缺少加入 task_group 离开 task_group 之类的操作
 // 调用的地方太少了
-
 ```
 
 ```c
@@ -67,159 +62,10 @@ struct task_group {
 
 > 还是 init_tg_cfs_entry 含有一些有意思的东西。
 
-```c
-void init_tg_cfs_entry(struct task_group *tg, struct cfs_rq *cfs_rq,
-			struct sched_entity *se, int cpu,
-			struct sched_entity *parent)
-{
-	struct rq *rq = cpu_rq(cpu);
-
-  // 对于每一个cpu　创建的cfs 和 sched_entity 初始化
-	cfs_rq->tg = tg;
-	cfs_rq->rq = rq;
-	init_cfs_rq_runtime(cfs_rq);
-
-	tg->cfs_rq[cpu] = cfs_rq;
-	tg->se[cpu] = se;
-
-	/* se could be NULL for root_task_group */
-	if (!se)
-		return;
-
-
-  // 神奇的地方 : 这一个 parent 其实是 task_group 的 parent 的父类的位置
-	if (!parent) {
-		se->cfs_rq = &rq->cfs;
-		se->depth = 0;
-	} else {
-		se->cfs_rq = parent->my_q;
-		se->depth = parent->depth + 1;
-	}
-
-	se->my_q = cfs_rq; // TODO 这么来说，那么my_q 不可以为null
-	/* guarantee group entities always have weight */
-	update_load_set(&se->load, NICE_0_LOAD);
-	se->parent = parent;
-}
-
-// 通过 此 无法修改 my_q 这一个变量
-// FIXME 必然 se 还有初始化的方法，其他的entity 是如何加入到 ?
-/* runqueue "owned" by this group */
-static inline struct cfs_rq *group_cfs_rq(struct sched_entity *grp)
-{
-	return grp->my_q;
-}
-```
-
-> 分析一下 taks_group 的 tree 是如何构建出来的
-
-```c
-/* allocate runqueue etc for a new task group */
-struct task_group *sched_create_group(struct task_group *parent)
-{
-	struct task_group *tg;
-
-	tg = kmem_cache_alloc(task_group_cache, GFP_KERNEL | __GFP_ZERO);
-	if (!tg)
-		return ERR_PTR(-ENOMEM);
-
-	if (!alloc_fair_sched_group(tg, parent)) // alloc_fair_sched_group 的唯一的调用位置
-		goto err;
-
-	if (!alloc_rt_sched_group(tg, parent))
-		goto err;
-
-	return tg;
-
-err:
-	sched_free_group(tg);
-	return ERR_PTR(-ENOMEM);
-}
-
-// 进一步的两个调用位置，
-
-static struct cgroup_subsys_state *
-cpu_cgroup_css_alloc(struct cgroup_subsys_state *parent_css)
-{
-	struct task_group *parent = css_tg(parent_css);
-	struct task_group *tg;
-
-	if (!parent) {
-		/* This is early initialization for the top cgroup */
-		return &root_task_group.css;
-	}
-
-	tg = sched_create_group(parent);
-	if (IS_ERR(tg))
-		return ERR_PTR(-ENOMEM);
-
-	return &tg->css;
-}
-
-static inline struct autogroup *autogroup_create(void)
-{
-	struct autogroup *ag = kzalloc(sizeof(*ag), GFP_KERNEL);
-	struct task_group *tg;
-
-	if (!ag)
-		goto out_fail;
-
-	tg = sched_create_group(&root_task_group);
-	if (IS_ERR(tg))
-		goto out_free;
-
-	kref_init(&ag->kref);
-	init_rwsem(&ag->lock);
-	ag->id = atomic_inc_return(&autogroup_seq_nr);
-	ag->tg = tg;
-#ifdef CONFIG_RT_GROUP_SCHED
-	/*
-	 * Autogroup RT tasks are redirected to the root task group
-	 * so we don't have to move tasks around upon policy change,
-	 * or flail around trying to allocate bandwidth on the fly.
-	 * A bandwidth exception in __sched_setscheduler() allows
-	 * the policy change to proceed.
-	 */
-	free_rt_sched_group(tg);
-	tg->rt_se = root_task_group.rt_se;
-	tg->rt_rq = root_task_group.rt_rq;
-#endif
-	tg->autogroup = ag;
-
-	sched_online_group(tg, &root_task_group);
-	return ag;
-
-out_free:
-	kfree(ag);
-out_fail:
-	if (printk_ratelimit()) {
-		printk(KERN_WARNING "autogroup_create: %s failure.\n",
-			ag ? "sched_create_group()" : "kzalloc()");
-	}
-
-	return autogroup_kref_get(&autogroup_default);
-}
-```
-
-
-## CONFIG_CFS_BANDWIDTH
-https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt
-
-CFS bandwidth control is a `CONFIG_FAIR_GROUP_SCHED` extension which allows the
-specification of the maximum CPU bandwidth available to a group or hierarchy.
-
-The bandwidth allowed for a group is specified using a quota and period. Within
-each given "period" (microseconds), a group is allowed to consume only up to
-"quota" microseconds of CPU time.  When the CPU bandwidth consumption of a
-group exceeds this limit (for that period), the tasks belonging to its
-hierarchy will be throttled and are not allowed to run again until the next
-period.
-> 所以，如何确定 quota 又是如何检测其中的是否超过设置的数值的
-
-
 ## CONFIG_NUMA_BALANCING
 
-This option adds support for automatic NUMA aware memory/task placement. The mechanism is quite primitive and is based on migrating memory when it has references to the node the task is running on.
+This option adds support for automatic NUMA aware memory/task placement.
+The mechanism is quite primitive and is based on migrating memory when it has references to the node the task is running on.
 
 This system will be inactive on UMA systems.
 
@@ -272,14 +118,6 @@ static void update_min_vruntime(struct cfs_rq *cfs_rq)
 
 // 6000 - 10000 用于迁移
 ```
-
-
-```c
-sched_group
-sched_domain
-```
-
-### CONFIG_SMP 带来的挑战
 
 ```c
 // 6296
