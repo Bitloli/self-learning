@@ -8,6 +8,9 @@
 
 - [ ] bandwidth 和 share 如何协同工作
 
+## 结论
+
+- task_group 持有 sched_entity 和 cfs_rq，通过 cfs_rq 可以重新构建该 group 的红黑树，而这个 rbtree 将会是 parent 的一个 node
 
 
 ## 如何切换 cgroup v2 来测试
@@ -147,8 +150,8 @@ sudo cgexec -g cpu:C dd if=/dev/zero of=/dev/null &
 ```c
 struct cfs_bandwidth {
     // ...
-	ktime_t			period;
-	u64			quota;
+    ktime_t         period;
+    u64         quota;
 ```
 
 关于 period
@@ -274,9 +277,9 @@ online 和 offline 表示 cpu 的添加和去除。
 ```c
 static void rq_online_fair(struct rq *rq)
 {
-	update_sysctl();
+    update_sysctl();
 
-	update_runtime_enabled(rq);
+    update_runtime_enabled(rq);
 }
 ```
 
@@ -294,42 +297,42 @@ static void rq_online_fair(struct rq *rq)
 
 在结合 sched_init 中间的代码，可以完全的确定:
 ```c
-	for_each_possible_cpu(i) {
-		struct rq *rq;
+    for_each_possible_cpu(i) {
+        struct rq *rq;
 
-		rq = cpu_rq(i);
-		raw_spin_lock_init(&rq->lock);
-		rq->nr_running = 0;
-		rq->calc_load_active = 0;
-		rq->calc_load_update = jiffies + LOAD_FREQ;
-		init_cfs_rq(&rq->cfs);
-		init_rt_rq(&rq->rt);
-		init_dl_rq(&rq->dl);
+        rq = cpu_rq(i);
+        raw_spin_lock_init(&rq->lock);
+        rq->nr_running = 0;
+        rq->calc_load_active = 0;
+        rq->calc_load_update = jiffies + LOAD_FREQ;
+        init_cfs_rq(&rq->cfs);
+        init_rt_rq(&rq->rt);
+        init_dl_rq(&rq->dl);
 #ifdef CONFIG_FAIR_GROUP_SCHED
-		root_task_group.shares = ROOT_TASK_GROUP_LOAD;
-		INIT_LIST_HEAD(&rq->leaf_cfs_rq_list);
-		rq->tmp_alone_branch = &rq->leaf_cfs_rq_list;
-		/*
-		 * How much CPU bandwidth does root_task_group get?
-		 *
-		 * In case of task-groups formed thr' the cgroup filesystem, it
-		 * gets 100% of the CPU resources in the system. This overall
-		 * system CPU resource is divided among the tasks of
-		 * root_task_group and its child task-groups in a fair manner,
-		 * based on each entity's (task or task-group's) weight
-		 * (se->load.weight).
-		 *
-		 * In other words, if root_task_group has 10 tasks of weight
-		 * 1024) and two child groups A0 and A1 (of weight 1024 each),
-		 * then A0's share of the CPU resource is:
-		 *
-		 *	A0's bandwidth = 1024 / (10*1024 + 1024 + 1024) = 8.33%
-		 *
-		 * We achieve this by letting root_task_group's tasks sit
-		 * directly in rq->cfs (i.e root_task_group->se[] = NULL).
-		 */
-		init_cfs_bandwidth(&root_task_group.cfs_bandwidth);
-		init_tg_cfs_entry(&root_task_group, &rq->cfs, NULL, i, NULL);
+        root_task_group.shares = ROOT_TASK_GROUP_LOAD;
+        INIT_LIST_HEAD(&rq->leaf_cfs_rq_list);
+        rq->tmp_alone_branch = &rq->leaf_cfs_rq_list;
+        /*
+         * How much CPU bandwidth does root_task_group get?
+         *
+         * In case of task-groups formed thr' the cgroup filesystem, it
+         * gets 100% of the CPU resources in the system. This overall
+         * system CPU resource is divided among the tasks of
+         * root_task_group and its child task-groups in a fair manner,
+         * based on each entity's (task or task-group's) weight
+         * (se->load.weight).
+         *
+         * In other words, if root_task_group has 10 tasks of weight
+         * 1024) and two child groups A0 and A1 (of weight 1024 each),
+         * then A0's share of the CPU resource is:
+         *
+         *  A0's bandwidth = 1024 / (10*1024 + 1024 + 1024) = 8.33%
+         *
+         * We achieve this by letting root_task_group's tasks sit
+         * directly in rq->cfs (i.e root_task_group->se[] = NULL).
+         */
+        init_cfs_bandwidth(&root_task_group.cfs_bandwidth);
+        init_tg_cfs_entry(&root_task_group, &rq->cfs, NULL, i, NULL);
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 ```
 
@@ -351,51 +354,51 @@ o
  */
 static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 {
-	struct cfs_rq *cfs_rq;
-	struct sched_entity *se = &curr->se;
+    struct cfs_rq *cfs_rq;
+    struct sched_entity *se = &curr->se;
 
-	for_each_sched_entity(se) {
-		cfs_rq = cfs_rq_of(se);
-		entity_tick(cfs_rq, se, queued);
-	}
+    for_each_sched_entity(se) {
+        cfs_rq = cfs_rq_of(se);
+        entity_tick(cfs_rq, se, queued);
+    }
 
-	if (static_branch_unlikely(&sched_numa_balancing))
-		task_tick_numa(rq, curr);
+    if (static_branch_unlikely(&sched_numa_balancing))
+        task_tick_numa(rq, curr);
 }
 
 static void
 entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 {
-	/*
-	 * Update run-time statistics of the 'current'.
-	 */
-	update_curr(cfs_rq);
+    /*
+     * Update run-time statistics of the 'current'.
+     */
+    update_curr(cfs_rq);
 
-	/*
-	 * Ensure that runnable average is periodically updated.
-	 */
-	update_load_avg(cfs_rq, curr, UPDATE_TG);
-	update_cfs_group(curr);
+    /*
+     * Ensure that runnable average is periodically updated.
+     */
+    update_load_avg(cfs_rq, curr, UPDATE_TG);
+    update_cfs_group(curr);
 
 #ifdef CONFIG_SCHED_HRTICK
-	/*
-	 * queued ticks are scheduled to match the slice, so don't bother
-	 * validating it and just reschedule.
-	 */
-	if (queued) {
-		resched_curr(rq_of(cfs_rq));
-		return;
-	}
-	/*
-	 * don't let the period tick interfere with the hrtick preemption
-	 */
-	if (!sched_feat(DOUBLE_TICK) &&
-			hrtimer_active(&rq_of(cfs_rq)->hrtick_timer))
-		return;
+    /*
+     * queued ticks are scheduled to match the slice, so don't bother
+     * validating it and just reschedule.
+     */
+    if (queued) {
+        resched_curr(rq_of(cfs_rq));
+        return;
+    }
+    /*
+     * don't let the period tick interfere with the hrtick preemption
+     */
+    if (!sched_feat(DOUBLE_TICK) &&
+            hrtimer_active(&rq_of(cfs_rq)->hrtick_timer))
+        return;
 #endif
 
-	if (cfs_rq->nr_running > 1)
-		check_preempt_tick(cfs_rq, curr);
+    if (cfs_rq->nr_running > 1)
+        check_preempt_tick(cfs_rq, curr);
 }
 
 /*
@@ -404,38 +407,38 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 static void
 check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 {
-	unsigned long ideal_runtime, delta_exec;
-	struct sched_entity *se;
-	s64 delta;
+    unsigned long ideal_runtime, delta_exec;
+    struct sched_entity *se;
+    s64 delta;
 
-	ideal_runtime = sched_slice(cfs_rq, curr); // sched_slice 分析可以运行的时间
-	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
-	if (delta_exec > ideal_runtime) {
-		resched_curr(rq_of(cfs_rq));
-		/*
-		 * The current task ran long enough, ensure it doesn't get
-		 * re-elected due to buddy favours.
-		 */
-		clear_buddies(cfs_rq, curr);
-		return;
-	}
+    ideal_runtime = sched_slice(cfs_rq, curr); // sched_slice 分析可以运行的时间
+    delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
+    if (delta_exec > ideal_runtime) {
+        resched_curr(rq_of(cfs_rq));
+        /*
+         * The current task ran long enough, ensure it doesn't get
+         * re-elected due to buddy favours.
+         */
+        clear_buddies(cfs_rq, curr);
+        return;
+    }
 
-	/*
-	 * Ensure that a task that missed wakeup preemption by a
-	 * narrow margin doesn't have to wait for a full slice.
-	 * This also mitigates buddy induced latencies under load.
-	 */
-	if (delta_exec < sysctl_sched_min_granularity)
-		return;
+    /*
+     * Ensure that a task that missed wakeup preemption by a
+     * narrow margin doesn't have to wait for a full slice.
+     * This also mitigates buddy induced latencies under load.
+     */
+    if (delta_exec < sysctl_sched_min_granularity)
+        return;
 
-	se = __pick_first_entity(cfs_rq);
-	delta = curr->vruntime - se->vruntime;
+    se = __pick_first_entity(cfs_rq);
+    delta = curr->vruntime - se->vruntime;
 
-	if (delta < 0)
-		return;
+    if (delta < 0)
+        return;
 
-	if (delta > ideal_runtime)
-		resched_curr(rq_of(cfs_rq));
+    if (delta > ideal_runtime)
+        resched_curr(rq_of(cfs_rq));
 }
 ```
 
@@ -470,39 +473,39 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 // 然后传播一下影响:
 int sched_group_set_shares(struct task_group *tg, unsigned long shares)
 {
-	int i;
+    int i;
 
-	/*
-	 * We can't change the weight of the root cgroup.
-	 */
-	if (!tg->se[0])
-		return -EINVAL;
+    /*
+     * We can't change the weight of the root cgroup.
+     */
+    if (!tg->se[0])
+        return -EINVAL;
 
-	shares = clamp(shares, scale_load(MIN_SHARES), scale_load(MAX_SHARES));
+    shares = clamp(shares, scale_load(MIN_SHARES), scale_load(MAX_SHARES));
 
-	mutex_lock(&shares_mutex);
-	if (tg->shares == shares)
-		goto done;
+    mutex_lock(&shares_mutex);
+    if (tg->shares == shares)
+        goto done;
 
-	tg->shares = shares;
-	for_each_possible_cpu(i) {
-		struct rq *rq = cpu_rq(i);
-		struct sched_entity *se = tg->se[i];
-		struct rq_flags rf;
+    tg->shares = shares;
+    for_each_possible_cpu(i) {
+        struct rq *rq = cpu_rq(i);
+        struct sched_entity *se = tg->se[i];
+        struct rq_flags rf;
 
-		/* Propagate contribution to hierarchy */
-		rq_lock_irqsave(rq, &rf);
-		update_rq_clock(rq);
-		for_each_sched_entity(se) {
-			update_load_avg(cfs_rq_of(se), se, UPDATE_TG);
-			update_cfs_group(se);
-		}
-		rq_unlock_irqrestore(rq, &rf);
-	}
+        /* Propagate contribution to hierarchy */
+        rq_lock_irqsave(rq, &rf);
+        update_rq_clock(rq);
+        for_each_sched_entity(se) {
+            update_load_avg(cfs_rq_of(se), se, UPDATE_TG);
+            update_cfs_group(se);
+        }
+        rq_unlock_irqrestore(rq, &rf);
+    }
 
 done:
-	mutex_unlock(&shares_mutex);
-	return 0;
+    mutex_unlock(&shares_mutex);
+    return 0;
 }
 ```
 
@@ -523,7 +526,7 @@ done:
 ```plain
                     tg->shares * grq->load.weight
 ge->load.weight = -------------------------------               (1)
-		                \Sum grq->load.weight
+                        \Sum grq->load.weight
 
 注: grq := group cfs_rq
 ```
@@ -543,21 +546,21 @@ ge->load.weight = -------------------------------               (1)
 static void
 account_entity_enqueue(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
-	update_load_add(&cfs_rq->load, se->load.weight);
+    update_load_add(&cfs_rq->load, se->load.weight);
   // 如果到达顶层了，那么就刷新一下 rq
-	if (!parent_entity(se))
-		update_load_add(&rq_of(cfs_rq)->load, se->load.weight);
+    if (!parent_entity(se))
+        update_load_add(&rq_of(cfs_rq)->load, se->load.weight);
 
   // CONFIG_SMP 内的内容还是不知道呀!
 #ifdef CONFIG_SMP
-	if (entity_is_task(se)) {
-		struct rq *rq = rq_of(cfs_rq);
+    if (entity_is_task(se)) {
+        struct rq *rq = rq_of(cfs_rq);
 
-		account_numa_enqueue(rq, task_of(se));
-		list_add(&se->group_node, &rq->cfs_tasks);
-	}
+        account_numa_enqueue(rq, task_of(se));
+        list_add(&se->group_node, &rq->cfs_tasks);
+    }
 #endif
-	cfs_rq->nr_running++;
+    cfs_rq->nr_running++;
 }
 ```
 
@@ -567,19 +570,139 @@ account_entity_enqueue(struct cfs_rq *cfs_rq, struct sched_entity *se)
 
 ```c
 void set_user_nice(struct task_struct *p, long nice)
-	if (queued)
-		dequeue_task(rq, p, DEQUEUE_SAVE | DEQUEUE_NOCLOCK);
+    if (queued)
+        dequeue_task(rq, p, DEQUEUE_SAVE | DEQUEUE_NOCLOCK);
 
-	if (queued) {
-		enqueue_task(rq, p, ENQUEUE_RESTORE | ENQUEUE_NOCLOCK);
-		/*
-		 * If the task increased its priority or is running and
-		 * lowered its priority, then reschedule its CPU:
-		 */
-		if (delta < 0 || (delta > 0 && task_running(rq, p)))
-			resched_curr(rq);
-	}
+    if (queued) {
+        enqueue_task(rq, p, ENQUEUE_RESTORE | ENQUEUE_NOCLOCK);
+        /*
+         * If the task increased its priority or is running and
+         * lowered its priority, then reschedule its CPU:
+         */
+        if (delta < 0 || (delta > 0 && task_running(rq, p)))
+            resched_curr(rq);
+    }
 
 // 如果当前的 task_struct 在队列上，
 // 想要修改其 weight 首先将其 dequeue 然后 enqueue
 ```
+
+## bandwidth
+利用接口
+- /sys/fs/cgroup/cpu/cpu.cfs_quota_us
+- /sys/fs/cgroup/cpu/cpu.cfs_period_us
+
+`period`表示周期，`quota`表示限额，也就是在 period 期间内，用户组的 CPU 限额为 quota 值，当超过这个值的时候，用户组将会被限制运行（throttle），等到下一个周期开始被解除限制（unthrottle）；
+- [ ] 还是一个 task_group 作为对象来限制吗 ?
+  - [ ] 是一个 cpu 还是总的 cpu ?
+
+- [ ] 那么我之前一致说，保证至少运行一点时间的机制在哪里啊 ?
+
+```c
+struct cfs_bandwidth {
+#ifdef CONFIG_CFS_BANDWIDTH
+    raw_spinlock_t      lock;
+    ktime_t         period;
+    u64         quota;
+    u64         runtime; // 记录限额剩余时间，会使用quota值来周期性赋值；
+    s64         hierarchical_quota;
+
+    u8          idle;
+    u8          period_active; // 周期性计时已经启动；
+    u8          slack_started;
+    struct hrtimer      period_timer;
+    struct hrtimer      slack_timer; // 延迟定时器，在任务出列时，将剩余的运行时间返回到全局池里；
+    struct list_head    throttled_cfs_rq;
+
+    /* Statistics: */
+    int         nr_periods;
+    int         nr_throttled;
+    u64         throttled_time;
+#endif
+};
+
+
+/* CFS-related fields in a runqueue */
+struct cfs_rq {
+// ...
+#ifdef CONFIG_CFS_BANDWIDTH
+    int         runtime_enabled;
+    s64         runtime_remaining; // 剩余的运行时间；
+
+    u64         throttled_clock;
+    u64         throttled_clock_task;
+    u64         throttled_clock_task_time;
+    int         throttled;
+    int         throttle_count;
+    struct list_head    throttled_list;
+#endif /* CONFIG_CFS_BANDWIDTH */
+```
+- [ ] cfs_rq::runtime_remaining 和 cfs_bandwidth::runtime 描述感觉是同一个东西啊
+- [x] cfs_bandwidth 会被多个 cfs_rq，是的，注意 bandwidth 的概念一致都是作用于 task_group 的，而不是 se 的
+  - [x] 所以，cfs_bandwidth 就是一个全局概念
+
+- `tg_set_cfs_bandwidth` 会从 `root_task_group` 根节点开始，遍历组调度树，并逐个设置限额比率 ；
+- 由于 task_group 是层级的，如果顶层的被限制，下面的所有节点都是需要被限制，所以 quota 需要需要累计所有的子节点
+
+注入时间, 或者称之为 runtime_remaining++ :
+1. update_curr
+2. check_enqueue_throttle :
+3. set_next_task_fair : This routine is mostly called to set `cfs_rq->curr` field when a task migrates between groups/classes.
+
+- slack_timer 定时器，slack_period 周期默认为 5ms，在该定时器函数中也会调用 distribute_cfs_runtime 从全局运行时间中分配 runtime；
+- slack_timer : 一个用于将未用完的时间再返回到时间池中
+
+
+A group’s unassigned quota is globally tracked, being refreshed back to cfs_quota units at each period boundary.
+
+```c
+/*
+ * Amount of runtime to allocate from global (tg) to local (per-cfs_rq) pool
+ * each time a cfs_rq requests quota.
+ *
+ * Note: in the case that the slice exceeds the runtime remaining (either due
+ * to consumption or the quota being specified to be smaller than the slice)
+ * we will always only issue the remaining available time.
+ *
+ * (default: 5 msec, units: microseconds)
+ */
+unsigned int sysctl_sched_cfs_bandwidth_slice       = 5000UL;
+```
+
+- bandwidth_slice : 时间是 cpu 时间，而不是 wall clock
+
+- throttle 的两条路径:
+  - check_enqueue_throttle : 如果从 runtime pool 中间都借不到资源，那么就只能 throttle
+    - account_cfs_rq_runtime
+      - `__account_cfs_rq_runtime` : 如果 `cfs_rq->runtime_remaining > 0`，那么就不需要继续了，有钱还借钱，贱不贱啊!
+        - assign_cfs_rq_runtime : 借钱开始
+          - `__assign_cfs_rq_runtime` : 从 runtime pool 中间尽量取出来给其
+            - start_cfs_bandwidth : 如果 period 过期了，那么顺便将 period timer 移动一下
+  - check_cfs_rq_runtime
+    - throttle_cfs_rq
+
+![](https://img2020.cnblogs.com/blog/1771657/202003/1771657-20200310214423221-158953219.png)
+
+
+- [x] 可是，我还是无法理解 slack_timer
+  - slack_timer：延迟定时器，在任务出列时，将**剩余的运行时间**返回到全局池里；
+  - slack_timer 定时器，slack_period 周期默认为 5ms，在该定时器函数中也会调用 distribute_cfs_runtime 从全局运行时间中分配 runtime；
+  - 好吧，还是理解的，当存在 task 将自己的时间返回给 runtime pool 的时候，不要立刻进行 distribute, 因为还有可能其他的 task 也在返回，所以等
+
+- dequeue_entity
+  - return_cfs_rq_runtime : return excess runtime on last dequeue
+    - `__return_cfs_rq_runtime` :  we know any runtime found here is valid as update_curr() precedes return
+      - 将自己持有的时间 `cfs_rq->runtime_remaining` 返回给 runtime pool `cfs_b->runtime`，如果此时有人被 unthrottle, 那么 `start_cfs_slack_bandwidth`
+      - runtime_refresh_within : Are we near the end of the current quota period?
+
+```c
+/* a cfs_rq won't donate quota below this amount */
+static const u64 min_cfs_rq_runtime = 1 * NSEC_PER_MSEC;
+/* minimum remaining period time to redistribute slack quota */
+static const u64 min_bandwidth_expiration = 2 * NSEC_PER_MSEC;
+/* how long we wait to gather additional slack before distributing */
+static const u64 cfs_bandwidth_slack_period = 5 * NSEC_PER_MSEC;
+```
+- unthrottle_cfs_rq 的时候，似乎操作就是 enqueue_task 就可以了，再次之前，runtime pool 的数值必然得到补充了
+
+- [ ] update_curr

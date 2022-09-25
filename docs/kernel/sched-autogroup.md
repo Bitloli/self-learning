@@ -92,3 +92,11 @@ Hence this priority number must be mapped to such a value; this is done in the a
 > 1. load of the taks 估计 time slice
 > 2. time slice 是 The concept of a time slice was introduced above as the amount of time that a task is allowed to run on a CPU within a scheduling period.
 > 3. @todo 既然存在 struct load_weight , load 和 weight 就是一个东西吗 ?
+
+## auto group
+man sched(7)
+和 setsid 的关系
+
+因为 task_group 是 cgroup 机制下，所以将 task_group 加入到机制中间:
+- sched_online_group
+- sched_offline_group

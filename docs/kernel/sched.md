@@ -43,24 +43,14 @@ sched_class 有几种实现：
 * fair_sched_class 就是普通进程的调度策略；
 * idle_sched_class 就是空闲进程的调度策略。
 
-## 分析 for_each_class
-
 ## 问题和记录
 - [ ] 似乎存在一个机制，让 thread 一个时间段必须运行一段时间。
 - [ ] 将奇怪的 thread process / process group / session 总结一下
 - [ ] fg bg ctrl-z 都是如何实现的
+- [ ] nohz
 
-## v2
+## cgroup  v2
 - https://facebookmicrosites.github.io/cgroup2/docs/cpu-controller.html
-
-## 记录
-> update_curr 其实调用各种 account 函数
-
-1. cfs_rq 和 rq 中间的 cfs
-
-而且还有两个大山:
-1. low lantency 的处理: period grandularity
-2. balance 的处理
 
 ## 总结
 | func             | desc                                                                                                  |
