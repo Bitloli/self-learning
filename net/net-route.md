@@ -11,7 +11,8 @@
 | 数据链路层 | 链路层 | 构建数据帧传输的链路     | ARP、PPP、MTU、SLIP 等   |
 | 物理层     | 物理层 | 提供信息传输的物理介质   | IEEE802.2、IEEE802.11 等 |
 
-- https://switch-router.gitee.io/categories/ ：阅读其中的每一篇文章
+- https://switch-router.gitee.io/categories/ ：阅读其中的每一篇文章；
+- https://zorrozou.github.io/docs/tcp/handshake/tcp_three_way_handshake.html : 关于 TCP 的文章可以分析一下。
 
 ## todo
 - https://cs144.github.io/ : tcp 实验
@@ -513,6 +514,14 @@ ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 可以看看 socket 的所有的 option 都有啥 ?
 
 - SO_BINDTODEVICE
+
+## scheduler
+
+- linux/net/sched/ : 例如 RED ，主要是队列的管理
+
+## wireguard
+
+## net/core/flow_dissector 是干啥的
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

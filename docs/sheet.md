@@ -58,3 +58,6 @@ yum install -y neovim python3-neovim
 ## centos
 - nmcli networking off
 - nmcli networking on
+
+## sudo
+- 让 sudo https://unix.stackexchange.com/questions/83191/how-to-make-sudo-preserve-path

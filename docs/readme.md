@@ -105,7 +105,7 @@
 
 ## Linux Kernel
 - [内核学习的一点经验之谈](./kernel/learn-linux-kernel.md)
-- [为什么 Linux 6.0 相比于 Linux 0.1 复杂那么多](./kernel/why-so-complex.md)
+<!-- - [为什么 Linux 6.0 相比于 Linux 0.1 复杂那么多](./kernel/why-so-complex.md) -->
 - [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md)
 - [tty 到底是什么](./kernel/tty.md)
 <!-- - 🚧 [syscall](./kernel/syscall.md) -->

@@ -12,3 +12,6 @@
 1. io_uring
 2. iommu
 3. kvm
+
+## 参考
+- https://www.zhihu.com/question/35484429/answer/62964898

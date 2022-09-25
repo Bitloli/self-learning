@@ -1,7 +1,4 @@
 # 装机
-
-
-
 ## 需求
 - AMD CPU
 - NVIDIA GPU : GPCPU ，调查一下

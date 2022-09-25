@@ -6,14 +6,14 @@
 ps -e -o pid,ppid,sgi_p,state,args | awk '$3!="*" {print}'
 ```
 
-- [ ] 有没有现成的工具分析一个 CPU 上的运行程序，例如百分比，1s 一次更新。ebpf ?
-
 - Scheduler Domain 从 acpi 中获取吗?
+
+
+- (CONFIG_ENERGY_MODEL) && (CONFIG_CPU_FREQ_GOV_SCHEDUTIL) : 做什么的 ?
+- get_group 和 build_balance_mask 上有非常多暂时看不懂的注释
 
 # topology
 - [ ] build_balance_mask
-
-- sched_domain
   - span
   - sched_domain_topology_level
 - sched_group
@@ -25,6 +25,196 @@ ps -e -o pid,ppid,sgi_p,state,args | awk '$3!="*" {print}'
 - degenerate
 
 - rq_attach_root
+
+## 如何初始化
+
+## 什么时候切换
+
+## 大核小核的影响
+
+## 如何实现 taskset 的效果
+
+## 关键结构体
+
+### root_domain
+
+```c
+/*
+ * We add the notion of a root-domain which will be used to define per-domain
+ * variables. Each exclusive cpuset essentially defines an island domain by
+ * fully partitioning the member CPUs from any other cpuset. Whenever a new
+ * exclusive cpuset is created, we also create and attach a new root-domain
+ * object.
+ *
+ */
+struct root_domain {
+	atomic_t		refcount;
+	atomic_t		rto_count;
+	struct rcu_head		rcu;
+	cpumask_var_t		span;
+	cpumask_var_t		online;
+
+	/*
+	 * Indicate pullable load on at least one CPU, e.g:
+	 * - More than one runnable task
+	 * - Running task is misfit
+	 */
+	int			overload;
+
+	/* Indicate one or more cpus over-utilized (tipping point) */
+	int			overutilized;
+
+	/*
+	 * The bit corresponding to a CPU gets set here if such CPU has more
+	 * than one runnable -deadline task (as it is below for RT tasks).
+	 */
+	cpumask_var_t		dlo_mask;
+	atomic_t		dlo_count;
+	struct dl_bw		dl_bw;
+	struct cpudl		cpudl;
+
+	/*
+	 * Indicate whether a root_domain's dl_bw has been checked or
+	 * updated. It's monotonously increasing value.
+	 *
+	 * Also, some corner cases, like 'wrap around' is dangerous, but given
+	 * that u64 is 'big enough'. So that shouldn't be a concern.
+	 */
+	u64 visit_gen;
+
+#ifdef HAVE_RT_PUSH_IPI
+	/*
+	 * For IPI pull requests, loop across the rto_mask.
+	 */
+	struct irq_work		rto_push_work;
+	raw_spinlock_t		rto_lock;
+	/* These are only updated and read within rto_lock */
+	int			rto_loop;
+	int			rto_cpu;
+	/* These atomics are updated outside of a lock */
+	atomic_t		rto_loop_next;
+	atomic_t		rto_loop_start;
+#endif
+	/*
+	 * The "RT overload" flag: it gets set if a CPU has more than
+	 * one runnable RT task.
+	 */
+	cpumask_var_t		rto_mask;
+	struct cpupri		cpupri;
+
+	unsigned long		max_cpu_capacity;
+
+	/*
+	 * NULL-terminated list of performance domains intersecting with the
+	 * CPUs of the rd. Protected by RCU.
+	 */
+	struct perf_domain __rcu *pd;
+};
+```
+
+
+### sched_group
+```c
+struct sched_group {
+	struct sched_group	*next;			/* Must be a circular list */
+	atomic_t		ref;
+
+	unsigned int		group_weight;
+	struct sched_group_capacity *sgc;
+	int			asym_prefer_cpu;	/* CPU of highest priority in group */
+	int			flags;
+
+	/*
+	 * The CPUs this group covers.
+	 *
+	 * NOTE: this field is variable length. (Allocated dynamically
+	 * by attaching extra space to the end of the structure,
+	 * depending on how many CPUs the kernel has booted up with)
+	 */
+	unsigned long		cpumask[];
+};
+```
+
+### sched_domain
+```c
+struct sched_domain {
+	/* These fields must be setup */
+	struct sched_domain __rcu *parent;	/* top domain must be null terminated */
+	struct sched_domain __rcu *child;	/* bottom domain must be null terminated */
+	struct sched_group *groups;	/* the balancing groups of the domain */
+	unsigned long min_interval;	/* Minimum balance interval ms */
+	unsigned long max_interval;	/* Maximum balance interval ms */
+	unsigned int busy_factor;	/* less balancing by factor if busy */
+	unsigned int imbalance_pct;	/* No balance until over watermark */
+	unsigned int cache_nice_tries;	/* Leave cache hot tasks for # tries */
+	unsigned int imb_numa_nr;	/* Nr running tasks that allows a NUMA imbalance */
+
+	int nohz_idle;			/* NOHZ IDLE status */
+	int flags;			/* See SD_* */
+	int level;
+
+	/* Runtime fields. */
+	unsigned long last_balance;	/* init to jiffies. units in jiffies */
+	unsigned int balance_interval;	/* initialise to 1. units in ms. */
+	unsigned int nr_balance_failed; /* initialise to 0 */
+
+	/* idle_balance() stats */
+	u64 max_newidle_lb_cost;
+	unsigned long last_decay_max_lb_cost;
+
+	u64 avg_scan_cost;		/* select_idle_sibling */
+
+#ifdef CONFIG_SCHEDSTATS
+	/* load_balance() stats */
+	unsigned int lb_count[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_failed[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_balanced[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_imbalance[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_gained[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_hot_gained[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_nobusyg[CPU_MAX_IDLE_TYPES];
+	unsigned int lb_nobusyq[CPU_MAX_IDLE_TYPES];
+
+	/* Active load balancing */
+	unsigned int alb_count;
+	unsigned int alb_failed;
+	unsigned int alb_pushed;
+
+	/* SD_BALANCE_EXEC stats */
+	unsigned int sbe_count;
+	unsigned int sbe_balanced;
+	unsigned int sbe_pushed;
+
+	/* SD_BALANCE_FORK stats */
+	unsigned int sbf_count;
+	unsigned int sbf_balanced;
+	unsigned int sbf_pushed;
+
+	/* try_to_wake_up() stats */
+	unsigned int ttwu_wake_remote;
+	unsigned int ttwu_move_affine;
+	unsigned int ttwu_move_balance;
+#endif
+#ifdef CONFIG_SCHED_DEBUG
+	char *name;
+#endif
+	union {
+		void *private;		/* used during construction */
+		struct rcu_head rcu;	/* used during destruction */
+	};
+	struct sched_domain_shared *shared;
+
+	unsigned int span_weight;
+	/*
+	 * Span of all CPUs in this domain.
+	 *
+	 * NOTE: this field is variable length. (Allocated dynamically
+	 * by attaching extra space to the end of the structure,
+	 * depending on how many CPUs the kernel has booted up with)
+	 */
+	unsigned long span[];
+};
+```
 
 # cpumask
 - start_kernel

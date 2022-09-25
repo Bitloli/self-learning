@@ -22,3 +22,10 @@ struct rq {
 
 
 - sched_class
+
+## 问题和记录
+- [ ] 似乎存在一个机制，让 thread 一个时间段必须运行一段时间。
+- [ ] 将奇怪的 thread process / process group / session 总结一下
+
+## v2
+- https://facebookmicrosites.github.io/cgroup2/docs/cpu-controller.html

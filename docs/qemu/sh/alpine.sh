@@ -7,9 +7,10 @@ replace_kernel=true
 hacking_memory="numa"
 hacking_memory="hotplug"
 hacking_memory="virtio-mem"
+hacking_memory="virtio-pmem"
+hacking_memory="none"
 
 use_ovmf=false
-use_virtio_pmem=true
 
 abs_loc=$(dirname "$(realpath "$0")")
 configuration=${abs_loc}/config.json
@@ -29,7 +30,7 @@ kernel=${kernel_dir}/arch/x86/boot/bzImage
 
 distribution=ubuntu-server-22.04
 distribution=centos7
-distribution=CentOS-Stream-8-x86_64     # good
+distribution=CentOS-Stream-8-x86_64 # good
 # distribution=openEuler-22.03-LTS-x86_64 # good
 
 iso=${workstation}/${distribution}.iso
@@ -52,7 +53,7 @@ fi
 
 arg_hugetlb="default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
 # 可选参数
-arg_mem_cpu="-m 12G -cpu host -smp 8"
+arg_mem_cpu="-m 12G -cpu host -smp 2"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
 arg_mem_balloon="-device virtio-balloon"
 
@@ -86,13 +87,16 @@ case $hacking_memory in
   arg_mem_cpu="-m 1G,slots=7,maxmem=8G"
   arg_hugetlb=""
   ;;
-esac
-
-if [[ -n ${use_virtio_pmem+x} ]]; then
+"virtio-pmem")
+  # @todo 似乎这一行不能去掉
+  # memory devices (e.g. for memory hotplug) are not enabled, please specify the maxmem option
+  # 还有其他问题
+  arg_mem_cpu="-m 1G,slots=7,maxmem=8G"
   pmem_img=${workstation}/virtio_pmem.img
   arg_hacking="${arg_hacking} -object memory-backend-file,id=nvmem1,share=on,mem-path=${pmem_img},size=4G"
   arg_hacking="${arg_hacking} -device virtio-pmem-pci,memdev=nvmem1,id=nv1"
-fi
+  ;;
+esac
 
 arg_bridge="-device pci-bridge,id=mybridge,chassis_nr=1"
 if [[ -z ${seabios+x} ]]; then
@@ -112,7 +116,8 @@ if [[ $use_ovmf == true ]]; then
   # arg_seabios="-bios /tmp/OVMF.fd"
 fi
 
-arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb"
+arg_cgroupv2="systemd.unified_cgroup_hierarchy=1"
+arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb $arg_cgroupv2"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"

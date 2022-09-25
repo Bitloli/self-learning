@@ -11,45 +11,7 @@ task_group 的 share 的计算方法是什么 ?
 
 ## analyze
 
-struct task_group 中的: parent sibling 以及 chilren 的关联
-
-- walk_tg_tree_from
-- tg_cfs_scheduable_down　// 放到 walk_tg_tree_from 的参数吧!
-- sched_online_group
-- sched_offline_group
-
-
-```c
-static int __cfs_schedulable(struct task_group *tg, u64 period, u64 quota)
-{
-	int ret;
-	struct cfs_schedulable_data data = {
-		.tg = tg,
-		.period = period,
-		.quota = quota,
-	};
-
-	if (quota != RUNTIME_INF) {
-		do_div(data.period, NSEC_PER_USEC);
-		do_div(data.quota, NSEC_PER_USEC);
-	}
-
-	rcu_read_lock();
-  // 注意其中放入的两个函数是什么 ?
-	ret = walk_tg_tree(tg_cfs_schedulable_down, tg_nop, &data);
-	rcu_read_unlock();
-
-	return ret;
-}
-
-// __cfs_schedulable 的唯一调用位置
-static int tg_set_cfs_bandwidth(struct task_group *tg, u64 period, u64 quota)
-// TODO 为什么这么复杂的函数，但是终于知道 bandwidth 和 tg 之间的关系是什么 ?
-```
-
-
 ## 才注意到 : cfs_rq 中间持有 tg
-
 
 ```c
 static inline void list_add_leaf_cfs_rq(struct cfs_rq *cfs_rq)

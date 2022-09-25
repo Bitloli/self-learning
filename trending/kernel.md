@@ -28,3 +28,8 @@
 - 873aefb376bbc0ed1dd2381ea1d6ec88106fdbd4 : vfio refercount 的 bug 修复
 - 8cbb2b50ee2dcb082675237eaaa48fe8479f8aa5 ：softirq on stack
 - 2ccd4502f512e04b6cc01995da730e8754529cf9 ：iommu
+- drivers/tty/serial/sifive.c : 为什么 RISC-V 需要一个额外的 tty 设备
+- c0feea594e058223973db94c1c32a830c9807c86 : workqueue
+- e775f93f2ab976a2cdb4a7b53063cbe890904f73 : io uring
+- 317fab7ec55d5a150bce46f37efbc942013a8c5b : 几个 KVM fix
+- e45cc288724f0cfd497bb5920bcfa60caa335729 : memory 相关的 patch
