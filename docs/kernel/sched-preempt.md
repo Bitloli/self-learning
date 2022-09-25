@@ -1,27 +1,3 @@
-# kernel/sched/core.c 分析
-
-
-## try_to_wake_up
-> 想象 : 将当前设置为 task 为 RUNABLE 就像 semaphore 的 unlock 一样 !
-> 实际 : 想要立刻执行 ?
-
-
-## schedule()
-```c
-asmlinkage __visible void __sched schedule(void)
-{
-	struct task_struct *tsk = current;
-
-  // TODO
-	sched_submit_work(tsk);
-	do {
-		preempt_disable();
-		__schedule(false);
-		sched_preempt_enable_no_resched();
-	} while (need_resched());
-}
-```
-
 ## preempt
 抢占的含义 :
 1. 用户确定决定自己的放弃的时机 ?
@@ -229,15 +205,3 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
     // 但是 rq 中间持有 rbtree
 		p = fair_sched_class.pick_next_task(rq, prev, rf);
 ```
-
-## context switch
-
-```c
-/*
- * context_switch - switch to the new MM and the new thread's register state.
- */
-static __always_inline struct rq *
-context_switch(struct rq *rq, struct task_struct *prev,
-	       struct task_struct *next, struct rq_flags *rf)
-```
-> TODO 应该不会太麻烦 !
