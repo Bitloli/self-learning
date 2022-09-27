@@ -1,4 +1,5 @@
 # hugetlb
+
 - 无需考虑碎片化的问题。
 - 内核不用使用这些页面。
 - 不用 swap 的。
@@ -21,6 +22,7 @@ obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
   - /proc/sys/vm/nr_hugepages_mempolicy
   - /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages
   - /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages_mempolicy
+- 这些外部接口太混乱了，使用 nuamstat -m 会更加清晰
 
 
 默认的 mount 点:
@@ -293,7 +295,7 @@ numactl -m <node-list> echo 20 >/proc/sys/vm/nr_hugepages_mempolicy
 ```
 和
 ```txt
-echo 20 >/proc/sys/vm/nr_hugepages_mempolicy
+echo 20 > /proc/sys/vm/nr_hugepages_mempolicy
 ```
 的区别是什么 ?
 

@@ -33,3 +33,4 @@
 - e775f93f2ab976a2cdb4a7b53063cbe890904f73 : io uring
 - 317fab7ec55d5a150bce46f37efbc942013a8c5b : 几个 KVM fix
 - e45cc288724f0cfd497bb5920bcfa60caa335729 : memory 相关的 patch
+- 3800a713b6070d4f03fb43613a7b7d536a99b2b7 : memory hotfix

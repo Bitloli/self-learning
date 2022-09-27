@@ -16,6 +16,7 @@ cache
 ## 编辑器的延迟
 
 ## 一次 kernel thread 上下文切换的开销
+https://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html
 
 ## 一个 syscall 的开销
 
