@@ -1,5 +1,3 @@
-# Intel
-
 # Volume 1 : Basic Architecture
 
 # Volume 2 : Instruction Set Reference

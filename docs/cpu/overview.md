@@ -34,3 +34,6 @@ https://developers.google.com/silicon
 ## intel
 - https://news.ycombinator.com/item?id=32145324
   - 居然真的有人将 intel 的 opcode 解码出来了
+
+# 超标量处理器设计
+- https://book.douban.com/subject/26293546/

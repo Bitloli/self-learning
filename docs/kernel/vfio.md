@@ -6,8 +6,17 @@
     - 所以 container 是个什么概念
 - `vfio_iommu_type1_group_iommu_domain` 中的 domain 是个什么含义
 - [ ] 应该是 container 中含有 group 的
-
 - [ ] 难道一个主板上可以有多个 IOMMU，否则，为什么会存在 `iommu_group`
+
+## 记录小米笔记本中处理
+lspci -n -s 02:00.0
+```txt
+02:00.0 0108: 1cc1:0021 (rev 01)
+```
+
+echo 0000:02:00.0 > /sys/bus/pci/devices/0000:02:00.0/driver/unbind
+echo 1cc1 0021 > /sys/bus/pci/drivers/vfio-pci/new_id
+
 
 ## 需要被 ebpf trace 的东西
 - `vfio_pci_mmap_fault`

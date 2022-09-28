@@ -2,7 +2,7 @@
 set -e
 
 use_nvme_as_root=false
-replace_kernel=true
+# replace_kernel=true
 
 hacking_memory="numa"
 hacking_memory="hotplug"
@@ -19,6 +19,11 @@ configuration=${abs_loc}/config.json
 kernel_dir=$(jq -r ".kernel_dir" <"$configuration")
 qemu_dir=$(jq -r ".qemu_dir" <"$configuration")
 workstation="$(jq -r ".workstation" <"$configuration")"
+if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+  kernel_dir=/home/maritns3/core/ubuntu-linux
+  qemu_dir=/home/maritns3/core/kvmqemu
+  workstation=/home/maritns3/core/hacking-vfio
+fi
 # bios 镜像的地址，可以不配置，将下面的 arg_seabios 定位为 "" 就是使用默认的
 # seabios=/home/maritns3/core/seabios/out/bios.bin
 # ------------------------------------------------------------------------------
@@ -33,6 +38,10 @@ distribution=centos7
 distribution=CentOS-Stream-8-x86_64 # good
 # distribution=openEuler-22.03-LTS-x86_64 # good
 
+if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+  distribution="alpine-standard-3.16.2-x86_64"
+fi
+
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2
 ext4_img1=${workstation}/img1.ext4
@@ -44,7 +53,11 @@ LAUNCH_GDB=false
 
 arg_hacking=""
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
-root=/dev/vdb3
+root=/dev/vdb2
+
+if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+  root=/dev/vdb3
+fi
 
 if [[ $use_nvme_as_root = true ]]; then
   arg_img="-device nvme,drive=nvme3,serial=foo -drive file=${disk_img},format=qcow2,if=none,id=nvme3"
@@ -126,9 +139,15 @@ arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=ne
 arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
 arg_monitor="-serial mon:stdio -display none"
+if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+  arg_monitor="-serial mon:stdio"
+fi
 arg_initrd="-initrd /home/martins3/initramfs-6.0.0-rc2-00159-g4c612826bec1-dirty.img"
 arg_initrd=""
 arg_trace="--trace 'memory_region_ops_\*'"
+
+arg_vfio="-device vfio-pci,host=02:00.0" # 将音频设备直通到 Guest 中
+arg_vfio=""
 # -soundhw pcspk
 
 show_help() {
@@ -200,10 +219,11 @@ if [ ! -f "$ext4_img2" ]; then
 fi
 
 if [ ! -f "${disk_img}" ]; then
-  sure "install alpine image"
+  sure "use ${iso} install ${disk_img}"
   qemu-img create -f qcow2 "${disk_img}" 100G
   # 很多发行版的安装必须使用图形界面，如果在远程，那么需要 vnc
   arg_monitor="-vnc :0,password=on -monitor stdio"
+  arg_monitor=""
   qemu-system-x86_64 \
     -boot d \
     -cdrom "$iso" \
@@ -224,11 +244,11 @@ fi
 
 if [[ -z ${replace_kernel+x} ]]; then
   arg_monitor="-vnc :0,password=on -monitor stdio"
-  arg_monitor="-nographic"
-  qemu="qemu-system-x86_64" # 自己的编译的 QEMU 不支持加密，无法使用 vnc
-
+  # arg_monitor="-nographic"
+  # arg_monitor=""
   # @todo 应该是无需如此复杂的
-  qemu-system-x86_64 \
+  qemu=qemu-system-x86_64
+  ${qemu} \
     -cpu host $arg_img \
     -enable-kvm \
     -m 2G \
@@ -239,6 +259,6 @@ fi
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
   ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
-  ${arg_qmp}"
+  ${arg_qmp} ${arg_vfio}"
 echo "$cmd"
 eval "$cmd"

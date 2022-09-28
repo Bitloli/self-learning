@@ -1,4 +1,6 @@
 ## THP
+
+
 - 原来的那个文章找过来看看
 
 - [ ] PageDoubleMap
@@ -19,6 +21,14 @@ transparent hugepage 和 swap 是相关的
 1. swap
 2. reference 的问题
 3. split 和 merge
+
+## [The transparent huge page shrinker](https://lwn.net/Articles/906511/)
+
+lwn 作者认为如果加上这个，那么 thp 就可以成为默认参数。
+
+## how to disable thp
+- https://www.thegeekdiary.com/centos-rhel-7-how-to-disable-transparent-huge-pages-thp/
+  - 实际上，不仅仅需要在 grub 中 disable 的，而且需要考虑 tune
 
 
 #### THP admin manual
@@ -60,9 +70,6 @@ interface in sysfs :
 
 - [ ] huge_memory.c 用于处理 split 和 各种参数
 - [ ] khugepaged.c 用于 scan page 将 base page 转化为 hugepage
-
-- [ ] 本 section 分析一般的 kernel 问题
-
 - [ ] 内核态分析: 透明的性质在于 `__handle_mm_fault` 中间就开始检查是否可以 由于 hugepage 会修改 page walk ，所以 pud_none 和 `__transparent_hugepage_enabled`
   - [ ] 检查更多的细节
 
@@ -110,11 +117,6 @@ khugepaged.c 中间的 hugepage 守护进程的工作是什么 ?
 [Transparent huge pages for filesystems](https://lwn.net/Articles/789159/)
 
 > It is using the [Binary Optimization and Layout Tool (BOLT)](https://github.com/facebookincubator/BOLT) to profile its code in order to identify the hot functions. Those functions are collected up into an 8MB region in the generated executable.
-
-
-// ------------- split huge page ---------------- begin
-
-// ------------- split huge page ---------------- end
 
 
 #### THP khugepaged

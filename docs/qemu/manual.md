@@ -249,7 +249,7 @@ lrwxrwxrwx    1 root     root             0 May 16 08:50 0000:01:01.0 -> ../../.
 
 给启动参数添加上
 ```sh
-vnc :0,password=on
+-vnc :0,password=on
 ```
 
 在 mac 上可以使用连接:
@@ -259,7 +259,7 @@ open vnc://192.168.23.126:5900
 
 注意：这里又一个小坑，那就是密码是必须的，然后在 QEMU 的 monitor 中设置密码:
 ```txt
-(qemu) set_password vnc 123456
+(qemu) set_password vnc 1
 ```
 
 ## 模拟 numa

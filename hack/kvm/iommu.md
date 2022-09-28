@@ -6,14 +6,12 @@
   - [ ] iommu 可以支持嵌套虚拟化吗 ?
 - [ ] virtio iommu 是做什么的，和 vIOMMU 是什么关系?
 - [ ] 能不能 hacking 一个 minimal 的用户态 nvme 驱动，能够读取一个 block 上来的那种
-
 - VFIO 中，是如何处理中断的
-
 - [ ] 在代码中找到 device page table 的内容，以及 IOMMU 防护恶意驱动
-
 - [ ] QEMU 中存在 3000 行处理 Intel IOMMU 的模拟
-
 - [ ] 据说 IOMMU 对于性能会存在影响。
+
+## Documentation/x86/iommu.rst
 
 ## https://events19.linuxfoundation.cn/wp-content/uploads/2017/11/Shared-Virtual-Addressing_Yisheng-Xie-_-Bob-Liu.pdf
 
@@ -69,9 +67,6 @@ io device 经过各级 pci hub 到达 root complex,  进入 iommu 翻译，然�
 > ![](./img/b.png)
 > interrupt remapping table
 > ![](./img/a.png)
-
-最后，其中的补充文章可以看看，了解一下业界的工作内容。比如:
-- http://web.cs.ucla.edu/~haoyc/pdf/hpca17.pdf
 
 ## https://kernelgo.org/intel_iommu.html
 - 解释了一下 intel iommu 启动的过程

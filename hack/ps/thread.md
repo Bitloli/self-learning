@@ -72,5 +72,3 @@ static __always_inline struct task_struct *get_current(void)
 
 #define current get_current()
 ```
-
-
