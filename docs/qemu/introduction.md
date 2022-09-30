@@ -10,7 +10,7 @@ x86 到 arm 的翻译，而 QEMU 可以支持多达 20 个架构的互相二进�
 ![](./img/qemu.svg)
 
 ## CPU
-图上只是画了两个技术，tcg 和 kvm，主要是因为这两个我比较熟悉 :-) ，但是实际上还支持其他的一些技术，例如 xen ，下文也主要分析这两种。
+图上只是画了两个技术，tcg 和 kvm，主要是因为这两个我比较熟悉 :-) ，但是实际上还支持其他的一些技术，例如 xen, hvf 和 hyperv ，下文也主要分析这两种。
 
 kvm 利用硬件加速，总体代码量很小，而且大多数代码都在 Linux 内核中。tcg (Tiny Code Generator) 是将一个架构，例如 x86，的指令翻译为 tcg IR (Intermediate Representation)，然后 tcg ir
 翻译为另一个架构的指令，例如 arm 上的二进制翻译技术。
@@ -101,11 +101,24 @@ Guest 访问了一个物理地址，该位置上是物理内存还是 memory map
 
 ## Architecture
 
+QEMU 组织代码的的基础设施:
+
 | 基础设备 | 描述                                                                         |
 |----------|------------------------------------------------------------------------------|
 | qdev     | QEMU 描述设备层次结构的模型                                                  |
 | qom      | QEMU 的面向对象模型                                                          |
 | qapi     | virsh 等工具和 QEMU 交互的接口，和 QEMU 的参数解析搅合在一起，目前我没怎么看 |
+
+## Why so Complex
+
+对比 Cloud Hypervisor ，我们发现 QEMU 要复杂的多，原因如下:
+- tcg
+- 多种网络设备的支持
+- 多种存储设备的支持
+- firmware 的完整支持
+  - smbios
+  - acpi
+  - seabios / uefi 启动
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

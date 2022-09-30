@@ -3,4 +3,5 @@
 - 21adec30f62e4e700e0e217da756723e189d7b29 : kvm
 - 52281c6d11ec68b802e8a264780df2c4b981e6bc
 - dbc4f48b5ab3e6d85f78aa4df6bd6ad561c3d152
-- c48c9c6b33d7bb2b4ffa14cd33934a37db0cd342
+- c48c9c6b33d7bb2b4ffa14cd33934a37db0cd342 : 各种内容，主要是 kraxel 提交的
+- dbc4f48b5ab3e6d85f78aa4df6bd6ad561c3d152 : dvpa 的修复

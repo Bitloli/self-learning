@@ -22,6 +22,68 @@ transparent hugepage 和 swap 是相关的
 2. reference 的问题
 3. split 和 merge
 
+## How to use hugepages with tmpfs
+尝试回答这个问题:
+https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
+
+```sh
+sudo mount -t ramfs -osize=6G,mode=1777,id=$ID,huge=always tmpfs G
+```
+
+```txt
+➜  g egrep 'trans|thp' /proc/vmstat
+nr_anon_transparent_hugepages 15
+thp_migration_success 0
+thp_migration_fail 0
+thp_migration_split 0
+thp_fault_alloc 19
+thp_fault_fallback 0
+thp_fault_fallback_charge 0
+thp_collapse_alloc 10
+thp_collapse_alloc_failed 0
+thp_file_alloc 0
+thp_file_fallback 0
+thp_file_fallback_charge 0
+thp_file_mapped 0
+thp_split_page 0
+thp_split_page_failed 0
+thp_deferred_split_page 9
+thp_split_pmd 44
+thp_scan_exceed_none_pte 0
+thp_scan_exceed_swap_pte 0
+thp_scan_exceed_share_pte 0
+thp_split_pud 0
+thp_zero_page_alloc 0
+thp_zero_page_alloc_failed 0
+thp_swpout 0
+thp_swpout_fallback 0
+➜  g grep AnonHugePages /proc/meminfo
+AnonHugePages:     32768 kB
+```
+- [ ] check /proc/vmstat
+- [ ] fallocate 在 G 上总是失败
+
+
+```txt
+sudo mount -t tmpfs -osize=6G,mode=1777,huge=always g
+```
+
+```txt
+#0  shmem_parse_one (fc=0xffff8881424ebc00, param=0xffffc90001247e50) at mm/shmem.c:3437
+#1  0xffffffff8139c8bb in vfs_parse_fs_param (param=0xffffc90001247e50, fc=0xffff8881424ebc00) at fs/fs_context.c:146
+#2  vfs_parse_fs_param (fc=0xffff8881424ebc00, param=0xffffc90001247e50) at fs/fs_context.c:127
+#3  0xffffffff8139c9a2 in vfs_parse_fs_string (fc=fc@entry=0xffff8881424ebc00, key=key@entry=0xffffffff8284d0eb "source", value=value@entry=0xffff888144681f58 "tmpfs", v_size=<optimized out>) at fs/fs_context.c:184
+#4  0xffffffff8138588b in do_new_mount (data=0xffff888147ac3000, name=0xffff888144681f58 "tmpfs", mnt_flags=32, sb_flags=<optimized out>, fstype=0x20 <fixed_percpu_data+32> <error: Cannot access memory at address 0x20>, path=0xffffc90001247ef8) at fs/namespace.c:3034
+#5  path_mount (dev_name=dev_name@entry=0xffff888144681f58 "tmpfs", path=path@entry=0xffffc90001247ef8, type_page=type_page@entry=0xffff888144681f18 "tmpfs", flags=<optimized out>, flags@entry=3236757504, data_page=data_page@entry=0xffff888147ac3000) at fs/namespace.c:3370
+#6  0xffffffff81386162 in do_mount (data_page=0xffff888147ac3000, flags=3236757504, type_page=0xffff888144681f18 "tmpfs", dir_name=0x563274087540 "/home/martins3/g", dev_name=0xffff888144681f58 "tmpfs") at fs/namespace.c:3383
+#7  __do_sys_mount (data=<optimized out>, flags=3236757504, type=<optimized out>, dir_name=0x563274087540 "/home/martins3/g", dev_name=<optimized out>) at fs/namespace.c:3591
+#8  __se_sys_mount (data=<optimized out>, flags=3236757504, type=<optimized out>, dir_name=94774695064896, dev_name=<optimized out>) at fs/namespace.c:3568
+#9  __x64_sys_mount (regs=<optimized out>) at fs/namespace.c:3568
+#10 0xffffffff81f4270b in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001247f58) at arch/x86/entry/common.c:50
+#11 do_syscall_64 (regs=0xffffc90001247f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#12 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
 ## [The transparent huge page shrinker](https://lwn.net/Articles/906511/)
 
 lwn 作者认为如果加上这个，那么 thp 就可以成为默认参数。

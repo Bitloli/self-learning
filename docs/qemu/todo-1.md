@@ -10,6 +10,7 @@
 - [ ] `g_autoptr` 是什么? 例如在 `fd_chr_add_watch` 中看到的。
 - [ ] docs/devel/qapi-code-gen.txt 和 qmp 如何工作的，是如何生成的。
 
+- [ ] 我们发现 guest 中的 ip 总是 10.0.2.5 ，但是，实际上，可以给 guest 一个 LAN 的 ip，似乎是可以让 guest dhcp 直接和物理环境中的网关的沟通的
 ## qmp
 
 - [ ] `qmp_block_commit` 的唯一调用者是如何被生成的。

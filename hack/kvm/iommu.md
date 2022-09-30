@@ -1,15 +1,28 @@
 # IOMMU
 
+- https://luohao-brian.gitbooks.io/interrupt-virtualization/content/vt-d-interrupt-remapping-fen-xi.html
+
 ## 问题 && TODO
 - [ ] drivers/iommu/hyperv-iommu.c 是个什么概念 ?
-- [ ] vCPU 支持
-  - [ ] iommu 可以支持嵌套虚拟化吗 ?
-- [ ] virtio iommu 是做什么的，和 vIOMMU 是什么关系?
 - [ ] 能不能 hacking 一个 minimal 的用户态 nvme 驱动，能够读取一个 block 上来的那种
 - VFIO 中，是如何处理中断的
 - [ ] 在代码中找到 device page table 的内容，以及 IOMMU 防护恶意驱动
 - [ ] QEMU 中存在 3000 行处理 Intel IOMMU 的模拟
+  - [ ] virtio iommu 是做什么的，和 vIOMMU 是什么关系?
 - [ ] 据说 IOMMU 对于性能会存在影响。
+
+
+1. https://wiki.qemu.org/Features/VT-d 分析了下为什么 guest 需要 vIOMMU
+2. [oracle 的 blog](https://blogs.oracle.com/linux/post/a-study-of-the-linux-kernel-pci-subsystem-with-qemu) 告诉了 iommu 打开的方法 : `-device intel-iommu` + `-machine q35`
+  - iommu 在 QEMU 中就是调试的作用
+  - 还分析过 pcie switch 的
+
+## https://compas.cs.stonybrook.edu/~nhonarmand/courses/sp17/cse506/slides/hw_io_virtualization.pdf
+- 直通的设备对于 pci 配置空间的读写，需要经过 Host 吗?
+  - 需要
+- 直通的设备对于 MMIO，需要经过 Host 吗?
+
+guest 可以编辑 MSI ，从而让 guest 发送任意的中断给 Host 机器。
 
 ## Documentation/x86/iommu.rst
 

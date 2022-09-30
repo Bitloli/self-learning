@@ -638,11 +638,7 @@ address-space: nvme
     0000000000000000-ffffffffffffffff (prio 0, i/o): alias bus master @system 0000000000000000-ffffffffffffffff
 ```
 
-pci_device_iommu_address_space : 如果一个 device 被用于直通，那么其进行 IO 的 address space 就不再是 address_space_memory 的，而是需要经过一层映射。
-
-1. https://wiki.qemu.org/Features/VT-d 分析了下为什么 guest 需要 vIOMMU
-2. [oracle 的 blog](https://blogs.oracle.com/linux/post/a-study-of-the-linux-kernel-pci-subsystem-with-qemu) 告诉了 iommu 打开的方法 : `-device intel-iommu` + `-machine q35`
-
+函数 pci_device_iommu_address_space : 如果一个 device 被用于直通，那么其进行 IO 的 address space 就不再是 address_space_memory 的，而是需要经过一层映射。
 ## PCI Device AddressSpace
 ```c
 struct PCIDevice {

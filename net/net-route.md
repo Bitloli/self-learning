@@ -523,6 +523,10 @@ ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 ## net/core/flow_dissector 是干啥的
 
+## 可以用 gns3 来理解一下网络的 topo
+
+- https://docs.gns3.com/docs/
+
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/
 [^6]: [An Introduction to Computer Networks](http://intronetworks.cs.luc.edu/current2/html/)

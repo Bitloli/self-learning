@@ -298,6 +298,16 @@ https://askubuntu.com/questions/164926/how-to-make-partitions-mount-at-startup
 
 ## cli tools
 
+### parted
+
+```sh
+parted /dev/sda -- mklabel msdos
+parted /dev/sda -- mkpart primary 1MiB 100%
+```
+
+parted /dev/nvme0n1 -- mklabel gpt
+parted /dev/nvme0n1 -- mkpart primary 1MiB 100%
+
 ### fdisk
 - 处理分区表的
 

@@ -2,13 +2,13 @@
 set -e
 
 use_nvme_as_root=false
-# replace_kernel=true
+replace_kernel=true
 
-hacking_memory="numa"
 hacking_memory="hotplug"
-hacking_memory="virtio-mem"
 hacking_memory="virtio-pmem"
 hacking_memory="none"
+hacking_memory="virtio-mem"
+hacking_memory="numa"
 
 use_ovmf=false
 
@@ -19,13 +19,16 @@ configuration=${abs_loc}/config.json
 kernel_dir=$(jq -r ".kernel_dir" <"$configuration")
 qemu_dir=$(jq -r ".qemu_dir" <"$configuration")
 workstation="$(jq -r ".workstation" <"$configuration")"
-if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
   kernel_dir=/home/maritns3/core/ubuntu-linux
   qemu_dir=/home/maritns3/core/kvmqemu
   workstation=/home/maritns3/core/hacking-vfio
 fi
-# bios 镜像的地址，可以不配置，将下面的 arg_seabios 定位为 "" 就是使用默认的
-# seabios=/home/maritns3/core/seabios/out/bios.bin
+
+if [[ $(uname -r) != "5.15.0-48-generic" ]]; then
+  # bios 镜像的地址，可以不配置
+  seabios=/home/martins3/core/seabios/out/bios.bin
+fi
 # ------------------------------------------------------------------------------
 qemu=${qemu_dir}/build/x86_64-softmmu/qemu-system-x86_64
 
@@ -38,7 +41,7 @@ distribution=centos7
 distribution=CentOS-Stream-8-x86_64 # good
 # distribution=openEuler-22.03-LTS-x86_64 # good
 
-if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
   distribution="alpine-standard-3.16.2-x86_64"
 fi
 
@@ -53,9 +56,9 @@ LAUNCH_GDB=false
 
 arg_hacking=""
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
-root=/dev/vdb2
+root=/dev/vdb3
 
-if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
   root=/dev/vdb3
 fi
 
@@ -66,15 +69,14 @@ fi
 
 arg_hugetlb="default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
 # 可选参数
-arg_mem_cpu="-m 12G -cpu host -smp 2"
+arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
 arg_mem_balloon="-device virtio-balloon"
 
 case $hacking_memory in
 "numa")
-  # @todo qemu-system-x86_64: -numa node,mem=6G,cpus=0-3,nodeid=0: Parameter -numa node,mem is not supported by this machine type
   memdev="-object memory-backend-ram,size=4G,id=m0 -object memory-backend-ram,size=4G,id=m1"
-  arg_mem_cpu="$memdev -cpu host -m 8G -smp cpus=4 -numa node,memdev=m0,cpus=0-1,nodeid=0 -numa node,memdev=m1,cpus=2-3,nodeid=1"
+  arg_mem_cpu="$memdev -cpu host -m 8G -smp cpus=4 -numa node,memdev=m0,cpus=2-3,nodeid=0 -numa node,memdev=m1,cpus=0-1,nodeid=1"
   ;;
 
 "virtio-mem")
@@ -134,12 +136,15 @@ arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hu
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"
+# @todo virtio-blk-pci vs virtio-blk-device ?
 arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_img2},format=raw,if=none,id=nvme2"
 arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=net1"
+# @todo 尝试一下这个
+# -netdev tap,id=nd0,ifname=tap0 -device e1000,netdev=nd0
 arg_iothread="-object iothread,id=io0"
 arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
 arg_monitor="-serial mon:stdio -display none"
-if [[ $(uname -r) == "5.15.0-48-generic" ]];then
+if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
   arg_monitor="-serial mon:stdio"
 fi
 arg_initrd="-initrd /home/martins3/initramfs-6.0.0-rc2-00159-g4c612826bec1-dirty.img"
