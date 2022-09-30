@@ -331,20 +331,8 @@ vmx_exit_handlers_fastpath : 通过 omit what 来 fast
         gpa_t gpa = vcpu->arch.walk_mmu->gva_to_gpa(vcpu, addr, access,
 2. kvm_vcpu_read_guest_page : copy_to_user 而已
 
-
-
-
-#### kvm_vcpu_ioctl_x86_set_mce
-向 guest 注入错误的方法
-
-kvm_queue_exception
-
-So, what is bank ?
-
 ## event injection
 在 ./nested.md 中的同名 section 中间
-
-
 
 #### kvm_vcpu_flush_tlb_all
 

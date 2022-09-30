@@ -42,6 +42,7 @@ https://github.com/jesseduffield/lazydocker : 非常有意思，可以对于所�
 
 https://stackoverflow.com/questions/19585028/i-lose-my-data-when-the-container-exits
 
+## ctop
 
 ## mistake and todo
 1. 创建docker默认使用 root，但是 root 非常的不清真，应该创建用户，之后再改用户的角度使用

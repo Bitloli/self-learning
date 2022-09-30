@@ -15,10 +15,6 @@
 打包方法参考此处:
 - https://gitee.com/openeuler/community
 
-- https://github.com/andikleen/mcelog
-  - https://centos.pkgs.org/7/centos-x86_64/mcelog-144-10.94d853b2ea81.el7.x86_64.rpm.html
-- https://github.com/opcm/pcm
-
 ## openEuler 提供的打包方法
 - https://gitee.com/openeuler/community/blob/master/zh/contributors/package-install.md#https://gitee.com/openeuler/community/blob/master/zh/contributors/prepare-environment.md
 

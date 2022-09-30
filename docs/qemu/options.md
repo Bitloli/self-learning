@@ -1,6 +1,6 @@
 # QEMU 的参数解析
 
-大家第一次使用 QEMU 的时候必然被 QEMU 的参数搞的很难受，这是我常用的一个[脚本](https://github.com/Martins3/Martins3.github.io/blob/0aaf533f7a048a621d6a45657fbd42aa34cda45a/hack/qemu/x64-e1000/alpine.sh#L126) 的参数
+大家第一次使用 QEMU 的时候必然被 QEMU 的参数搞的很难受，这是我常用的一个[脚本](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/alpine.sh) 的参数
 ```sh
 qemu-system-x86_64 \
 -drive file=/home/maritns3/core/vn/hack/qemu/x64-e1000/alpine.qcow2,format=qcow2 \
@@ -220,7 +220,21 @@ static void help(int exitcode)
 
 ## extra notes
 - QemuOptsList::merge_lists : `-smp 2,maxcpus=3` 也可以写为 `-smp 2 -smp maxcpus=3`
+- QEMU 参数复杂度而产生的项目 quickemu / utm
+- QEMU 作者的另一个的工具 ffmpeg 的参数也非常的复杂，以至于有这个网站 https://evanhahn.github.io/ffmpeg-buddy/
 
-<script src="https://utteranc.es/client.js" repo="Martins3/Martins3.github.io" issue-term="url" theme="github-light" crossorigin="anonymous" async> </script>
+<script src="https://giscus.app/client.js"
+        data-repo="martins3/martins3.github.io"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MjA0MDg="
+        data-category="Show and tell"
+        data-category-id="MDE4OkRpc2N1c3Npb25DYXRlZ29yeTMyMDMzNjY4"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-theme="light"
+        data-lang="zh-CN"
+        crossorigin="anonymous"
+        async>
+</script>
 
 本站所有文章转发 **CSDN** 将按侵权追究法律责任，其它情况随意。

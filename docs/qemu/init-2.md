@@ -2,17 +2,17 @@
 - [ ] ../qemu/init.md 一并整理过来
 
 - Machine 层次相关
-	- [x] hw/i386/x86.c
-		- `x86_machine_info` : 注册 `x86_machine_initfn` 和 `86_machine_class_init`
-		- `x86_cpu_new`
-	- [x] /hw/i386/pc.c
-		- 注册了 TypeInfo, 注册 `pc_machine_info` 和 `pc_machine_class_init`
-	- [x] `hw/i386/pc_piix.c`
-		- `pc_init1`
+    - [x] hw/i386/x86.c
+        - `x86_machine_info` : 注册 `x86_machine_initfn` 和 `86_machine_class_init`
+        - `x86_cpu_new`
+    - [x] /hw/i386/pc.c
+        - 注册了 TypeInfo, 注册 `pc_machine_info` 和 `pc_machine_class_init`
+    - [x] `hw/i386/pc_piix.c`
+        - `pc_init1`
 - CPU 层次相关
   - [x] hw/core/cpu.c
-	- [x] target/i386/cpu.c
-			- `x86_cpu_realizefn`
+    - [x] target/i386/cpu.c
+            - `x86_cpu_realizefn`
 
 ## 初始化 QEMU 大约需要处理的事情
 - [ ] `rtc_set_cpus_count` 中和 seabios 的关系需要完全走通
@@ -170,10 +170,10 @@ type_init(pc_machine_init_v4_2);
 ```
 
 3. machine 的继承关系
-	- pc_piix.c : 具体的主板号
-	- pc.c : pc 类型
-	- x86.c : x86 的机器
-	- machine.c : 根类型
+    - pc_piix.c : 具体的主板号
+    - pc.c : pc 类型
+    - x86.c : x86 的机器
+    - machine.c : 根类型
 
 ```c
 static const TypeInfo pc_machine_info = {
@@ -290,8 +290,8 @@ X86CPU *cpu = X86_CPU(ms->possible_cpus->cpus[0].cpu);
 为了获取 X86MachineState::apic_id_limit
 
 - x86_cpu_apic_id_from_index
-	- init_topo_info
-	- x86_apicid_from_cpu_idx
+    - init_topo_info
+    - x86_apicid_from_cpu_idx
 
 #### CPUClass
 几乎所有的成员都是和 vmstate 相关的，所以实际上，
