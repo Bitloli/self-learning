@@ -267,3 +267,18 @@ static const struct dma_map_ops iommu_dma_ops = {
 #44 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
 #45 0x0000000000000000 in ?? ()
 ```
+
+# iommu
+
+- [ ] iommu 是可以实现每一个 device 都存在各自的映射，而不是一个虚拟机使用一个映射的。
+
+- 为什么 IOMMU 需要搞出来 iommu group，需要更加详细的解释。
+
+## [ ] vIOMMU 和 virtio iommu 是一个东西吗?
+
+## [ ] IOMMU interrupt remapping 是如何实现的?
+参考 intel vt-d 标准吧！
+
+# vIOMMU
+
+- QEMU 的解释 : https://wiki.qemu.org/Features/VT-d

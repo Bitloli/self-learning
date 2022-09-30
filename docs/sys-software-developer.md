@@ -39,7 +39,6 @@
   - virtio vhost OVS
   - folio
 - DPDK
-- OVS
 - Rust
   - CloudHppervisor
 - 找一些 Data Center 相关的文章看看。

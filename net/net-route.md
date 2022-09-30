@@ -213,7 +213,6 @@ sudo dhclient en0
 - https://jvns.ca/blog/2022/09/06/send-network-packets-python-tun-tap/
 
 ## [ ] bridge
-[bridge 和 ovs 的对比](https://www.fiber-optic-transceiver-module.com/ovs-vs-linux-bridge-who-is-the-winner.html)
 
 https://github.com/liexusong/linux-source-code-analyze/blob/master/net_bridge.md
 
@@ -325,7 +324,6 @@ emmmmmmm, 只是 DUP 上的封装
 - [liexusong](https://github.com/liexusong/linux-source-code-analyze)
 - [sdn book](https://tonydeng.github.io/sdn-handbook/)
   - [ ] vpn
-  - [ ] ovs
   - [ ] 以及后面的 sdn 的所有内容
 
 

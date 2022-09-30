@@ -6,7 +6,6 @@
 - [ ] https://liujunming.top/2022/08/20/Notes-about-KVM-steal-time/ : kvm steal ，一直的问题，顺便整理 timer
 
 ## 项目
-- [ ] https://github.com/openvswitch/ovs : open vSwitch 和 virtio 是什么关系？
 - [ ] https://github.com/intel/haxm : 对于 Windows 和 Mac 存在良好的支持，但是 Linux 上根本无法编译的，感觉类似于 KVM 的东西
   - https://www.qemu.org/2017/11/22/haxm-usage-windows/ : 在 qemu 上利用这个东西实现加速
 

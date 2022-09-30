@@ -56,3 +56,8 @@
 上的负载均衡。在实际应用中，系统还会将 RSS 限制在有限几个处理器核心
 上，避免网络中断给整体系统计算带来的影响。
 - 巨帧（Jumbo Frames
+
+# rdma
+
+- https://github.com/linux-rdma/rdma-core
+  - https://www.youtube.com/watch?v=QAIAoNheX-8 : RDMA 的想法应该很简单吧!
