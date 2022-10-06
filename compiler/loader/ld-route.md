@@ -27,7 +27,7 @@ Simple Linker Script Commands
 # 资源
 https://github.com/bravegnu/gnu-eprog
 
-https://github.com/davepfeiffer/embedded-makefile-flow 
+https://github.com/davepfeiffer/embedded-makefile-flow
 
 https://twilco.github.io/riscv-from-scratch/2019/03/10/riscv-from-scratch-1.html riscv 顺便找到的东西
 
@@ -36,5 +36,8 @@ https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/4/html/Us
 https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_chapter/ld_3.html 官方的文档 其实很短的
 ## 问题
 1. https://0xax.github.io/categories/assembler/
-    - Call C from assembly 
+    - Call C from assembly
         - ld   -dynamic-linker /lib64/ld-linux-x86-64.so.2 -lc casm.o c.o -o casm
+
+## PIC 和 PIE 的问题
+- https://stackoverflow.com/questions/36968287/why-doesnt-gcc-reference-the-plt-for-function-calls

@@ -174,6 +174,11 @@ https://www.zhihu.com/question/26655435/answer/1825719171
 ## TODO
 - 测试 RISC-V 的用户态中断，硬件线程
 
+## 其他的思考
+- intel 可以设置每一个核使用的 cache 多少
+  - https://intel.github.io/cri-resource-manager/stable/docs/policy/rdt.html
+
+
 ## 参考资料
 
 [^1]: [riscv non isa](https://github.com/riscv-non-isa)

@@ -163,6 +163,8 @@ https://www.cyberithub.com/list-network-interfaces/
 - [flow control vs congestion control](https://stackoverflow.com/questions/16473038/whats-the-difference-between-flow-control-and-congestion-control-in-tcp)
   - Congestion control is a global issue – involves every router and host within the subnet
   - Flow control, that is scoped from point to point, involves just sender and receiver.
+- [What's ndisc_cache?](https://unix.stackexchange.com/questions/228469/whats-ndisc-cache)
+  - arp_cache 给 ipv4 用的，ndisc_cache 给 ipv6 ，对应 ndp 协议
 
 ## packet
 - [ ] wireshark 使用 `AF_PACKET` ，那么 bpf filter 发生在什么位置啊?
@@ -526,6 +528,8 @@ ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 - https://docs.gns3.com/docs/
 
 ## rtnl_link_ops 是做什么的 ?
+
+
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析
 [^4]: http://yuba.stanford.edu/rcp/

@@ -122,6 +122,7 @@ https://news.ycombinator.com/item?id=24170201 : 感觉完成度还可以的 浏�
   - 最后一部分关于 gc，应该是比较简明的了
 - https://tip.golang.org/doc/gc-guide : go 语言 GC 介绍
 - [A simple garbage collector for C](https://news.ycombinator.com/item?id=21841368)
+- https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/unified-theory-gc/
 
 
 ## deep learning

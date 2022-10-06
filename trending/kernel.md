@@ -36,3 +36,4 @@
 - 3800a713b6070d4f03fb43613a7b7d536a99b2b7 : memory hotfix
 - 06bbaa6dc53cb72040db952053432541acb9adc7
 - 195624d9c26b64c6856863da30ec578a790feec4 : tun , 顺便补充到 qemu manual 中如何使用网络吧
+- 70575e77839f4c5337ce2653b39b86bb365a870e : vhost

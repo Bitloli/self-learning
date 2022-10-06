@@ -114,8 +114,6 @@ https://github.com/huihut/interview#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1
 
 ## [RISC-V 体系结构介绍](https://twilco.github.io/riscv-from-scratch/2019/03/10/riscv-from-scratch-1.html)
 
-## [互联网的黑暗森林法则](https://onezero.medium.com/the-dark-forest-theory-of-the-internet-7dc3e68a7cb1)
-
 ## [公司创始人推荐的书籍](https://postmake.io/books)
 1. The learn Startup 推荐
 2. Zero to One 不推荐看书，但是推荐https://zhuanlan.zhihu.com/p/27224469 提供的课程
