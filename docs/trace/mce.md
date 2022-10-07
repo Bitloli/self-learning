@@ -2,6 +2,9 @@
 
 - https://unix.stackexchange.com/questions/451655/running-mcelog-on-an-amd-processor
 
+ f9781bb18ed828e7b83b7bac4a4ad7cd497ee7d7
+
+
 ## 能不能注册 ecc 的错误给 guest
 
 ecc 是 mce 的一种才对

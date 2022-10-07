@@ -6,3 +6,5 @@
 - c48c9c6b33d7bb2b4ffa14cd33934a37db0cd342 : 各种内容，主要是 kraxel 提交的
 - dbc4f48b5ab3e6d85f78aa4df6bd6ad561c3d152 : dvpa 的修复
 - 85b6d2b5fc25c9c0d10d493b3728183ab8f8e68a : vfio
+- efbf38d73e5dcc4d5f8b98c6e7a12be1f3b91745 : block
+- dbc4f48b5ab3e6d85f78aa4df6bd6ad561c3d152

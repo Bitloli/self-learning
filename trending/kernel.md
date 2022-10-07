@@ -37,3 +37,6 @@
 - 06bbaa6dc53cb72040db952053432541acb9adc7
 - 195624d9c26b64c6856863da30ec578a790feec4 : tun , 顺便补充到 qemu manual 中如何使用网络吧
 - 70575e77839f4c5337ce2653b39b86bb365a870e : vhost
+- /home/martins3/core/linux/arch/x86/kernel/cpu/microcode/ : 和 firmware 相关的 microcode
+  - https://www.intel.com/content/www/us/en/developer/articles/technical/software-security-guidance/secure-coding/loading-microcode-os.html
+- 890f242084c9eac18ef87031d95e0bdbaac01ed4 : rcu

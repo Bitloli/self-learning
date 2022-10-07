@@ -86,6 +86,7 @@
 * [用户态](#用户态)
 * [https://www.zhihu.com/question/21536660](#httpswwwzhihucomquestion21536660)
 * [ext4_fiemap && do_vfs_ioctl 是做啥的](#ext4_fiemap-do_vfs_ioctl-是做啥的)
+* [erofs](#erofs)
 
 <!-- vim-markdown-toc -->
 
@@ -2080,6 +2081,9 @@ https://www.kernel.org/doc/html/latest/filesystems/caching/index.html
 ## https://www.zhihu.com/question/21536660
 
 ## ext4_fiemap && do_vfs_ioctl 是做啥的
+
+## erofs
+fs/erofs : 什么场景下需要只读文件系统。
 
 [^1]: [kernel doc : Overview of the Linux Virtual File System](https://www.kernel.org/doc/html/latest/filesystems/vfs.html)
 [^2]: [github : aio](https://github.com/littledan/linux-aio)
