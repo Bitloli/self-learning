@@ -101,6 +101,9 @@ IOMMU 可以实现 irq remapping 和 dma remapping 进而:
 
 具体可以参考 Intel 的 VT-d
 
+### 错误检测
+例如 ECC，需要考虑实现 edac
+
 ### SOC
 - 主要要求实现 chipset
 
@@ -177,7 +180,6 @@ https://www.zhihu.com/question/26655435/answer/1825719171
 ## 其他的思考
 - intel 可以设置每一个核使用的 cache 多少
   - https://intel.github.io/cri-resource-manager/stable/docs/policy/rdt.html
-
 
 ## 参考资料
 

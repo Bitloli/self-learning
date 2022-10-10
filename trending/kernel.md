@@ -40,3 +40,5 @@
 - /home/martins3/core/linux/arch/x86/kernel/cpu/microcode/ : 和 firmware 相关的 microcode
   - https://www.intel.com/content/www/us/en/developer/articles/technical/software-security-guidance/secure-coding/loading-microcode-os.html
 - 890f242084c9eac18ef87031d95e0bdbaac01ed4 : rcu
+- driver/dma 下的代码到底在处理什么 ?
+- 513389809e138ae903b6ef43c1d5d2ffaf4dca17 : 开始怀疑，现在这种方法看内核真的有用吗 ?

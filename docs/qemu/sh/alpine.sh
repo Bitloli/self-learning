@@ -67,6 +67,8 @@ if [[ $use_nvme_as_root = true ]]; then
   root=/dev/nvme1n1
 fi
 
+# 在 guset 中使用 sudo dmidecode -t bios 查看
+arg_smbios='-smbios type=0,vendor="martins3",version=12,date="2022-2-2", -smbios type=1,manufacturer="Martins3 Inc",product="Hacking Alpine",version=12,serial="1234-4567-abbbcbbcccccccccfasdfasdfakdjalfjdalfjadklfjakdf"'
 arg_hugetlb="default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
@@ -264,6 +266,6 @@ fi
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
   ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
-  ${arg_qmp} ${arg_vfio}"
+  ${arg_qmp} ${arg_vfio} ${arg_smbios}"
 echo "$cmd"
 eval "$cmd"

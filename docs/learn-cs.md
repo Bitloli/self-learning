@@ -4,10 +4,8 @@
 学习计算机的人也从小学生到博士，从在校生到培训班等各色各样，现在我的经验也只是一家之言，如果不同意，欢迎来讨论。
 
 ## 不要迷信大学
-我个人认为大陆的大学连技校的工作都没有做好, 曾经我以为是上的大学比较差，后来看池先生，发现其实国内大学
+我个人认为大陆的大学连技校的工作都没有做好, 曾经我以为是上的大学比较差，后来看池先生的吐槽，才发现其实国内大学
 都是如此，可以参考国外的大学教程，例如 [Standford 教程](https://docs.google.com/spreadsheets/d/1zfw8nPvJeewxcFUBpKUKmAVE8PjnJI7H0CKimdQXxr0/htmlview)
-
-一个老哥对于国外课程做一个几个评价集合，方便大家选择[合适的课程自学](https://github.com/conanhujinming/comments-for-awesome-courses), 非常不错
 
 以华中科技大学的计算机学院为例，我可以明显的感觉出来很多问题:
 - 课程安排比例不合适，最为重要的操作系统，计算机网络，数据结构算法和组成原理几乎都是一个学期上完的，其他时间都是在一些莫名其妙的课程上浪费时间。
@@ -23,7 +21,7 @@
 黄玄在他的[中国高等教育的系统性失败](https://huangxuan.me/2021/01/19/the-systematic-failure-of-higher-education-in-china/) 中阐述的一些想法
 也非常不错。
 
-不听老师的课，不影响你靠高分，也不影响你找到好工作，更不掌握好技术，你已经是一个大人了，你得靠自己，大学教育会毁了你的。
+不听老师的课，不影响你考高分，也不影响你找到好工作，更不掌握好技术，你已经是一个大人了，你得靠自己，大学教育会毁了你的。
 
 ## 远离‘酷炫’的东西
 不要着急做一些可以展示起来很酷炫的东西，比如前端，比如使用一个游戏引擎做一个游戏。
@@ -80,15 +78,14 @@
 - 将自己的操作系统换成 Linux，不要过多的使用 Windows，越早越好
 - 学好 [mit 的这个课程](https://missing-semester-cn.github.io/)
 
-## 附录
-
-https://wangzhe3224.github.io/2021/10/20/roadpath/#more
-
-似乎这个才是真正落到实处的吧:
+## 推荐
 https://github.com/PKUFlyingPig/cs-self-learning
 
+目前找到的最好的自学资料，没有之一。
 
-关于如何自学，已经有非常多的参考资料，我觉得写的都非常好：
+## 其他资料
+- https://github.com/conanhujinming/comments-for-awesome-courses
+- https://wangzhe3224.github.io/2021/10/20/roadpath/#more
 - https://github.com/ossu/computer-science
 - https://github.com/keithnull/TeachYourselfCS-CN
 - https://teachyourselfcs.com
@@ -102,7 +99,6 @@ https://github.com/PKUFlyingPig/cs-self-learning
 - https://github.com/Developer-Y/cs-video-courses#systems-programming
 - https://github.com/niudai/How-to-be-a-good-programmer : 经典电子书
 - [学习编程的 12 个游戏](https://medium.mybridge.co/12-free-resources-learn-to-code-while-playing-games-f7333043de11#.xi83hlivu)
-
 - https://github.com/tuvtran/project-based-learning :star:
 - https://github.com/danistefanovic/build-your-own-x :star:
 - https://github.com/charlax/professional-programming
