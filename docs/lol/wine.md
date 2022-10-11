@@ -9,6 +9,8 @@
 <!-- 一些跨平台的设施: -->
 <!-- https://github.com/HaxeFoundation/haxe -->
 <!-- https://github.com/jart/cosmopolitan -->
+<!-- https://news.ycombinator.com/item?id=33157199 -->
+<!-- https://news.ycombinator.com/item?id=33156727 -->
 
 [^1]: https://www.jianshu.com/p/d743a3405eef
 [^2]: https://snapcraft.io/leagueoflegends

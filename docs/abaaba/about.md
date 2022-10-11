@@ -1,6 +1,12 @@
 # 关于
 
-### 喜欢
+## 经历
+- 2015-2019 : 华中科技大学
+- 2018-2022 : 龙芯中科
+- 2018-2022 : 中科院计算技术研究所
+- 2022-现在 : SmartX
+
+## 喜欢
 - [配 vim](https://martins3.github.io/My-Linux-Config/nvim.html)
 - 阅读（和业务无关的）源代码
 - 英雄联盟 / 原神
@@ -10,18 +16,19 @@
 - 虚拟化
   - Qemu
 - Linux Kernel
-- Twitter / Hacker News / Reddit
+- twitter / Hacker News / Reddit
 - StackOverflow
 
-### 不喜欢
+## 不喜欢
 - 写报告
 - Mac / iPhone
 - 微信
+- 企业微信
 
-### 佩服
+## 佩服
 - [Fabrice Bellard](https://bellard.org/)
 
-### 影视
+## 影视
 - [绿色星球](https://www.bilibili.com/bangumi/play/ep451882)
 
 <script src="https://giscus.app/client.js"

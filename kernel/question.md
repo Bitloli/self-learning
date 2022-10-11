@@ -730,10 +730,6 @@ set_current_state(TASK_INTERRUPTIBLE)
 
 #### (time) 能不能其他的CPU 时钟停止，只有有事情干的才会时钟 tick ?
 
-#### (misc) watchdog 是什么 ? 感觉到处都可以看到 watchdog 函数
-
-#### ()
-
 #### () 我想知道uboot bootloader PMON bios 都是什么J8 东西。
 https://github.com/u-boot/u-boot
 
