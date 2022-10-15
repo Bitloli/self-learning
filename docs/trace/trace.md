@@ -292,7 +292,6 @@ dpdk 测试工具
 
 ## depmod -a / -A
 
-
 ## iostat
 
 ## pidstat
@@ -301,6 +300,10 @@ dpdk 测试工具
 
 - https://wiki.ubuntu.com/Kernel/Reference/stress-ng
 - https://gitee.com/openeuler/release-management/pulls/417/
+
+## iftop
+
+## tiptop
 
 [^4]: [An introduction to KProbes](https://lwn.net/Articles/132196/)
 [^5]: [Using user-space tracepoints with BPF](https://lwn.net/Articles/753601/)

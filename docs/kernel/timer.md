@@ -126,7 +126,11 @@ secondary_startup_64_no_verify+213
 
 ## hrtimer
 
+- [ ] https://stackoverflow.com/questions/35800850/why-does-my-hrtimer-callback-return-too-early-after-forwarding-it
+
 ![](./img/hrtimer_run_queues.svg)
+
+> 将这个照片移除吧，直接补充一个 backtrace
 
 - `__hrtimer_run_queues` 一共有三个调用位置:
   - [ ] softirq : 这个是为了替代原来的低精度的 timer 所以设计的吗，为了处理这个东西，搞了不少内容。
@@ -136,6 +140,64 @@ secondary_startup_64_no_verify+213
 - `hrtimer_reprogram` : 重新设置计时器的位置
 
 - 因为内核是可以支持 hrtimer 来模拟的
+
+### soft hard mode
+- https://lwn.net/Articles/461592/
+
+```c
+/*
+ * Mode arguments of xxx_hrtimer functions:
+ *
+ * HRTIMER_MODE_ABS		- Time value is absolute
+ * HRTIMER_MODE_REL		- Time value is relative to now
+ * HRTIMER_MODE_PINNED		- Timer is bound to CPU (is only considered
+ *				  when starting the timer)
+ * HRTIMER_MODE_SOFT		- Timer callback function will be executed in
+ *				  soft irq context
+ * HRTIMER_MODE_HARD		- Timer callback function will be executed in
+ *				  hard irq context even on PREEMPT_RT.
+ */
+enum hrtimer_mode {
+	HRTIMER_MODE_ABS	= 0x00,
+	HRTIMER_MODE_REL	= 0x01,
+	HRTIMER_MODE_PINNED	= 0x02,
+	HRTIMER_MODE_SOFT	= 0x04,
+	HRTIMER_MODE_HARD	= 0x08,
+
+	HRTIMER_MODE_ABS_PINNED = HRTIMER_MODE_ABS | HRTIMER_MODE_PINNED,
+	HRTIMER_MODE_REL_PINNED = HRTIMER_MODE_REL | HRTIMER_MODE_PINNED,
+
+	HRTIMER_MODE_ABS_SOFT	= HRTIMER_MODE_ABS | HRTIMER_MODE_SOFT,
+	HRTIMER_MODE_REL_SOFT	= HRTIMER_MODE_REL | HRTIMER_MODE_SOFT,
+
+	HRTIMER_MODE_ABS_PINNED_SOFT = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_SOFT,
+	HRTIMER_MODE_REL_PINNED_SOFT = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_SOFT,
+
+	HRTIMER_MODE_ABS_HARD	= HRTIMER_MODE_ABS | HRTIMER_MODE_HARD,
+	HRTIMER_MODE_REL_HARD	= HRTIMER_MODE_REL | HRTIMER_MODE_HARD,
+
+	HRTIMER_MODE_ABS_PINNED_HARD = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_HARD,
+	HRTIMER_MODE_REL_PINNED_HARD = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_HARD,
+};
+```
+- 这些模式都是什么意思 ?
+
+```c
+enum  hrtimer_base_type {
+	HRTIMER_BASE_MONOTONIC,
+	HRTIMER_BASE_REALTIME,
+	HRTIMER_BASE_BOOTTIME,
+	HRTIMER_BASE_TAI,
+	HRTIMER_BASE_MONOTONIC_SOFT,
+	HRTIMER_BASE_REALTIME_SOFT,
+	HRTIMER_BASE_BOOTTIME_SOFT,
+	HRTIMER_BASE_TAI_SOFT,
+	HRTIMER_MAX_CLOCK_BASES,
+};
+```
+- 这些 base type 又是什么意思
+## hrtimer migratin
+https://lwn.net/Articles/574379/
 
 ## timer.c
 低精度时钟，主要提供接口:
@@ -329,19 +391,6 @@ secondary_startup_64_no_verify+213
 - [ ] what does kernel used to notified hrtimer that it's expired ?
 
 kernel doc is invaluable[^4].
-
-## hrtimer
-- [ ] https://stackoverflow.com/questions/35800850/why-does-my-hrtimer-callback-return-too-early-after-forwarding-it
-
-```c
-struct clock_event_device {
-    int         (*set_next_event)(unsigned long evt, struct clock_event_device *);
-
-void hrtimer_interrupt(struct clock_event_device *dev)
-```
-My nightmare is wiped out from my mind now.
-With clock_event_device::set_next_event, we program the hardware clock to fire a interrupt at a specified timepoint,
-and the hrtimer_interrupt will be called.
 
 ## itimer.c
 需要 task_struct::hrtimer 的支持，然后调用通用的 hrtimer API:
@@ -616,6 +665,47 @@ http://www.wowotech.net/timer_subsystem/tick-broadcast-framework.html
 
 ## 问题
 - do_idle 中为什么调用 tick_check_broadcast_expired 来决定是否进入 cpu_idle_poll 的状态
+
+### [ ] timer_list 是通过 hrtimer 触发的吗
+
+似乎并不是，当
+```txt
+@[
+    try_to_wake_up+1
+    hrtimer_wakeup+30
+    __hrtimer_run_queues+298
+    hrtimer_interrupt+262
+    __sysvec_apic_timer_interrupt+127
+    sysvec_apic_timer_interrupt+157
+    asm_sysvec_apic_timer_interrupt+18
+    native_safe_halt+11
+    default_idle+10
+    default_idle_call+50
+    do_idle+478
+    cpu_startup_entry+25
+    start_secondary+278
+    secondary_startup_64_no_verify+213
+]: 750
+
+
+@[
+    tcp_keepalive_timer+1
+    call_timer_fn+39
+    __run_timers.part.0+462
+    run_timer_softirq+49
+    __softirqentry_text_start+238
+    __irq_exit_rcu+181
+    sysvec_apic_timer_interrupt+162
+    asm_sysvec_apic_timer_interrupt+18
+    native_safe_halt+11
+    default_idle+10
+    default_idle_call+50
+    do_idle+478
+    cpu_startup_entry+25
+    start_secondary+278
+    secondary_startup_64_no_verify+213
+]: 1
+```
 
 
 [^1]: https://www.kernel.org/doc/html/latest/virt/kvm/timekeeping.html

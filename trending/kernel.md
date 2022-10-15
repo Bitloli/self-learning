@@ -43,3 +43,12 @@
 - driver/dma 下的代码到底在处理什么 ?
 - 513389809e138ae903b6ef43c1d5d2ffaf4dca17 : 开始怀疑，现在这种方法看内核真的有用吗 ?
 - ef688f8b8cd3eb20547a6543f03e3d8952b87769 : kvm
+- 8aeab132e05fefc3a1a5277878629586bd7a3547 : virtio vDPA
+- 6ad931a232e71620c6dbb8d573ccef51f84f2566 : iommu
+- adf4bfc4a9ab86be0b72fa9cadc9e7ab6ad15dfe : cgroup
+- 52abb27abfff8c5ddf44eef4d759f3d1e9f166c5 : slab
+- 30c999937f69abf935b0228b8411713737377d9e : scheduer
+- d3cf40513330752238ae585fdb0e46ec6baa588b : vfio
+- fac35ba763ed07ba93154c95ffc0c4a55023707f : hugetlb
+- f311d498be8f1aa49d5cfca0b18d6db4f77845b7 : kvm
+- init_osnoise_tracer : trace 实际上比我想想的更加有趣

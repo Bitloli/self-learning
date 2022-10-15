@@ -1600,3 +1600,18 @@ starting from the bottom to the top.
 
 Algorithm 1:
 > scheduling group && sched domain ?
+
+## IRQ_TIME_ACCOUNTING
+
+```c
+config IRQ_TIME_ACCOUNTING
+	bool "Fine granularity task level IRQ time accounting"
+	depends on HAVE_IRQ_TIME_ACCOUNTING && !VIRT_CPU_ACCOUNTING_NATIVE
+	help
+	  Select this option to enable fine granularity task irq time
+	  accounting. This is done by reading a timestamp on each
+	  transitions between softirq and hardirq state, so there can be a
+	  small performance impact.
+
+	  If in doubt, say N here.
+```

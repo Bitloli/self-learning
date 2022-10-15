@@ -24,3 +24,18 @@ static __init int ftrace_init_dyn_tracefs(struct dentry *d_tracer)
 	return 0;
 }
 ```
+
+
+## ftrace 对于编译的时候有要求
+```txt
+crash> dis ktime_get
+0xffffffff82105a30 <ktime_get>: nopl   0x0(%rax,%rax,1) [FTRACE NOP]
+0xffffffff82105a35 <ktime_get+5>:       push   %rbp
+0xffffffff82105a36 <ktime_get+6>:       mov    0xc54e68(%rip),%eax        # 0xffffffff82d5a8a4
+0xffffffff82105a3c <ktime_get+12>:      mov    %rsp,%rbp
+0xffffffff82105a3f <ktime_get+15>:      push   %r14
+0xffffffff82105a41 <ktime_get+17>:      test   %eax,%eax
+0xffffffff82105a43 <ktime_get+19>:      push   %r13
+0xffffffff82105a45 <ktime_get+21>:      push   %r12
+0xffffffff82105a47 <ktime_get+23>:      push   %rbx
+```
