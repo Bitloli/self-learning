@@ -529,6 +529,13 @@ ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 ## rtnl_link_ops 是做什么的 ?
 
+## mptcp
+> MultiPath TCP (MPTCP) is an effort towards enabling the simultaneous use of several IP-addresses/interfaces by a modification of TCP that presents a regular TCP interface to applications, while in fact spreading data across several subflows.
+
+5.4 合并进入的:
+
+- https://www.multipath-tcp.org/
+
 
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析

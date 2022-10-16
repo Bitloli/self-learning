@@ -47,8 +47,6 @@ fi
 
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2
-ext4_img1=${workstation}/img1.ext4
-ext4_img2=${workstation}/img2.ext4
 
 debug_qemu=
 debug_kernel=
@@ -137,9 +135,11 @@ arg_cgroupv2="systemd.unified_cgroup_hierarchy=1"
 arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb $arg_cgroupv2"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
-arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${ext4_img1},format=raw,if=none,id=nvme1"
+arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${workstation}/img1,format=raw,if=none,id=nvme1"
 # @todo virtio-blk-pci vs virtio-blk-device ?
-arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${ext4_img2},format=raw,if=none,id=nvme2"
+arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${workstation}/img2,format=raw,if=none,id=nvme2"
+arg_scsi="-device virtio-scsi-pci,id=scsi0,bus=pci.0,addr=0xa -device scsi-hd,bus=scsi0.0,channel=0,scsi-id=0,lun=0,drive=scsi-drive -drive file=${workstation}/img3,format=raw,id=scsi-drive,if=none"
+
 arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=net1"
 # @todo 尝试一下这个
 # -netdev tap,id=nd0,ifname=tap0 -device e1000,netdev=nd0
@@ -209,21 +209,17 @@ if [ ! -f "$iso" ]; then
   exit 0
 fi
 
-# 创建额外的两个 disk 用于测试 nvme
+# 创建额外的两个 disk 用于测试 nvme 和 scsi
 # mount -o loop /path/to/data /mnt
-if [ ! -f "$ext4_img1" ]; then
-  sure "create ${ext4_img1}"
-  dd if=/dev/null of="${ext4_img1}" bs=1M seek=100
-  mkfs.ext4 -F "${ext4_img1}"
-  exit 0
-fi
-
-if [ ! -f "$ext4_img2" ]; then
-  sure "create ${ext4_img1}"
-  dd if=/dev/null of="${ext4_img2}" bs=1M seek=100
-  mkfs.ext4 -F "${ext4_img2}"
-  exit 0
-fi
+for ((i = 0; i < 3; i++)); do
+  ext4_img="${workstation}/img$((i + 1))"
+  if [ ! -f "$ext4_img" ]; then
+    sure "create ${ext4_img}"
+    dd if=/dev/null of="${ext4_img}" bs=1M seek=100
+    mkfs.ext4 -F "${ext4_img}"
+    exit 0
+  fi
+done
 
 if [ ! -f "${disk_img}" ]; then
   sure "use ${iso} install ${disk_img}"
@@ -233,8 +229,8 @@ if [ ! -f "${disk_img}" ]; then
   arg_monitor=""
   qemu-system-x86_64 \
     -boot d \
-    -cdrom "$iso" \
-    -cpu host \
+    -cdrom "$iso"
+  -cpu host \
     -hda "${disk_img}" \
     -enable-kvm \
     -m 2G \
@@ -266,6 +262,6 @@ fi
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
   ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
   ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
-  ${arg_qmp} ${arg_vfio} ${arg_smbios}"
+  ${arg_qmp} ${arg_vfio} ${arg_smbios} ${arg_scsi}"
 echo "$cmd"
 eval "$cmd"

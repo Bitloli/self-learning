@@ -37,11 +37,19 @@
 - recap
 - glamorous
 - relegating
+- contrail
+- stagnated
+- dodgy
+- pretentious
+- consternation
+- supersede
+- contextualisation
 
 
 ## 超过的
 - cuckoo
 - judiciously
+
 
 ## 重新忘记的
 - insidious
