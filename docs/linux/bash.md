@@ -2,44 +2,40 @@
 
 <!-- vim-markdown-toc GitLab -->
 
-  * [问题](#问题)
-  * [Bash 的基本语法](#bash-的基本语法)
-  * [基本符号](#基本符号)
-  * [扩展模式](#扩展模式)
-  * [here doc 和 here string](#here-doc-和-here-string)
-  * [变量](#变量)
-  * [字符串](#字符串)
-  * [数组](#数组)
-  * [有用的变量](#有用的变量)
-  * [eval 和 exec 的区别](#eval-和-exec-的区别)
-  * [算术运算](#算术运算)
-  * [重定向](#重定向)
-  * [常用工具](#常用工具)
-    * [xargs](#xargs)
-    * [awk](#awk)
-    * [[ ] pushd 和 popd](#-pushd-和-popd)
-    * [[ ] printf](#-printf)
-    * [[ ] sed](#-sed)
-    * [[ ] cut](#-cut)
-    * [[ ] bash 中容易犯的错误](#-bash-中容易犯的错误)
-    * [[ ] https://effective-shell.com/part-2-core-skills/job-control/](#-httpseffective-shellcompart-2-core-skillsjob-control)
-  * [资源和工具](#资源和工具)
-* [一些链接](#一些链接)
-  * [一些资源](#一些资源)
-  * [一些博客](#一些博客)
-  * [重定向](#重定向-1)
-  * [shell 资源推荐](#shell-资源推荐)
-  * [选择好用的 shell](#选择好用的-shell)
-  * [常用命令行工具的替代](#常用命令行工具的替代)
-  * [一些小技巧](#一些小技巧)
-  * [zsh 的技巧](#zsh-的技巧)
-  * [shell 中移动](#shell-中移动)
-  * [一些库](#一些库)
-  * [冷知识](#冷知识)
-  * [获取帮助](#获取帮助)
-  * [有趣](#有趣)
-  * [TODO](#todo)
-  * [reference](#reference)
+* [问题](#问题)
+* [Bash 的基本语法](#bash-的基本语法)
+* [基本符号](#基本符号)
+* [扩展模式](#扩展模式)
+* [here doc 和 here string](#here-doc-和-here-string)
+* [变量](#变量)
+* [字符串](#字符串)
+* [数组](#数组)
+* [有用的变量](#有用的变量)
+* [eval 和 exec 的区别](#eval-和-exec-的区别)
+* [算术运算](#算术运算)
+* [重定向](#重定向)
+* [常用工具](#常用工具)
+  * [xargs](#xargs)
+  * [awk](#awk)
+  * [pushd 和 popd](#pushd-和-popd)
+  * [[ ] bash 中容易犯的错误](#-bash-中容易犯的错误)
+  * [[ ] https://effective-shell.com/part-2-core-skills/job-control/](#-httpseffective-shellcompart-2-core-skillsjob-control)
+* [资源和工具](#资源和工具)
+* [一些资源](#一些资源)
+* [一些博客](#一些博客)
+* [重定向](#重定向-1)
+* [shell 资源推荐](#shell-资源推荐)
+* [选择好用的 shell](#选择好用的-shell)
+* [常用命令行工具的替代](#常用命令行工具的替代)
+* [一些小技巧](#一些小技巧)
+* [zsh 的技巧](#zsh-的技巧)
+* [shell 中移动](#shell-中移动)
+* [一些库](#一些库)
+* [冷知识](#冷知识)
+* [获取帮助](#获取帮助)
+* [有趣](#有趣)
+* [TODO](#todo)
+* [reference](#reference)
 
 <!-- vim-markdown-toc -->
 
@@ -293,16 +289,12 @@ awk 还存在
 - Associative Arrays
 - for / if
 
-### [ ] pushd 和 popd
+### pushd 和 popd
+- https://unix.stackexchange.com/questions/77077/how-do-i-use-pushd-and-popd-commands
 
-### [ ] printf
-
-### [ ] sed
-删除掉文件夹中所有含有 TODO 的行
-```plain
-ag -l TODO | xargs sed -i '/TODO/d'
-```
-### [ ] cut
+- 从左边进入
+- 最左边的就是当前的目录
+- pushd x 会进入到 x 中
 
 ### [ ] bash 中容易犯的错误
 http://mywiki.wooledge.org/BashPitfalls
@@ -313,13 +305,12 @@ http://mywiki.wooledge.org/BashPitfalls
 1. https://explainshell.com/
 2. https://wangchujiang.com/linux-command/
 
-# 一些链接
-2. [Pure bash bible](https://github.com/dylanaraps/pure-bash-bible)
 
 ## 一些资源
 - [forgit](https://github.com/wfxr/forgit) A utility tool powered by fzf for using git interactively
 - [Bash web server](https://github.com/dzove855/Bash-web-server/) : 只有几百行的 web server 使用 bash 写的 :star:
 - [Write a shell in C](https://brennan.io/2015/01/16/write-a-shell-in-c/) : 自己动手写一个 shell
+- [Pure bash bible](https://github.com/dylanaraps/pure-bash-bible)
 
 ## 一些博客
 - [window powershell 和 bash 的对比](https://vedipen.com/2020/linux-bash-vs-windows-powershell/)
@@ -382,6 +373,8 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 - [locate vs find](https://unix.stackexchange.com/questions/60205/locate-vs-find-usage-pros-and-cons-of-each-other)
   - locate 只是比 find 更快而已
 - 使用 mv /tmp/gafsdfa/fadafsdf{aaa,bb}.png 来实现 rename
+- [根据 shell 启动的不同，加载的配置的文件不同](https://cjting.me/2020/08/16/shell-init-type/)
+  - 存在 login 和 non-login ，interactive 和 non-interactive 之分
 
 ## 获取帮助
 1. whatis
@@ -393,11 +386,12 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 - https://github.com/mydzor/bash2048/blob/master/bash2048.sh : 300 行的 2048
 
 ## TODO
-- https://learnbyexample.github.io/cli_text_processing_coreutils/tr.html : 讲解各种 text processing 的事情，值得单独作为一个章节来分析。
-https://github.com/learnbyexample/Command-line-text-processing : 文本处理，终于来了
-https://github.com/dylanaraps/pure-bash-bible
-https://cjting.me/2020/08/16/shell-init-type/ : 不错不错，讲解 bash 的启动
+- https://cjting.me/2020/08/16/shell-init-type/ : 不错不错，讲解 bash 的启动
 
+- 输入 top 10 的命令，但是没看懂
+```sh
+history | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl |  head -n10
+```
 
 ## reference
 [^1]: https://github.com/agarrharr/awesome-cli-apps

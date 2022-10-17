@@ -59,6 +59,7 @@ sudo apt install ubuntu-desktop
 - 应该是环境变量的问题，kitty 必须从 iterm 中启动， 可以使用 open $(which kitty) 来测试
 - kitty 中文渲染不正常，可以确认不是软件的问题，因为插上外接显示器之后，字体就渲染不正常了。
 - 暂时没有安装上 nixpkgs；
+- neovim 0.8 在 Mac 上不稳定(2022/10/17)
 
 ### 安装 Linux
 

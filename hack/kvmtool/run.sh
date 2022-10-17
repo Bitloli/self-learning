@@ -11,15 +11,15 @@ log_file=${kvmtool_dir}/debug.txt
 
 DEBUG_KVMTOOL=false
 while getopts "d" opt; do
-	case $opt in
-	d) DEBUG_KVMTOOL=true ;;
-	*) exit 0 ;;
-	esac
+  case $opt in
+  d) DEBUG_KVMTOOL=true ;;
+  *) exit 0 ;;
+  esac
 done
 
 cmd="${kvmtool} run -k ${kernel_img} -d ${img} -m 5000 2> ${log_file}"
 
-if [ $DEBUG_KVMTOOL = true ];then
+if [ $DEBUG_KVMTOOL = true ]; then
   debug="gdb --args ${cmd}"
   eval "$debug"
   exit 0
@@ -27,8 +27,8 @@ fi
 
 eval "$cmd"
 
-for((i=0; i < 10; i++)); do
-    echo $i
+for ((i = 0; i < 10; i++)); do
+  echo $i
 done
 foomatic-rip
 
