@@ -13,6 +13,9 @@
 - find /tmp -size 0 -print -delete : 删除大小为 0 的文件
   - https://stackoverflow.com/questions/5475905/linux-delete-file-with-size-0
 - find . -type f -name "*.md" : 将所有的 md 找出来
+- find . -type f -name "*.sh" -exec sed -i '2i\set -e' "{}" +
+  - 对于 find 的所有的文件进行操作，其中 {} 是操作对象
+  - [ ] 这里的 + 没有看懂，https://unix.stackexchange.com/questions/12902/how-to-run-find-exec
 
 ## rpm
 - rpm -qf 可以找到一个文件对应的包
@@ -61,3 +64,10 @@ yum install -y neovim python3-neovim
 
 ## sudo
 - 让 sudo https://unix.stackexchange.com/questions/83191/how-to-make-sudo-preserve-path
+
+## sed
+- sed -i '1i\hello world;' a.sh
+  - 在 a.sh 的第一行插入 hello world
+
+## xargs
+- [ ] 为什么这个操作是错误的: find . -name '*.sh' | xargs -I % sh -c 'shfmt % > %' ，这个重定向直接将文件清空了

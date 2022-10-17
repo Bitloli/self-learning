@@ -11,6 +11,7 @@
 - memory policy, cgroup cpuset, cgroup memory 三个位置同时可以限制内存使用
 
 - vmstat.c 是做什么的? vmstat_shepherd
+- 为什么切换一下内核，disk 的名称就会发生变化，这个问题让 alpine.sh 的 root= 很麻烦
 
 - [ ] ksm
 - [ ] shmem
@@ -18,6 +19,7 @@
 - [ ] gup 机制 : FOLL_GET 之类的 flags 烦死人了
 
 - 问一个问题: pg_data_t 中间 pg 是什么？ ask the stackoverflow
+- 为什么将 ext4 从模块修改 ext4，然后整个项目几乎重新编译
 
 - kobj_to_hstate
   - 当内核中写 /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages 的时候，通过这个可以知道当前的 node 是什么

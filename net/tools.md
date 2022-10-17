@@ -36,8 +36,6 @@ https://www.kawabangga.com/posts/4515 中间提到 nc -l  9999 的操作可以�
 
 主要参考 [使用 mtr 检查网络问题，以及注意事项](https://www.kawabangga.com/posts/4275)
 
-## netstat
-
 ## nslookup
 
 ## wireshark
@@ -66,7 +64,9 @@ https://github.com/shemminger/iproute2
 ## smap
 https://github.com/s0md3v/Smap
 
-## [ ] netstat
+## netstat
+
+> This program is obsolete. Replacement for netstat is ss. Replacement for netstat -r is ip route. Replacement for netstat -i is ip -s link. Replacement for netstat -g is ip maddr.
 
 ## [ ] dropwatch
 

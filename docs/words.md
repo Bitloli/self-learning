@@ -48,6 +48,8 @@ Absence of a signal is itself a signal.[^15]
 
 稳定压倒一切[^16]
 
+Great teams are allowed more — some teams are just faster than others at delivering the value. They get bored with what they do more easily. These teams can introduce new technologies more often. That’s no excuse not to use spikes and do hackathons. On the other hand, if the team has troubles delivering — proceed with caution.[^17]
+
 [^1]: https://www.zhihu.com/question/443850977/answer/1754327421
 [^2]: https://mp.weixin.qq.com/s/4kN65Eu_mYKmC-GLig082g
 [^3]: https://github.com/cdk8s/cdk8s-team-style/blob/master/other/read-write.md
@@ -64,3 +66,4 @@ Absence of a signal is itself a signal.[^15]
 [^14]: https://thorstenball.com/blog/2022/05/17/professional-programming-the-first-10-years/
 [^15]: https://www.netmeister.org/blog/ops-lessons.html
 [^16]: https://github.com/shengcaishizhan/kkndme_tianya
+[^17]: https://blog.daftcode.pl/hype-driven-development-3469fc2e9b22

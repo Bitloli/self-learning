@@ -17,6 +17,7 @@
   * [常用工具](#常用工具)
     * [xargs](#xargs)
     * [awk](#awk)
+    * [[ ] pushd 和 popd](#-pushd-和-popd)
     * [[ ] printf](#-printf)
     * [[ ] sed](#-sed)
     * [[ ] cut](#-cut)
@@ -26,7 +27,7 @@
 * [一些链接](#一些链接)
   * [一些资源](#一些资源)
   * [一些博客](#一些博客)
-* [shell 的一些经验之谈](#shell-的一些经验之谈)
+  * [重定向](#重定向-1)
   * [shell 资源推荐](#shell-资源推荐)
   * [选择好用的 shell](#选择好用的-shell)
   * [常用命令行工具的替代](#常用命令行工具的替代)
@@ -34,11 +35,17 @@
   * [zsh 的技巧](#zsh-的技巧)
   * [shell 中移动](#shell-中移动)
   * [一些库](#一些库)
+  * [冷知识](#冷知识)
+  * [获取帮助](#获取帮助)
+  * [有趣](#有趣)
+  * [TODO](#todo)
   * [reference](#reference)
 
 <!-- vim-markdown-toc -->
 
 基本参考 [Bash 脚本教程](https://wangdoc.com/bash/index.html)
+
+![](https://preview.redd.it/8a7tpszpdgj41.png?width=640&height=360&crop=smart&auto=webp&s=04e05726a9bb67ff47a8599101931409953859a0)
 
 ## 问题
 - [ ] 学会使用 eval
@@ -286,6 +293,8 @@ awk 还存在
 - Associative Arrays
 - for / if
 
+### [ ] pushd 和 popd
+
 ### [ ] printf
 
 ### [ ] sed
@@ -315,11 +324,14 @@ http://mywiki.wooledge.org/BashPitfalls
 ## 一些博客
 - [window powershell 和 bash 的对比](https://vedipen.com/2020/linux-bash-vs-windows-powershell/)
 
-[^1]: https://wizardzines.com/comics/redirects/
+## 重定向
+1. ls > /dev/null
+2. ls 2> /dev/null
+3. ls > /dev/null > 2>&1
+4. cat < file
 
-# shell 的一些经验之谈
+https://wizardzines.com/comics/redirects/
 
-![](https://preview.redd.it/8a7tpszpdgj41.png?width=640&height=360&crop=smart&auto=webp&s=04e05726a9bb67ff47a8599101931409953859a0)
 
 `shell` 和 `gnu` `make`, `cmake` 等各种工具类似，一学就会，学完就忘。究其原因，是因为使用频率太低了。
 所以，shell 我不建议非常认真系统的学习，因为学完之后发现根本用不上。难道你每天都需要使用正则表达式删除文件吗?
@@ -347,9 +359,7 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 | find | [fd](https://github.com/chinanf-boy/fd-zh)                                                                                                                        |
 | ssh  | [sshfs](https://github.com/libfuse/sshfs)
 
-只能感慨开源社区的强大，最近发现了一个叫 [modern unix](https://github.com/ibraheemdev/modern-unix) 的项目，总结一大堆工具, 比我上面找的更加全面。
-
-- [libtree](https://github.com/ibraheemdev/modern-unix)
+[modern unix](https://github.com/ibraheemdev/modern-unix) 的项目也是总结了一大堆。
 
 ## 一些小技巧
 - [alias](https://thorsten-hans.com/5-types-of-zsh-aliases)
@@ -365,6 +375,28 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 
 ## 一些库
 - [gum](https://github.com/charmbracelet/gum)
+- [Bats](https://www.dolthub.com/blog/2020-03-23-testing-dolt-bats/) : bash 的测试库
+
+
+## 冷知识
+- [locate vs find](https://unix.stackexchange.com/questions/60205/locate-vs-find-usage-pros-and-cons-of-each-other)
+  - locate 只是比 find 更快而已
+- 使用 mv /tmp/gafsdfa/fadafsdf{aaa,bb}.png 来实现 rename
+
+## 获取帮助
+1. whatis
+2. tldr
+3. cheat.sh
+4. apropos 模糊查询 man
+
+## 有趣
+- https://github.com/mydzor/bash2048/blob/master/bash2048.sh : 300 行的 2048
+
+## TODO
+- https://learnbyexample.github.io/cli_text_processing_coreutils/tr.html : 讲解各种 text processing 的事情，值得单独作为一个章节来分析。
+https://github.com/learnbyexample/Command-line-text-processing : 文本处理，终于来了
+https://github.com/dylanaraps/pure-bash-bible
+https://cjting.me/2020/08/16/shell-init-type/ : 不错不错，讲解 bash 的启动
 
 
 ## reference
@@ -372,4 +404,3 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 [^2]: https://github.com/alebcay/awesome-shell
 [^3]: https://github.com/unixorn/awesome-zsh-plugins
 [^4]: https://news.ycombinator.com/
-[^5]:

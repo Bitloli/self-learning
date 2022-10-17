@@ -5,7 +5,10 @@
 - [ ] scsi disk / scsi cd-rom / scsi - 磁带 / scsi - generic
 - [ ] QEMU 中的 -cdrom 是如何实现的
 - [ ] scsi 是不是连接在 PCIe 上的
-- [ ] 理解一下 virtio scsi 是如何沟通的。
+- [ ] 理解一下 virtio_scsi 是如何在内核和 QEMU 两侧沟通的。
+- [ ] 如何理解 ATA 和 scsi 的关系是什么?
+- 使用 QEMU 模拟 scsi 的: https://blogs.oracle.com/linux/post/how-to-emulate-block-devices-with-qemu
+- megasas 是啥?
 
 启动的时候必然遇到这个:
 ```txt
