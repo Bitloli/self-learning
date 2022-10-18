@@ -25,6 +25,7 @@
 - https://news.ycombinator.com/item?id=32478907 : sqlite is not a toy database
 - https://news.ycombinator.com/item?id=32539360
 - https://fly.io/blog/
+- https://www.codedump.info/post/20220904-weekly-24/
 
 ## 两本教科书
 - database system concepts

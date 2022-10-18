@@ -337,6 +337,8 @@ emmmmmmm, 只是 DUP 上的封装
 ## nfs
 看 fs.md 中内容
 
+- https://unix.stackexchange.com/questions/234154/exactly-what-does-rpcbind-do
+
 ## [ ]  Understanding Host Network Stack Overheads
 > 去 zotero 上看看，其引用
 

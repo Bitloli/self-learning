@@ -9,3 +9,7 @@
   - 从这里介绍内核的 flags，是极好的
 
 - 如果是 private 映射一个文件，其修改应该最后也是写入到 swap 中的吧
+
+- [What Every Programmer Should Know About Memory](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf)
+  - 总体结论，还是正确的
+  - https://stackoverflow.com/questions/8126311/how-much-of-what-every-programmer-should-know-about-memory-is-still-valid

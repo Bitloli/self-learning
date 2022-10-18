@@ -49,6 +49,7 @@ https://github.com/upgundecha/howtheysre : 各个公司关于 SRE 的报告吧
 
 ## 项目
 - [分布式网络模拟](https://github.com/shadow/shadow)
+- [分布式测试工具](https://github.com/stateright/stateright)
 
 ## 论文阅读
 - https://www.micahlerner.com/2022/07/03/sundial-fault-tolerant-clock-synchronization-for-datacenters.html

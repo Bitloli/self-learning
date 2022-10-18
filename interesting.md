@@ -19,3 +19,6 @@ https://blog.acrossapp.com/how-a-2-person-startup-already-uses-28-other-tools/ :
 - https://news.ycombinator.com/item?id=32678664 : 在 M1 中运行 stable diffusion
 
 - [command line heroes](https://www.redhat.com/en/command-line-heroes/season-1/os-wars-part-1) : 红帽的音频节目 [ddf]
+
+## 有趣的工具
+- https://github.com/phiresky/ripgrep-all : 对于 pdf tar 等也可以 ag

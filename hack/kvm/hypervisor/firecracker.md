@@ -112,8 +112,6 @@ device_manager/mod.rs                                    1              9       
 > handling vsock connection states.
 > Check out `muxer.rs` for a more detailed explanation of the inner workings of this backend.
 
-
-
 ## Rust language
 - [ ] https://stackoverflow.com/questions/30938499/why-is-the-sized-bound-necessary-in-this-trait
 - https://doc.rust-lang.org/nomicon/hrtb.html
@@ -127,3 +125,9 @@ device_manager/mod.rs                                    1              9       
 
 ## 中文的参考文档
 https://aws.amazon.com/cn/blogs/china/deep-analysis-aws-firecracker-principle-virtualization-container-runtime-technology/?nc1=b_rp
+
+## 相关工具
+- https://github.com/weaveworks/ignite : firecracker 的管理工具
+
+## blog
+https://www.talhoffman.com/2021/07/18/firecracker-internals/

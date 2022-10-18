@@ -205,8 +205,6 @@ https://load-balancer.inlab.net/manual/performance/measuring-internal-bandwidth-
 ## [ ] irqtop(1)
 
 # 传统的统计工具
-- [ ] ps
-- [ ] https://peteris.rocks/blog/htop/
 - lsof
 
 ## dperf
