@@ -28,4 +28,5 @@ systemctl list-units --type=service
 - [ ] 如何和 cgroup 交互
 - [ ] /var 下的 journal 到底是谁生成的，是 systemd 管理的吗?
 
-## [ ] 开机启动是如何完成的
+## ruanyf 的最基本的教程基本是够的
+https://www.ruanyifeng.com/blog/2016/03/systemd-tutorial-commands.html

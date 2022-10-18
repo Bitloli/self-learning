@@ -96,7 +96,6 @@
 | 进程调度       |
 | 进程地址空间   | brk
 
-- [ ] https://peteris.rocks/blog/htop/#load-average : Great
 
 ## task_struct
 
@@ -1620,7 +1619,6 @@ https://stackoverflow.com/questions/20688982/zombie-process-vs-orphan-process
 [^5]: https://www.kernel.org/doc/html/latest/x86/kernel-stacks.html
 [^6]: https://stackoverflow.com/questions/61886139/why-thread-info-should-be-the-first-element-in-task-struct
 [^8]: https://www.cnblogs.com/LoyenWang/p/12249106.html
-[^9]: https://peteris.rocks/blog/htop/
 [^10]: https://www.cnblogs.com/LoyenWang/p/12316660.html
 [^22]: https://stackoverflow.com/questions/14163208/how-to-link-c-object-files-with-ld
 [^23]: https://stackoverflow.com/questions/18133812/where-is-the-x86-64-system-v-abi-documented
