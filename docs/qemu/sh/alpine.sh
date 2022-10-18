@@ -2,7 +2,7 @@
 set -e
 
 use_nvme_as_root=false
-replace_kernel=true
+# replace_kernel=true
 
 hacking_memory="hotplug"
 hacking_memory="virtio-pmem"

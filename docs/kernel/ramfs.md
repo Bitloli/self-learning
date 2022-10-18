@@ -152,18 +152,6 @@ config BLK_DEV_INITRD
 - 思考一下过程，当 QEMU -kernel 的时候，这个参数居然在 UEFI 模式下也可以运行
 
 - 我忽然理解，QEMU -initrd 的作用了，感觉就是直接替代 grub 的功能了
-
-## dracut 源码分析
-https://github.com/dracutdevs/dracut
-
-This is all driven off of device availability.  Therefore, instead of scripts hard-coded to do
-various things, we depend on udev to create device nodes for us and
-then when we have the rootfs's device node, we mount and carry on.
-
-- https://www.suse.com/support/kb/doc/?id=000019945 : drucut
-- https://unix.stackexchange.com/questions/453263/how-to-find-modules-used-in-initrd : 检查其中的内容
-- [How to unpack/uncompress and repack/re-compress an initial ramdisk (initrd/initramfs) boot image file on RHEL 5,6 ?](https://access.redhat.com/solutions/24029)
-
 ## mkinit
 https://salsa.debian.org/kernel-team/initramfs-tools
 
