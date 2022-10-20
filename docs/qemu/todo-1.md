@@ -295,8 +295,6 @@ https://qemu.readthedocs.io/en/latest/tools/qemu-pr-helper.html
 [^2]: https://stackoverflow.com/questions/63357744/qemu-socket-communication
 [^3]: https://wiki.qemu.org/Features/ChardevFlowControl
 [^4]: https://qkxu.github.io/2019/03/24/Qemu-Guest-Agent-(QGA)%E5%8E%9F%E7%90%86%E7%AE%80%E4%BB%8B.html
-[^5]: https://mpolednik.github.io/2017/01/23/virtio-blk-vs-virtio-scsi/
-[^6]: https://stackoverflow.com/questions/39031456/why-is-virtio-scsi-much-slower-than-virtio-blk-in-my-experiment-over-and-ceph-r
 [^7]: https://wiki.qemu.org/Features/SCSI
 
 # smbios

@@ -7,7 +7,6 @@
 ## TODO
 - [ ] /home/maritns3/core/firecracker/src/devices/src/virtio/vsock/csm/connection.rs has a small typo
 - [ ] virtio and msi:
-- [ ] what's scsi : https://www.linux-kvm.org/images/archive/f/f5/20110823142849!2011-forum-virtio-scsi.pdf
 - [ ] 有的设备不支持 PCI 总线，需要使用 MMIO 的方式，但是 kvmtool 怎么知道这个设备需要使用 MMIO
 - [ ] 约定是第一个 bar 指向的 IO 空间在内核那一侧是怎么分配的 ?
 - [ ] virtio_bus 是挂载到哪里的?

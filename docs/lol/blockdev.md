@@ -43,6 +43,7 @@ static const struct blk_mq_ops nbd_mq_ops = {
     .timeout    = nbd_xmit_timeout,
 };
 ```
+- [ ] 检查 sd_open 之前的调用路径
 - [ ] request queue 和 multiqueue 的关系是什么 ?
   - [ ] block/blk-core.c 中，几乎所有的函数的参数都是有 `request_queue` 的
 - [ ] 可能更加有意思的问题是，为什么需要设计 /dev/ 和 major number 和 minor number 出来啊
@@ -480,8 +481,16 @@ const struct file_operations def_blk_fops = {
 从上面的过程中，可以看到直接读写裸盘的时候，也是存在 page cahce 的，而 page cache 总是关联 inode 作为来构建映射的，
 所以，需要一个 super_operations 来创建 inode 的。
 
-## lvm
+## dm
+- [ ] device-mapper 和 lvm2 是什么关系 ?
+
+- https://docs.kernel.org/admin-guide/device-mapper/index.html#
+  - 内核文档，相关内容好多啊
+- 相关的代码所在的位置: drivers/dm/md*.c
+
 - https://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)
+- https://wiki.archlinux.org/index.php/LVM : 卷 逻辑卷 到底是啥 ?
+- https://opensource.com/business/16/9/linux-users-guide-lvm
 
 最近安装 Ubunut server 作为 root，其启动参数如下，
 ```sh

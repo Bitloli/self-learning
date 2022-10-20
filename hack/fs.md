@@ -47,7 +47,6 @@
 * [inode](#inode)
 * [dcache](#dcache)
     * [dcache shrink](#dcache-shrink)
-* [lvm](#lvm)
 * [splice](#splice)
 * [pipe](#pipe)
 * [devpts](#devpts)
@@ -1604,11 +1603,6 @@ static struct shrinker mmu_shrinker = {
 };
 ```
 
-## lvm
-https://opensource.com/business/16/9/linux-users-guide-lvm
-
-
-
 ## splice
 Four syscall related : vmsplice splice tee pipe
 
@@ -1806,7 +1800,6 @@ cat /proc/mounts : we find the filesystem type of /dev is tmpfs, so what's the d
 
 ## exciting
 http://www.betrfs.org/
-https://wiki.archlinux.org/index.php/LVM : 卷 逻辑卷 到底是啥 ?
 
 ## benchmark
 https://lwn.net/Articles/385081/

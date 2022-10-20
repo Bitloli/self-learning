@@ -1,15 +1,3 @@
-https://www.kernel.org/doc/html/latest/bpf/index.html
-
-https://linux-audit.com/livepatch-linux-kernel-updates-without-rebooting/
-
-locking 和 rcu 被拆分为两个部分 !
-
-power 被单独分析了驱动管理。
-
-trace irq sched time
-
-> 下面其中的表层文件
-
 | Name                   | Blank | Comment | code | Explanation                                                                                                                             |
 |------------------------|-------|---------|------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | module.c               | 652   | 526     | 3220 | module 相关的操作，显然module 比 driver 是一个更加范围广的东西                                                                          |

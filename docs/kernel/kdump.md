@@ -1,4 +1,21 @@
-# kdump
+# kdump，kexec 和 crash-utility
+
+## 基本使用
+
+- foreach bt : 所有进程的 backtrace
+- bt -a : 所有的 CPU 的 backtrace
+- bt -FF  264 : CPU
+  - [ ] -FF 的数据，好吧，需要重新理解 kmalloc 和 stack 的关系
+- search sd_fops : 搜索 sd_fops，我靠，根本不能理解为什么这个东西的实现原理啊
+- dev : 展示所有的 device
+- kmem
+  - `-s` : 展示 k
+
+## 常见问题
+### struct: invalid data structure reference: r5conf
+https://stackoverflow.com/questions/58810201/how-to-find-a-symbol-file-and-tell-crash-about-it
+
+需要加载对应的模块
 
 ## 基本使用
 - centos 8
@@ -385,3 +402,6 @@ struct kimage *kexec_crash_image;
 ```
 
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/kernel_administration_guide/kernel_crash_dump_guide#sect-kdump-memory-requirements
+
+## 基本的使用
+- bt -FF : 为什么 stack 上和 kobject 有关

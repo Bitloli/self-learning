@@ -35,6 +35,9 @@ yum install -y neovim python3-neovim
 
 - sudo yum list installed : 展示自动安装的内核
 
+## 如何查询 rpm
+- https://buildlogs.centos.org/c7.1708.u/seabios/20170906231213/1.10.2-3.el7_4.1.x86_64/
+
 ## tar
 - tar czf name_of_archive_file.tar.gz name_of_directory_to_tar
   - https://unix.stackexchange.com/questions/46969/compress-a-folder-with-tar

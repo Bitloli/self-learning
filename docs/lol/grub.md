@@ -1,4 +1,4 @@
-# 关于 grub，我所知道 grub 的全部
+# 我所知道 grub 的全部
 
 ## 为什么需要 bootloader
 在计算上电的时候，首先会执行 ROM 中代码，这个 ROM 代码将将代码加载到内存中，然后进行各种初始化，这些程序以前是 BIOS，现在是 UEFI，如果有兴趣，可以看看 UEFI 的开源实现 edk2 .
@@ -48,15 +48,18 @@ dracut --add-drivers mymod initramfs-with-mymod.img
 - [How to unpack/uncompress and repack/re-compress an initial ramdisk (initrd/initramfs) boot image file on RHEL 5,6 ?](https://access.redhat.com/solutions/24029)
 
 ## grubby
-如果你经常需要修改内核参数，不停使用 vim 打开 /boot/grub2/grub.cfg ，你会发现一些问题:
-- 不同 distribution 会将 grub 放到不同的位置，总是找不到
-- 有的 distribution 会将 grub 设置为只读
+如果你经常需要修改内核参数，不停使用 vim 打开 /boot/grub2/grub.cfg ，很麻烦，无法脚本化。
 
 你可以使用 grubby 来更加方便的修改 grub.cfg 中 kernel 参数，一些使用案例参考此处:
 
 https://www.golinuxcloud.com/grubby-command-examples/
 
-## 其他的替代品
+## 其他小问题
+1. grub-mkconfig || grub2-mkconfig : 扫描 /boot 然后更新 grub.conf
+2. 从 grub rescue 模式下恢复: https://linuxhint.com/grub_rescue_ubuntu_1804/
+  - 其实原理很简单，本来 grub 找不到配置文件，现在我们手动设置要加载的内核和 initrd，然后启动系统后，更新 grub.cfg
+
+## 替代品
 - https://github.com/limine-bootloader/limine
 - https://askubuntu.com/questions/760875/any-downside-to-using-refind-instead-of-grub
 
@@ -64,6 +67,9 @@ https://www.golinuxcloud.com/grubby-command-examples/
 
 你可以使用 QEMU 来调试 grub :
 - https://stackoverflow.com/questions/31799336/how-to-build-grub2-bootloader-from-its-source-and-test-it-with-qemu-emulator
+
+
+[^1]: https://askubuntu.com/questions/1288580/sudo-grub2-mkconfig-command-not-found
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

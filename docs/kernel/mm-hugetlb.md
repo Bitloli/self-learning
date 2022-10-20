@@ -1,5 +1,7 @@
 # hugetlb
 
+- /dev/hugepages 是做啥的?
+
 - 无需考虑碎片化的问题。
 - 内核不用使用这些页面。
 - 不用 swap 的。

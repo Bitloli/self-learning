@@ -6,6 +6,10 @@
 - [ ] QEMU 中的 -cdrom 是如何实现的
 - [ ] scsi 是不是连接在 PCIe 上的
 - [ ] 理解一下 virtio_scsi 是如何在内核和 QEMU 两侧沟通的。
+  - https://github.com/spdk/spdk/issues/162 :  vhost-user-scsi-pci 是做什么的?
+  - [ ] what's scsi : https://www.linux-kvm.org/images/archive/f/f5/20110823142849!2011-forum-virtio-scsi.pdf
+  - https://mpolednik.github.io/2017/01/23/virtio-blk-vs-virtio-scsi/
+  - https://stackoverflow.com/questions/39031456/why-is-virtio-scsi-much-slower-than-virtio-blk-in-my-experiment-over-and-ceph-r
 - [ ] 如何理解 ATA 和 scsi 的关系是什么?
 - 使用 QEMU 模拟 scsi 的: https://blogs.oracle.com/linux/post/how-to-emulate-block-devices-with-qemu
 - megasas 是啥?
