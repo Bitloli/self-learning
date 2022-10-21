@@ -1,5 +1,8 @@
 # mm/memblock.c
 
+## 如何处理 NUMA
+- [ ] 系统初始化的时候，有的内存最好是散布在各个 Node 上，需要考虑吗?
+
 ## TODO
 1. 其中的设计思想是什么 ?
     1. 总体来说 : 将 free 和 allocated 的保存在两个数组中间
@@ -83,7 +86,7 @@
 
 
 
-> 当添加新 region 的时候 : 
+> 当添加新 region 的时候 :
 ```c
 /**
  * memblock_double_array - double the size of the memblock regions array
@@ -105,6 +108,9 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 						phys_addr_t new_area_size)
 ```
 
+
+
+```txt
         mem=nn[KMG]     [KNL,BOOT] Force usage of a specific amount of memory
                         Amount of memory to be used when the kernel is not able
                         to see the whole system memory or for test.
@@ -115,6 +121,7 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 
         mem=nopentium   [BUGS=X86-32] Disable usage of 4MB pages for kernel
                         memory.
+```
 
 
 ## memblock_add_range && memblock_remove_range
@@ -162,6 +169,7 @@ int __init_memblock memblock_add(phys_addr_t base, phys_addr_t size)
 
 > 1. MAX_NUMNODES 的含义是 ?
 > 2. flag  ?
+
 ```c
 /**
  * memblock_merge_regions - merge neighboring compatible regions
@@ -204,7 +212,6 @@ static void __init_memblock memblock_merge_regions(struct memblock_type *type)
  * @size:	size of the new region
  * @nid:	node id of the new region
  * @flags:	flags of the new region
- *
  * Insert new memblock region [@base, @base + @size) into @type at @idx.
  * @type must already have extra room to accommodate the new region.
  */
@@ -233,12 +240,10 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
  * @size: size of the new region
  * @nid: nid of the new region
  * @flags: flags of the new region
- *
  * Add new memblock region [@base, @base + @size) into @type.  The new region
  * is allowed to overlap with existing ones - overlaps don't affect already
  * existing regions.  @type is guaranteed to be minimal (all neighbouring
  * compatible regions are merged) after the addition.
- *
  * Return:
  * 0 on success, -errno on failure.
  */
@@ -334,6 +339,7 @@ repeat:
 	}
 }
 ```
+
 > @todo 这个分析很有意思的，一种 leetcode 的感觉，但是不想在此处浪费时间。
 > 其效果就是如此 : 形成链表，顺序从小到大，一个 region 描述一个连续物理地址空间。
 
@@ -634,7 +640,7 @@ void __free_pages_core(struct page *page, unsigned int order) // 设置 refcount
 	__ClearPageReserved(p); // 最后的一个位置不用 prefetchw
 	set_page_count(p, 0);
 
-	atomic_long_add(nr_pages, &page_zone(page)->managed_pages); 
+	atomic_long_add(nr_pages, &page_zone(page)->managed_pages);
 	set_page_refcounted(page); // 第一个page 的 refcoutn 需要特殊处理
 	__free_pages(page, order);
 }

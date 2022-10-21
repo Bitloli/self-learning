@@ -1,5 +1,33 @@
 # mm/sparse-vmemmap.c
 
+## 是如何处理 NUMA 的
+- for each node 的，无需额外的特殊处理
+
+## 是如何处理 hugepage 的
+
+```txt
+#0  vmemmap_populate (start=start@entry=18446719884453740544, end=end@entry=18446719884455837696, node=node@entry=1, altmap=altmap@entry=0x0 <fixed_percpu_data>) at arch/x86/mm/init_64.c:1612
+#1  0xffffffff81fb063f in __populate_section_memmap (pfn=pfn@entry=0, nr_pages=nr_pages@entry=32768, nid=nid@entry=1, altmap=altmap@entry=0x0 <fixed_percpu_data>, pgmap=pgmap@entry=0x0 <fixed_percpu_data>) at mm/sparse-vmemmap.c:392
+#2  0xffffffff83366fc1 in sparse_init_nid (nid=1, pnum_begin=pnum_begin@entry=0, pnum_end=pnum_end@entry=40, map_count=32) at mm/sparse.c:527
+#3  0xffffffff833673f4 in sparse_init () at mm/sparse.c:580
+#4  0xffffffff833532a0 in paging_init () at arch/x86/mm/init_64.c:816
+#5  0xffffffff83342b47 in setup_arch (cmdline_p=cmdline_p@entry=0xffffffff82a03f10) at arch/x86/kernel/setup.c:1253
+#6  0xffffffff83338c7d in start_kernel () at init/main.c:959
+#7  0xffffffff81000145 in secondary_startup_64 () at arch/x86/kernel/head_64.S:358
+#8  0x0000000000000000 in ?? ()
+```
+
+- vmemmap_populate
+  - vmemmap_populate_basepages : 使用 basepage 来实现映射
+  - vmemmap_populate_hugepages
+
+## [ ] 选择的虚拟地址从什么位置开始的
+
+## 使用的物理内存是从什么位置分配的
+- vmemmap_alloc_block_buf 最后调用 memblock 上
+
+## 基本知识
+
 1. 使用 vmemmap ，浪费大量的虚拟地址空间, 可以实现 pfn_to_page page_to_pfn 之间的快速装换。
 2. 此处完成的是将那些存在物理内存的区间　对应的 page descriptor 所在的虚拟地址对应的物理内存建立一个对应关系。
 
@@ -63,7 +91,7 @@ int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node,
 ## vmemmap_populate_basepages : 填充函数
 
 1. 对于 start 到 end 之间地址进行填充, 逐级向下进行 !
-2. 操作方法有点类似于 pagefault 的感觉: 当需要page frame 的时候就进行分配而已。
+2. 操作方法有点类似于 pagefault 的感觉: 当需要 page frame 的时候就进行分配而已。
 ```c
 int __meminit vmemmap_populate_basepages(unsigned long start,
 					 unsigned long end, int node)
@@ -95,80 +123,5 @@ int __meminit vmemmap_populate_basepages(unsigned long start,
 	}
 
 	return 0;
-}
-```
-
-```c
-pte_t * __meminit vmemmap_pte_populate(pmd_t *pmd, unsigned long addr, int node)
-{
-	pte_t *pte = pte_offset_kernel(pmd, addr);
-	if (pte_none(*pte)) {
-		pte_t entry;
-		void *p = vmemmap_alloc_block_buf(PAGE_SIZE, node);
-		if (!p)
-			return NULL;
-		entry = pfn_pte(__pa(p) >> PAGE_SHIFT, PAGE_KERNEL);
-		set_pte_at(&init_mm, addr, pte, entry);
-	}
-	return pte;
-}
-
-static void * __meminit vmemmap_alloc_block_zero(unsigned long size, int node)
-{
-	void *p = vmemmap_alloc_block(size, node);
-
-	if (!p)
-		return NULL;
-	memset(p, 0, size);
-
-	return p;
-}
-
-pmd_t * __meminit vmemmap_pmd_populate(pud_t *pud, unsigned long addr, int node)
-{
-	pmd_t *pmd = pmd_offset(pud, addr);
-	if (pmd_none(*pmd)) {
-		void *p = vmemmap_alloc_block_zero(PAGE_SIZE, node);
-		if (!p)
-			return NULL;
-		pmd_populate_kernel(&init_mm, pmd, p);
-	}
-	return pmd;
-}
-
-pud_t * __meminit vmemmap_pud_populate(p4d_t *p4d, unsigned long addr, int node)
-{
-	pud_t *pud = pud_offset(p4d, addr);
-	if (pud_none(*pud)) {
-		void *p = vmemmap_alloc_block_zero(PAGE_SIZE, node);
-		if (!p)
-			return NULL;
-		pud_populate(&init_mm, pud, p);
-	}
-	return pud;
-}
-
-p4d_t * __meminit vmemmap_p4d_populate(pgd_t *pgd, unsigned long addr, int node)
-{
-	p4d_t *p4d = p4d_offset(pgd, addr);
-	if (p4d_none(*p4d)) {
-		void *p = vmemmap_alloc_block_zero(PAGE_SIZE, node);
-		if (!p)
-			return NULL;
-		p4d_populate(&init_mm, p4d, p);
-	}
-	return p4d;
-}
-
-pgd_t * __meminit vmemmap_pgd_populate(unsigned long addr, int node)
-{
-	pgd_t *pgd = pgd_offset_k(addr);
-	if (pgd_none(*pgd)) {
-		void *p = vmemmap_alloc_block_zero(PAGE_SIZE, node);
-		if (!p)
-			return NULL;
-		pgd_populate(&init_mm, pgd, p);
-	}
-	return pgd;
 }
 ```

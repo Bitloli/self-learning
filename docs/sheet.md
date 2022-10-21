@@ -18,6 +18,7 @@
   - [ ] 这里的 + 没有看懂，https://unix.stackexchange.com/questions/12902/how-to-run-find-exec
 
 ## rpm
+- rpm -ivh --force --nodeps url
 - rpm -qf 可以找到一个文件对应的包
 - rpm2cpio shim-15.4-2.oe2203.src.rpm | cpio -idmv  : 解压一个 rpm 包
 - rpm -i --force -nodeps url 可以自动下载安装内核

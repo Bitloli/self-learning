@@ -38,5 +38,6 @@ QEMU 中 cpu_is_bsp 和 do_cpu_sipi
 
 那其他的 APs 可不可以也这样做呢，当然不行，否则岂不是要谋反么。此时 APs 进入 wait for SIPI 的状态，等待着 BSP 的发号施令。
 
+- [ ] 理解一下: secondary_startup_64
 
 [^1]: https://zhuanlan.zhihu.com/p/67989330

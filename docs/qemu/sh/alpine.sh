@@ -66,7 +66,7 @@ if [[ $use_nvme_as_root = true ]]; then
 fi
 
 # 在 guset 中使用 sudo dmidecode -t bios 查看
-arg_smbios='-smbios type=0,vendor="martins3",version=12,date="2022-2-2", -smbios type=1,manufacturer="Martins3 Inc",product="Hacking Alpine",version=12,serial="1234-4567-abbbcbbcccccccccfasdfasdfakdjalfjdalfjadklfjakdf"'
+arg_smbios='-smbios type=0,vendor="martins3",version=12,date="2022-2-2", -smbios type=1,manufacturer="Martins3 Inc",product="Hacking Alpine",version=12,serial="1234-4567-abc"'
 arg_hugetlb="default_hugepagesz=2M hugepagesz=1G hugepages=4 hugepagesz=2M hugepages=512"
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
@@ -132,7 +132,8 @@ if [[ $use_ovmf == true ]]; then
 fi
 
 arg_cgroupv2="systemd.unified_cgroup_hierarchy=1"
-arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb $arg_cgroupv2 scsi_mod.scsi_logging_level=0xffffffff"
+# scsi_mod.scsi_logging_level=0x3fffffff
+arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb $arg_cgroupv2 "
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${workstation}/img1,format=raw,if=none,id=nvme1"

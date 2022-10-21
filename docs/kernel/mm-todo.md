@@ -1,4 +1,7 @@
-- 一个 QEMU 可以混合使用不同大小的大页吗?
+- [ ] 一个 QEMU 可以混合使用不同大小的大页吗?
+- [ ] QEMU 的启动参数
+  - -m 24G -mem-prealloc -mem-path /dev/hugepages/test_vm
+- [ ] 一个 mmap 可以混合使用各种大页吗?
 
 - [ ] for_each_zone_zonelist_nodemask
 
@@ -10,7 +13,8 @@
 - https://www.kernel.org/doc/Documentation/vm/pagemap.txt
   - 从这里介绍内核的 flags，是极好的
 
-- 如果是 private 映射一个文件，其修改应该最后也是写入到 swap 中的吧
+- [ ] 如果是 private 映射一个文件，其修改应该最后也是写入到 swap 中的吧
+  - 应该是的，但是需要验证
 
 - [What Every Programmer Should Know About Memory](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf)
   - 总体结论，还是正确的
