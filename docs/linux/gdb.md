@@ -82,8 +82,11 @@
 - info signal
 - info sharedlibrary
 - info threads
+- info args
+- info variables
+- info locals
 
-### [ ] script
+### [ ] gdb script
 
 ### 高级
 - 条件 break

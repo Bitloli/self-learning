@@ -1,10 +1,14 @@
 # mm/sparse-vmemmap.c
 
+- 就是连续的
+
 ## 是如何处理 NUMA 的
-- for each node 的，无需额外的特殊处理
+- for each node 的构建，保证 page frame 和对应的 page struct 在同一个 node 中
+
 
 ## 是如何处理 hugepage 的
 
+首先执行:
 ```txt
 #0  vmemmap_populate (start=start@entry=18446719884453740544, end=end@entry=18446719884455837696, node=node@entry=1, altmap=altmap@entry=0x0 <fixed_percpu_data>) at arch/x86/mm/init_64.c:1612
 #1  0xffffffff81fb063f in __populate_section_memmap (pfn=pfn@entry=0, nr_pages=nr_pages@entry=32768, nid=nid@entry=1, altmap=altmap@entry=0x0 <fixed_percpu_data>, pgmap=pgmap@entry=0x0 <fixed_percpu_data>) at mm/sparse-vmemmap.c:392
@@ -17,6 +21,18 @@
 #8  0x0000000000000000 in ?? ()
 ```
 
+之后分配 memory 的:
+```txt
+#0  hugepages_setup (s=0xffff88823fff51ea "4") at mm/hugetlb.c:4165
+#1  0xffffffff833388f0 in obsolete_checksetup (line=0xffff88823fff51e0 "hugepages=4") at init/main.c:221
+#2  unknown_bootoption (param=0xffff88823fff51e0 "hugepages=4", val=val@entry=0xffff88823fff51ea "4", unused=unused@entry=0xffffffff827b3bc4 "Booting kernel", arg=arg@entry=0x0 <fixed_percpu_data>) at init/main.c:541
+#3  0xffffffff81131dc3 in parse_one (handle_unknown=0xffffffff83338856 <unknown_bootoption>, arg=0x0 <fixed_percpu_data>, max_level=-1, min_level=-1, num_params=748, params=0xffffffff82992e20 <__param_initcall_debug>, doing=0xffffffff827b3bc4 "Booting kernel", val=0xffff88823fff51ea "4", param=0xffff88823fff51e0 "hugepages=4") at kernel/params.c:153
+#4  parse_args (doing=doing@entry=0xffffffff827b3bc4 "Booting kernel", args=0xffff88823fff51ec "hugepagesz=2M hugepages=512 systemd.unified_cgroup_hierarchy=1 ", params=0xffffffff82992e20 <__param_initcall_debug>, num=748, min_level=min_level@entry=-1, max_level=max_level@entry=-1, arg=0x0 <fixed_percpu_data>, unknown=0xffffffff83338856 <unknown_bootoption>) at kernel/params.c:188
+#5  0xffffffff83338e27 in start_kernel () at init/main.c:974
+#6  0xffffffff81000145 in secondary_startup_64 () at arch/x86/kernel/head_64.S:358
+#7  0x0000000000000000 in ?? ()
+```
+
 - vmemmap_populate
   - vmemmap_populate_basepages : 使用 basepage 来实现映射
   - vmemmap_populate_hugepages
@@ -25,6 +41,8 @@
 
 ## 使用的物理内存是从什么位置分配的
 - vmemmap_alloc_block_buf 最后调用 memblock 上
+
+- vmemmap_alloc_block 中为什么会出现 slab_is_available 的判断，因为内存的热插拔，如果内存是存在的，那么
 
 ## 基本知识
 

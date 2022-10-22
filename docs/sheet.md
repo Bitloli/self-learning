@@ -36,9 +36,6 @@ yum install -y neovim python3-neovim
 
 - sudo yum list installed : 展示自动安装的内核
 
-## 如何查询 rpm
-- https://buildlogs.centos.org/c7.1708.u/seabios/20170906231213/1.10.2-3.el7_4.1.x86_64/
-
 ## tar
 - tar czf name_of_archive_file.tar.gz name_of_directory_to_tar
   - https://unix.stackexchange.com/questions/46969/compress-a-folder-with-tar
@@ -75,3 +72,9 @@ yum install -y neovim python3-neovim
 
 ## xargs
 - [ ] 为什么这个操作是错误的: find . -name '*.sh' | xargs -I % sh -c 'shfmt % > %' ，这个重定向直接将文件清空了
+
+## git
+- git reset : 将所有的内容 unstage
+- git commit --amend -m "an updated commit message"
+- git fetch origin && git reset --hard origin/master : 和远程完全相同
+- git checkout -- fs/ : 将 unstage 的取消掉

@@ -54,3 +54,5 @@
 - init_osnoise_tracer : trace 实际上比我想想的更加有趣
 - bd9a3dba185ce6701b41f0341470d3f53bbbbaed : sched/psi
 - 5e714bf1713b4b096d20ec75c13880b7086964bd : memory 的
+- 440b7895c990a63869a9d55e5c2502dd501a124e : memory fix
+- a3ccea6ed80db39e8aaed22d896099be477e1f85 : device mapper
