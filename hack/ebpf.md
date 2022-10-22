@@ -143,7 +143,6 @@ Before using bcc, you should start with the Linux basics. One reference is the [
 1. mpstat -P ALL 1
 1. pidstat 1
 1. iostat -xz 1
-1. free -m
 1. sar -n DEV 1
 1. sar -n TCP,ETCP 1
 1. top

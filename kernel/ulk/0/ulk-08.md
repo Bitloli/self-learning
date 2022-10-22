@@ -66,103 +66,7 @@ every memory node into three zones. In the 80x86 UMA architecture the zones are:
 
   Contains page frames of memory at and above 896 MB
 
-```c
-enum zone_type {
-	/*
-	 * ZONE_DMA and ZONE_DMA32 are used when there are peripherals not able
-	 * to DMA to all of the addressable memory (ZONE_NORMAL).
-	 * On architectures where this area covers the whole 32 bit address
-	 * space ZONE_DMA32 is used. ZONE_DMA is left for the ones with smaller
-	 * DMA addressing constraints. This distinction is important as a 32bit
-	 * DMA mask is assumed when ZONE_DMA32 is defined. Some 64-bit
-	 * platforms may need both zones as they support peripherals with
-	 * different DMA addressing limitations.
-	 *
-	 * Some examples:
-	 *
-	 *  - i386 and x86_64 have a fixed 16M ZONE_DMA and ZONE_DMA32 for the
-	 *    rest of the lower 4G.
-	 *
-	 *  - arm only uses ZONE_DMA, the size, up to 4G, may vary depending on
-	 *    the specific device.
-	 *
-	 *  - arm64 has a fixed 1G ZONE_DMA and ZONE_DMA32 for the rest of the
-	 *    lower 4G.
-	 *
-	 *  - powerpc only uses ZONE_DMA, the size, up to 2G, may vary
-	 *    depending on the specific device.
-	 *
-	 *  - s390 uses ZONE_DMA fixed to the lower 2G.
-	 *
-	 *  - ia64 and riscv only use ZONE_DMA32.
-	 *
-	 *  - parisc uses neither.
-	 */
-#ifdef CONFIG_ZONE_DMA
-	ZONE_DMA,
-#endif
-#ifdef CONFIG_ZONE_DMA32
-	ZONE_DMA32,
-#endif
-	/*
-	 * Normal addressable memory is in ZONE_NORMAL. DMA operations can be
-	 * performed on pages in ZONE_NORMAL if the DMA devices support
-	 * transfers to all addressable memory.
-	 */
-	ZONE_NORMAL,
-#ifdef CONFIG_HIGHMEM
-	/*
-	 * A memory area that is only addressable by the kernel through
-	 * mapping portions into its own address space. This is for example
-	 * used by i386 to allow the kernel to address the memory beyond
-	 * 900MB. The kernel will set up special mappings (page
-	 * table entries on i386) for each page that the kernel needs to
-	 * access.
-	 */
-	ZONE_HIGHMEM,
-#endif
-	ZONE_MOVABLE,
-#ifdef CONFIG_ZONE_DEVICE
-	ZONE_DEVICE,
-#endif
-	__MAX_NR_ZONES
-};
-```
-> @todo
-> 1. high memory, vmalloc 以及 FIX map 的关系是什么 ?
-> 2. 当使用 DMA32 同时所有内存只有 4G 的时候，那岂不是就没有 ZONE_MOVABLE 和 ZONE_NORMAL ?
-
-```c
-enum migratetype {
-	MIGRATE_UNMOVABLE,
-	MIGRATE_MOVABLE,
-	MIGRATE_RECLAIMABLE,
-	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
-	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
-#ifdef CONFIG_CMA
-	/*
-	 * MIGRATE_CMA migration type is designed to mimic the way
-	 * ZONE_MOVABLE works.  Only movable pages can be allocated
-	 * from MIGRATE_CMA pageblocks and page allocator never
-	 * implicitly change migration type of MIGRATE_CMA pageblock.
-	 *
-	 * The way to use it is to change migratetype of a range of
-	 * pageblocks to MIGRATE_CMA which can be done by
-	 * __free_pageblock_cma() function.  What is important though
-	 * is that a range of pageblocks must be aligned to
-	 * MAX_ORDER_NR_PAGES should biggest page be bigger then
-	 * a single pageblock.
-	 */
-	MIGRATE_CMA,
-#endif
-#ifdef CONFIG_MEMORY_ISOLATION
-	MIGRATE_ISOLATE,	/* can't allocate from here */
-#endif
-	MIGRATE_TYPES
-};
-```
-
-> @todo 原来 zone 和 migrate 不是一个东西 ？
+> 1. FIX map 的关系是什么 ?
 
 #### 1.4 The Pool of Reserved Page Frames
 
@@ -244,7 +148,7 @@ The **zone allocator** is the frontend of the kernel page frame allocator. This 
 enough to satisfy the memory request. This task is not as simple as it could appear at
 a first glance, because the zone allocator must satisfy several goals:
 
-## 2 Memory Area Management 
+## 2 Memory Area Management
 > skip : we will reference the wowotech first.
 
 ## 3 Noncontiguous Memory Area Management

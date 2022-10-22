@@ -118,6 +118,8 @@
 <!-- - [vfio : Linux 内核实现](.) -->
 <!-- - [vfio : QEMU 实现](.) -->
 - [oom](./kernel/mm-oom.md)
+- [sparse vmemmap](./kernel/mm-vmemmap.md)
+- [memblock](./kernel/mm-memblock.md)
 
 <!-- ## Database -->
 <!-- - [leveldb 源码分析](./database/leveldb.md) -->
