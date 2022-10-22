@@ -80,24 +80,6 @@ __alloc_pages_nodemask : 核心
 1. CONFIG_SPARSEMEM : mem_section
 2. compound page: 550
 3. PageBuddy() indicates that the page is free and in the buddy system
-4. 基本的就是三种 :
-```c
-/*
- * This array describes the order lists are fallen back to when
- * the free lists for the desirable migrate type are depleted
- */
-static int fallbacks[MIGRATE_TYPES][4] = {
-    [MIGRATE_UNMOVABLE]   = { MIGRATE_RECLAIMABLE, MIGRATE_MOVABLE,   MIGRATE_TYPES },
-    [MIGRATE_RECLAIMABLE] = { MIGRATE_UNMOVABLE,   MIGRATE_MOVABLE,   MIGRATE_TYPES },
-    [MIGRATE_MOVABLE]     = { MIGRATE_RECLAIMABLE, MIGRATE_UNMOVABLE, MIGRATE_TYPES },
-#ifdef CONFIG_CMA
-    [MIGRATE_CMA]         = { MIGRATE_TYPES }, /* Never used */
-#endif
-#ifdef CONFIG_MEMORY_ISOLATION
-    [MIGRATE_ISOLATE]     = { MIGRATE_TYPES }, /* Never used */
-#endif
-};
-```
 
 #### 几乎确定
 4. migratetype 的种类 : isolated pageblock, normal pageblock

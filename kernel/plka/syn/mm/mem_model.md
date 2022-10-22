@@ -14,13 +14,13 @@
 
 > SPARSE：在64位系统上，At the cost of additional page table entries, page_to_pfn(), and pfn_to_page() became as simple as with the flat model. (其他我就真的没有看懂
 
-## SPARSE 
+## SPARSE
 下面说明一下sparse memory model的架构代码体现。
 #### A
 arch/x86/include/asm/mmzone_32.h 和 arch/x86/include/asm/mmzone_64.h 中间定义pg_data_t 的数组。
 
 #### B
-include/linux/mmzone.h 中间定义了pg_data_t，其描述的内容一个node 
+include/linux/mmzone.h 中间定义了pg_data_t，其描述的内容一个node
 0. zone类型的数组。
 1. 每一个节点都有自己的ID：node_id；
 3. node_start_pfn是这个节点的起始页号；
@@ -47,7 +47,7 @@ include/linux/mmzone.h 其中同样定义了zone，查看一下中间的内容�
 void __init paging_init(void)
 {
 	sparse_memory_present_with_active_regions(MAX_NUMNODES);
-	sparse_init(); 
+	sparse_init();
 	/*
 	 * clear the default setting with node 0
 	 * note: don't use nodes_clear here, that is really clearing when
@@ -95,89 +95,9 @@ static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __meminitdata;
 
 free_area_init_node 的工作:
 1. 各种pg_data_t 成员初始化
-2. 调用free_area_init_core 
+2. 调用free_area_init_core
     1. 初始化pg_data_t `pgdat_init_internals(pgdat)`
     2. 对于每一个zone 为buddy system 启用做准备，顺便初始化各个zone `		zone_init_internals(zone, j, nid, freesize)`
-
-## 3. zone 和 node 中间都含有统计信息，分别统计什么?
-1. 这些统计信息是通过什么接口提供给用户程序的，或者内核如何使用它们?
-2. zone 和 node 统计内容有什么侧重?
-
-node 统计信息定义
-```
-	/* Per-node vmstats */
-	struct per_cpu_nodestat __percpu *per_cpu_nodestats;
-	atomic_long_t		vm_stat[NR_VM_NODE_STAT_ITEMS];
-} pg_data_t;
-
-struct zone {
-...
-	/* Zone statistics */
-	atomic_long_t		vm_stat[NR_VM_ZONE_STAT_ITEMS];
-	atomic_long_t		vm_numa_stat[NR_VM_NUMA_STAT_ITEMS];
-} ____cacheline_internodealigned_in_smp;
-
-struct per_cpu_nodestat {
-	s8 stat_threshold;
-	s8 vm_node_stat_diff[NR_VM_NODE_STAT_ITEMS];
-};
-
-enum zone_stat_item {
-	/* First 128 byte cacheline (assuming 64 bit words) */
-	NR_FREE_PAGES,
-	NR_ZONE_LRU_BASE, /* Used only for compaction and reclaim retry */
-	NR_ZONE_INACTIVE_ANON = NR_ZONE_LRU_BASE,
-	NR_ZONE_ACTIVE_ANON,
-	NR_ZONE_INACTIVE_FILE,
-	NR_ZONE_ACTIVE_FILE,
-	NR_ZONE_UNEVICTABLE,
-	NR_ZONE_WRITE_PENDING,	/* Count of dirty, writeback and unstable pages */
-	NR_MLOCK,		/* mlock()ed pages found and moved off LRU */
-	NR_PAGETABLE,		/* used for pagetables */
-	NR_KERNEL_STACK_KB,	/* measured in KiB */
-	/* Second 128 byte cacheline */
-	NR_BOUNCE,
-#if IS_ENABLED(CONFIG_ZSMALLOC)
-	NR_ZSPAGES,		/* allocated in zsmalloc */
-#endif
-	NR_FREE_CMA_PAGES,
-	NR_VM_ZONE_STAT_ITEMS };
-
-enum node_stat_item {
-	NR_LRU_BASE,
-	NR_INACTIVE_ANON = NR_LRU_BASE, /* must match order of LRU_[IN]ACTIVE */
-	NR_ACTIVE_ANON,		/*  "     "     "   "       "         */
-	NR_INACTIVE_FILE,	/*  "     "     "   "       "         */
-	NR_ACTIVE_FILE,		/*  "     "     "   "       "         */
-	NR_UNEVICTABLE,		/*  "     "     "   "       "         */
-	NR_SLAB_RECLAIMABLE,
-	NR_SLAB_UNRECLAIMABLE,
-	NR_ISOLATED_ANON,	/* Temporary isolated pages from anon lru */
-	NR_ISOLATED_FILE,	/* Temporary isolated pages from file lru */
-	WORKINGSET_REFAULT,
-	WORKINGSET_ACTIVATE,
-	WORKINGSET_NODERECLAIM,
-	NR_ANON_MAPPED,	/* Mapped anonymous pages */
-	NR_FILE_MAPPED,	/* pagecache pages mapped into pagetables.
-			   only modified from process context */
-	NR_FILE_PAGES,
-	NR_FILE_DIRTY,
-	NR_WRITEBACK,
-	NR_WRITEBACK_TEMP,	/* Writeback using temporary buffers */
-	NR_SHMEM,		/* shmem pages (included tmpfs/GEM pages) */
-	NR_SHMEM_THPS,
-	NR_SHMEM_PMDMAPPED,
-	NR_ANON_THPS,
-	NR_UNSTABLE_NFS,	/* NFS unstable pages */
-	NR_VMSCAN_WRITE,
-	NR_VMSCAN_IMMEDIATE,	/* Prioritise for reclaim when writeback ends */
-	NR_DIRTIED,		/* page dirtyings since bootup */
-	NR_WRITTEN,		/* page writings since bootup */
-	NR_INDIRECTLY_RECLAIMABLE_BYTES, /* measured in bytes */
-	NR_VM_NODE_STAT_ITEMS
-};
-```
-
 
 ## 4. pageset swap migration watermark 和 buddy system 分别依赖于zone 还是 node，为什么?
 首先大致解释一下，这些东西都是什么东西和作用!
@@ -214,34 +134,6 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 
 
 ```c
-enum migratetype {
-	MIGRATE_UNMOVABLE,
-	MIGRATE_MOVABLE,
-	MIGRATE_RECLAIMABLE,
-	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
-	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
-#ifdef CONFIG_CMA
-	/*
-	 * MIGRATE_CMA migration type is designed to mimic the way
-	 * ZONE_MOVABLE works.  Only movable pages can be allocated
-	 * from MIGRATE_CMA pageblocks and page allocator never
-	 * implicitly change migration type of MIGRATE_CMA pageblock.
-	 *
-	 * The way to use it is to change migratetype of a range of
-	 * pageblocks to MIGRATE_CMA which can be done by
-	 * __free_pageblock_cma() function.  What is important though
-	 * is that a range of pageblocks must be aligned to
-	 * MAX_ORDER_NR_PAGES should biggest page be bigger then
-	 * a single pageblock.
-	 */
-	MIGRATE_CMA,
-#endif
-#ifdef CONFIG_MEMORY_ISOLATION
-	MIGRATE_ISOLATE,	/* can't allocate from here */
-#endif
-	MIGRATE_TYPES
-};
-
 struct per_cpu_pages {
 	int count;		/* number of pages in the list */
 	int high;		/* high watermark, emptying needed */
@@ -331,7 +223,7 @@ struct zone {
 ## 8. 为什么物理内存不是连续的?
 https://stackoverflow.com/questions/23626165/what-is-meant-by-holes-in-the-memory-linux
 
-## 9.  分析函数 page_zone实现!  
+## 9.  分析函数 page_zone实现!
 ```c
 static inline struct zone *page_zone(const struct page *page)
 {

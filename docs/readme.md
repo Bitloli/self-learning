@@ -105,11 +105,15 @@
 
 ## Linux Kernel
 - [内核学习的一点经验之谈](./kernel/learn-linux-kernel.md)
-<!-- - [为什么 Linux 6.0 相比于 Linux 0.1 复杂那么多](./kernel/why-so-complex.md) -->
 - [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md)
 - [tty 到底是什么](./kernel/tty.md)
-<!-- - 🚧 [syscall](./kernel/syscall.md) -->
 - [mknod](./kernel/mknod.md)
+- [oom](./kernel/mm-oom.md)
+- [sparse vmemmap](./kernel/mm-vmemmap.md)
+- [memblock](./kernel/mm-memblock.md)
+- [cmd](./kernel/mm-cma.md)
+<!-- - [为什么 Linux 6.0 相比于 Linux 0.1 复杂那么多](./kernel/why-so-complex.md) -->
+<!-- - 🚧 [syscall](./kernel/syscall.md) -->
 <!-- -  🚧 [Linux 设备模型](./kernel/device.md) -->
 <!-- - [irq domain](./kernel/irq-domain.md) -->
 <!-- -  🚧 [LWN 阅读笔记](./lwn.md) -->
@@ -117,9 +121,6 @@
 <!-- - [iommu 基本原理介绍](.) -->
 <!-- - [vfio : Linux 内核实现](.) -->
 <!-- - [vfio : QEMU 实现](.) -->
-- [oom](./kernel/mm-oom.md)
-- [sparse vmemmap](./kernel/mm-vmemmap.md)
-- [memblock](./kernel/mm-memblock.md)
 
 <!-- ## Database -->
 <!-- - [leveldb 源码分析](./database/leveldb.md) -->

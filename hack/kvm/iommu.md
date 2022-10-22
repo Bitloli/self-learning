@@ -10,6 +10,7 @@
 - [ ] QEMU 中存在 3000 行处理 Intel IOMMU 的模拟
   - [ ] virtio iommu 是做什么的，和 vIOMMU 是什么关系?
 - [ ] 据说 IOMMU 对于性能会存在影响。
+- [ ] IOMMU 能不能解决 cma 的问题，也就是，使用离散的物理内存提供给设备，让设备以为自己访问的是连续的物理内存
 
 
 1. https://wiki.qemu.org/Features/VT-d 分析了下为什么 guest 需要 vIOMMU

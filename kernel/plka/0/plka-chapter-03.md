@@ -1651,38 +1651,6 @@ impact on code and data structures of the buddy allocator. The kernel defines so
 the different migrate types:
 
 
-```c
-enum migratetype {
-  MIGRATE_UNMOVABLE,
-  MIGRATE_MOVABLE,
-  MIGRATE_RECLAIMABLE,
-  MIGRATE_PCPTYPES, /* the number of types on the pcp lists */
-  MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
-#ifdef CONFIG_CMA
-  /*
-   * MIGRATE_CMA migration type is designed to mimic the way
-   * ZONE_MOVABLE works.  Only movable pages can be allocated
-   * from MIGRATE_CMA pageblocks and page allocator never
-   * implicitly change migration type of MIGRATE_CMA pageblock.
-   *
-   * The way to use it is to change migratetype of a range of
-   * pageblocks to MIGRATE_CMA which can be done by
-   * __free_pageblock_cma() function.  What is important though
-   * is that a range of pageblocks must be aligned to
-   * MAX_ORDER_NR_PAGES should biggest page be bigger then
-   * a single pageblock.
-   */
-  MIGRATE_CMA,
-#endif
-#ifdef CONFIG_MEMORY_ISOLATION
-  MIGRATE_ISOLATE,  /* can't allocate from here */
-#endif
-  MIGRATE_TYPES
-};
-```
-> 1. 终于算是知道MIGRATE的含义了
-> 2. 实际上不只有刚刚说明三种类型
-
 The macro `for_each_migratetype_order(order, type)` can be used to iterate over the migrate
 types of all allocation orders.
 ```c
@@ -1697,23 +1665,6 @@ namely, when we considered what happens when an allocation cannot
 be fulfilled from a specific NUMA zone. The kernel proceeds similarly as in this case by providing a
 fallback list regulating which migrate types should be used next if a request cannot be fulfilled from the
 desired list:
-```c
-/*
- * This array describes the order lists are fallen back to when
- * the free lists for the desirable migrate type are depleted
- */
-static int fallbacks[MIGRATE_TYPES][4] = {
-  [MIGRATE_UNMOVABLE]   = { MIGRATE_RECLAIMABLE, MIGRATE_MOVABLE,   MIGRATE_TYPES },
-  [MIGRATE_MOVABLE]     = { MIGRATE_RECLAIMABLE, MIGRATE_UNMOVABLE, MIGRATE_TYPES },
-  [MIGRATE_RECLAIMABLE] = { MIGRATE_UNMOVABLE,   MIGRATE_MOVABLE,   MIGRATE_TYPES },
-#ifdef CONFIG_CMA
-  [MIGRATE_CMA]         = { MIGRATE_TYPES }, /* Never used */
-#endif
-#ifdef CONFIG_MEMORY_ISOLATION
-  [MIGRATE_ISOLATE]     = { MIGRATE_TYPES }, /* Never used */
-#endif
-};
-```
 
 * **Global Variables and Auxiliary Functions**
 

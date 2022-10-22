@@ -15,7 +15,7 @@
 | mempolicy.c          | 365   | 585     | 1928 | numa 系统分配内存选择 memory node  @todo 所以难道分配给local不好吗?                                                                                          |
 | filemap.c            | 364   | 1052    | 1915 | 实现page cache　也就是无处不在的 address_space                                                                                                               |
 | migrate.c            | 395   | 715     | 1844 | 似乎处理的事情是将内存从一个memory node 到另一个 memory node                                                                                                 |
-| zsmalloc.c           | 409   | 408     | 1723 | https://lwn.net/Articles/477067/ 新的分配器 @todo 文章顺便提到CMA等                                                                                          |
+| zsmalloc.c           | 409   | 408     | 1723 | https://lwn.net/Articles/477067/ 新的分配器                                                                                          |
 | vmalloc.c            | 383   | 678     | 1689 | vmalloc 实现物理页面和虚拟页面的建立映射                                                                                                                     |
 | vmstat.c             | 325   | 337     | 1479 | 各种统计                                                                                                                                                     |
 | page-writeback.c     | 329   | 1031    | 1472 | Contains functions related to writing back dirty pages at the  address_space level.                                                                          |

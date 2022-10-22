@@ -160,3 +160,59 @@ or can be discarded if needed (various types of caches). Everything else is expe
 > 1. 用户数据可以随便移动，copy 数据然后修改 pte 即可。
 > 2. 但是内核态的采用的是线性映射，如果将页面进行移动，那么指向其的指针全部需要进行修改，但是很难找到指向其的指针。
 > 3. 内核 backing store 的方法 : 将该 page 写回。
+
+## 一时不知道把这个放到哪里
+
+```c
+enum migratetype {
+  MIGRATE_UNMOVABLE,
+  MIGRATE_MOVABLE,
+  MIGRATE_RECLAIMABLE,
+  MIGRATE_PCPTYPES, /* the number of types on the pcp lists */
+  MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
+#ifdef CONFIG_CMA
+  /*
+   * MIGRATE_CMA migration type is designed to mimic the way
+   * ZONE_MOVABLE works.  Only movable pages can be allocated
+   * from MIGRATE_CMA pageblocks and page allocator never
+   * implicitly change migration type of MIGRATE_CMA pageblock.
+   *
+   * The way to use it is to change migratetype of a range of
+   * pageblocks to MIGRATE_CMA which can be done by
+   * __free_pageblock_cma() function.  What is important though
+   * is that a range of pageblocks must be aligned to
+   * MAX_ORDER_NR_PAGES should biggest page be bigger then
+   * a single pageblock.
+   */
+  MIGRATE_CMA,
+#endif
+#ifdef CONFIG_MEMORY_ISOLATION
+  MIGRATE_ISOLATE,  /* can't allocate from here */
+#endif
+  MIGRATE_TYPES
+};
+```
+
+```c
+/*
+ * This array describes the order lists are fallen back to when
+ * the free lists for the desirable migrate type are depleted
+ */
+static int fallbacks[MIGRATE_TYPES][4] = {
+  [MIGRATE_UNMOVABLE]   = { MIGRATE_RECLAIMABLE, MIGRATE_MOVABLE,   MIGRATE_TYPES },
+  [MIGRATE_MOVABLE]     = { MIGRATE_RECLAIMABLE, MIGRATE_UNMOVABLE, MIGRATE_TYPES },
+  [MIGRATE_RECLAIMABLE] = { MIGRATE_UNMOVABLE,   MIGRATE_MOVABLE,   MIGRATE_TYPES },
+#ifdef CONFIG_CMA
+  [MIGRATE_CMA]         = { MIGRATE_TYPES }, /* Never used */
+#endif
+#ifdef CONFIG_MEMORY_ISOLATION
+  [MIGRATE_ISOLATE]     = { MIGRATE_TYPES }, /* Never used */
+#endif
+};
+```
+
+可以观测的内容:
+
+```txt
+sudo cat /proc/pagetypeinfo
+```

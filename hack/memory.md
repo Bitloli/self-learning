@@ -1300,38 +1300,6 @@ static inline int gfpflags_to_migratetype(const gfp_t gfp_flags) {
 }
 ```
 
-// --------------- 需要处理的事情 -----------------
-```c
-enum migratetype {
-  MIGRATE_UNMOVABLE,
-  MIGRATE_MOVABLE,     // 需要难受
-  MIGRATE_RECLAIMABLE, // 想必这应该是最简单的，将其释放或者flush 掉即可
-  MIGRATE_PCPTYPES, /* the number of types on the pcp lists */ // todo 为什么PCP 只需要前面的三种 ? 为什么 PCP 需要区分这些内容 ?
-  MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
-#ifdef CONFIG_CMA
-  /*
-   * MIGRATE_CMA migration type is designed to mimic the way
-   * ZONE_MOVABLE works.  Only movable pages can be allocated
-   * from MIGRATE_CMA pageblocks and page allocator never
-   * implicitly change migration type of MIGRATE_CMA pageblock.
-   *
-   * The way to use it is to change migratetype of a range of
-   * pageblocks to MIGRATE_CMA which can be done by
-   * __free_pageblock_cma() function.  What is important though
-   * is that a range of pageblocks must be aligned to
-   * MAX_ORDER_NR_PAGES should biggest page be bigger then
-   * a single pageblock.
-   */
-  MIGRATE_CMA,
-#endif
-#ifdef CONFIG_MEMORY_ISOLATION
-  MIGRATE_ISOLATE,  /* can't allocate from here */
-#endif
-  MIGRATE_TYPES
-};
-```
-// --------------- 需要处理的事情 -----------------
-
 
 - [ ] comments below in /home/maritns3/core/linux/include/linux/page-flags.h
   - [ ] PAGE_MAPPING_MOVABLE : I think all anon page is movable
@@ -2203,18 +2171,6 @@ struct mmu_notifier_subscriptions {
 Provide infrastructure and helpers to integrate non-conventional memory (device memory like GPU on board memory) into regular kernel path, with the cornerstone of this being specialized struct page for such memory.
 HMM also provides optional helpers for SVM (Share Virtual Memory) [^19]
 
-## CMA
-Movable pages are, primarily, page cache or anonymous memory pages; they are accessed via page tables and the page cache radix tree. The contents of such pages can be moved somewhere else as long as the tables and tree are updated accordingly. Reclaimable pages, instead, might possibly be given back to the kernel on demand; they hold data structures like the inode cache. Unmovable pages are usually those for which the kernel has direct pointers; memory obtained from kmalloc() cannot normally be moved without breaking things, for example.
-
-In other words, memory which is marked for use by CMA remains available to the rest of the system with the one restriction that it can only contain movable pages. [^21]
-
-To keep pages with the same migrate type together, the buddy allocator groups pages into "pageblocks," each having a migrate type assigned to it. The allocator then tries to allocate pages from pageblocks with a type corresponding to the request. If that's not possible, however, it will take pages from different pageblocks and may even change a pageblock's migrate type. This means that a non-movable page can be allocated from a MIGRATE_MOVABLE pageblock which can also result in that pageblock changing its migrate type. This is undesirable for CMA, so it introduces a MIGRATE_CMA type which has one important property: only movable pages can be allocated from a MIGRATE_CMA pageblock. [^12]
-
-- [ ] track function : `alloc_contig_pages`
-
-[TO BE CONTINUE](https://www.cnblogs.com/LoyenWang/p/12182594.html)
-
-https://zhuanlan.zhihu.com/p/105745299
 ## zsmalloc
 slub 分配器处理size > page_size / 2 会浪费非常多的内容，zsmalloc 就是为了解决这个问题 [^20]
 
