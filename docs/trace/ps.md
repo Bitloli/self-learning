@@ -17,3 +17,4 @@
  1725 pts/0    Ss     0:00 -bash
  2628 pts/0    R+     0:00 ps x
 ```
+## ps -auxf

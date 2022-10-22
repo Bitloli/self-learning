@@ -1,44 +1,5 @@
 # 这一次我要学会 bash
 
-<!-- vim-markdown-toc GitLab -->
-
-* [问题](#问题)
-* [Bash 的基本语法](#bash-的基本语法)
-* [基本符号](#基本符号)
-* [扩展模式](#扩展模式)
-* [here doc 和 here string](#here-doc-和-here-string)
-* [变量](#变量)
-* [字符串](#字符串)
-* [数组](#数组)
-* [有用的变量](#有用的变量)
-* [eval 和 exec 的区别](#eval-和-exec-的区别)
-* [算术运算](#算术运算)
-* [重定向](#重定向)
-* [常用工具](#常用工具)
-  * [xargs](#xargs)
-  * [awk](#awk)
-  * [pushd 和 popd](#pushd-和-popd)
-  * [[ ] bash 中容易犯的错误](#-bash-中容易犯的错误)
-  * [[ ] https://effective-shell.com/part-2-core-skills/job-control/](#-httpseffective-shellcompart-2-core-skillsjob-control)
-* [资源和工具](#资源和工具)
-* [一些资源](#一些资源)
-* [一些博客](#一些博客)
-* [重定向](#重定向-1)
-* [shell 资源推荐](#shell-资源推荐)
-* [选择好用的 shell](#选择好用的-shell)
-* [常用命令行工具的替代](#常用命令行工具的替代)
-* [一些小技巧](#一些小技巧)
-* [zsh 的技巧](#zsh-的技巧)
-* [shell 中移动](#shell-中移动)
-* [一些库](#一些库)
-* [冷知识](#冷知识)
-* [获取帮助](#获取帮助)
-* [有趣](#有趣)
-* [TODO](#todo)
-* [reference](#reference)
-
-<!-- vim-markdown-toc -->
-
 基本参考 [Bash 脚本教程](https://wangdoc.com/bash/index.html)
 
 ![](https://preview.redd.it/8a7tpszpdgj41.png?width=640&height=360&crop=smart&auto=webp&s=04e05726a9bb67ff47a8599101931409953859a0)
@@ -219,8 +180,8 @@ https://blog.k8s.li/shell-snippet.html
 ## eval 和 exec 的区别
 https://unix.stackexchange.com/questions/296838/whats-the-difference-between-eval-and-exec/296852
 
-eval 相当于执行这个函数
-exec 继续执行程序
+- eval 相当于执行这个函数
+- exec 继续执行程序
 
 ## 算术运算
 使用这个，而不是 let expr 之类的 $((1+2))
@@ -296,8 +257,27 @@ awk 还存在
 - 最左边的就是当前的目录
 - pushd x 会进入到 x 中
 
-### [ ] bash 中容易犯的错误
-http://mywiki.wooledge.org/BashPitfalls
+### 提升 bash 安全的操作
+- [ ] http://mywiki.wooledge.org/BashPitfalls
+
+1. 使用 local
+```sh
+change_owner_of_file() {
+    local filename=$1
+    local user=$2
+    local group=$3
+
+    chown $user:$group $filename
+}
+```
+2. 使用 set -x set +x 组合来调试特定位置的代码
+3. 打印函数名称和调用的参数
+
+```sh
+temporary_files() {
+    echo $FUNCNAME $@
+}
+```
 
 ### [ ] https://effective-shell.com/part-2-core-skills/job-control/
 
@@ -318,7 +298,7 @@ http://mywiki.wooledge.org/BashPitfalls
 ## 重定向
 1. ls > /dev/null
 2. ls 2> /dev/null
-3. ls > /dev/null > 2>&1
+3. ls > /dev/null > 2>&1 或者 &> file
 4. cat < file
 
 https://wizardzines.com/comics/redirects/
@@ -356,6 +336,7 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 - [alias](https://thorsten-hans.com/5-types-of-zsh-aliases)
 - [/dev/null](https://www.putorius.net/introduction-to-dev-null.html)
 - [bash 使用方向键匹配历史记录](https://askubuntu.com/questions/59846/bash-history-search-partial-up-arrow)
+- [自动回答交互式的 shell script](https://askubuntu.com/questions/338857/automatically-enter-input-in-command-line)
 
 ## zsh 的技巧
 - take 创建并且进入目录

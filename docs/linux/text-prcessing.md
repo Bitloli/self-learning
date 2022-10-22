@@ -11,6 +11,9 @@
 tr '[:lower:]' '[:upper:]' <greeting.txt
 ```
 
+- 过滤数字
+echo toto.titi.3312.tata.2.abc.def | tr -d -c 0-9
+
 ## cut
 
 - -f 后面跟着的参数类似 array 的 slice 的感觉
