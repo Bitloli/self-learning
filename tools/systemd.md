@@ -9,6 +9,10 @@ https://www.ruanyifeng.com/blog/2016/03/systemd-tutorial-commands.html
 
 ## 查看依赖链条
 
+- https://serverfault.com/questions/617398/is-there-a-way-to-see-the-execution-tree-of-systemd
+
+sudo systemctl list-dependencies
+
 ## [systemd](https://medium.com/@benmorel/creating-a-linux-service-with-systemd-611b5c8b91d6)
 将长时间运行的程序转化为systemd
 
