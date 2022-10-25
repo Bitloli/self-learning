@@ -5,7 +5,6 @@
 - echo b > /sys/sys-trigger 来重启的原理是什么？
 - 调查一下 fs/iomap
   - https://patchwork.kernel.org/project/linux-fsdevel/patch/1464792297-13185-3-git-send-email-hch@lst.de/
-- 理解一下什么是 memsection
 - mark_oom_victim -> `__thaw_task`
   - 什么 uninterruptable sleep 之类的哇
 - memory policy, cgroup cpuset, cgroup memory 三个位置同时可以限制内存使用

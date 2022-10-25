@@ -109,9 +109,9 @@
 - [tty 到底是什么](./kernel/tty.md)
 - [mknod](./kernel/mknod.md)
 - [oom](./kernel/mm-oom.md)
-- [sparse vmemmap](./kernel/mm-vmemmap.md)
 - [memblock](./kernel/mm-memblock.md)
 - [cmd](./kernel/mm-cma.md)
+<!-- - [sparse vmemmap](./kernel/mm-vmemmap.md) -->
 <!-- - [为什么 Linux 6.0 相比于 Linux 0.1 复杂那么多](./kernel/why-so-complex.md) -->
 <!-- - 🚧 [syscall](./kernel/syscall.md) -->
 <!-- -  🚧 [Linux 设备模型](./kernel/device.md) -->

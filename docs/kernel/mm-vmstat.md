@@ -131,11 +131,11 @@ extern atomic_long_t vm_numa_event[NR_VM_NUMA_EVENT_ITEMS];
 | nr_inactive_file               | 621102   |                                                                  |
 | nr_active_file                 | 1223692  |                                                                  |
 | nr_unevictable                 | 852      |                                                                  |
-| nr_slab_reclaimable            | 100760   |                                                                  |
-| nr_slab_unreclaimable          | 39601    |                                                                  |
-| nr_isolated_anon               | 0        |                                                                  |
+| nr_slab_reclaimable            | 100760   | @todo 不知道在什么                                                                  |
+| nr_slab_unreclaimable          | 39601    |                                                                   |
+| nr_isolated_anon               | 0        | reclaim_clean_pages_from_list @todo 关注这个函数的调用路径                                                                 |
 | nr_isolated_file               | 0        |                                                                  |
-| workingset_nodes               | 0        |                                                                  |
+| workingset_nodes               | 0        | @todo workingset.c 相关                                                                  |
 | workingset_refault_anon        | 0        |                                                                  |
 | workingset_refault_file        | 0        |                                                                  |
 | workingset_activate_anon       | 0        |                                                                  |
