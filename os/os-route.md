@@ -36,7 +36,7 @@ Linux 内核相关的有趣资源，欢迎补充。
 - https://richardweiyang-2.gitbook.io/kernel-exploring
 - https://devarea.com/labs/#.Xm3c_XUzYUE
 - https://github.com/novelinux/linux-4.x.y
-- https://terenceli.github.io/archive.html
+- http://terenceli.github.io/archive.html
 - https://unixism.net/2020/04/io-uring-by-example-article-series/
 
 

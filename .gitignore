@@ -378,3 +378,4 @@ tmp/
 .DS_Store
 perf.data
 perf.data.old
+.syncthing.*
