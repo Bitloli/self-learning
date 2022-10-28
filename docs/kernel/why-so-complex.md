@@ -5,8 +5,14 @@
 > [Hacker News Reader](https://news.ycombinator.com/item?id=27328285)
 
 ## 横向扩展
-1. 更多的架构支持
-2. 更多的驱动支持
+
+### 更多的架构支持
+
+### 更多的驱动支持
+- PCIe
+- scsi
+- ata
+- HBA (Host Bus Adapter)
 
 ## 纵向扩展
 1. io_uring

@@ -135,28 +135,6 @@ void setup_per_zone_wmarks(void)
 init_per_zone_wmark_min : 非常值的关注的东西
 ```
 
-
-
-
-## CONFIG_SPARSEMEM : mem_section
-
-1. https://lwn.net/Articles/134804/
-2. http://mytechkorner.blogspot.com/2010/12/sparsemem.html
-
-> 科学的文档
-
-```c
-static inline struct mem_section *__pfn_to_section(unsigned long pfn)
-{
-    return __nr_to_section(pfn_to_section_nr(pfn));
-}
-```
-1. @todo 如何实现 pfn 到 mem_section ?
-2. @todo mem_section 中间的持有何种信息 ?
-
-`__get_pfnblock_flags_mask` : mem_section pageblock flags
-
-
 ## free 机制
 
 ```c
@@ -339,61 +317,6 @@ struct page *rmqueue(struct zone *preferred_zone,
 
 
 ## init
-
-
-
-
-## migration & compaction
-```c
-// 设置page 所在的 pageblock 中的数值，一个mem_section 持有的 page block 的数量为64 (一个为27 一个为21)
-void set_pageblock_migratetype(struct page *page, int migratetype)
-{
-    if (unlikely(page_group_by_mobility_disabled &&
-             migratetype < MIGRATE_PCPTYPES))
-        migratetype = MIGRATE_UNMOVABLE;
-
-    set_pageblock_flags_group(page, (unsigned long)migratetype,
-                    PB_migrate, PB_migrate_end);
-}
-
-// 实现的值的关注的内容 : 如果从pfn 获取对应的mem_section
-// 当没有使用 sparsemem 的时候，zone 对应的是连续地址空间，
-// 在64位，在物理页面上， pfn 和 page 之间的相互转换的方法，简单的采用 vmemmap 的加减
-
-# define SECTION_SIZE_BITS  27 /* matt - 128 is convenient right now */
-/*
- * SECTION_SHIFT            #bits space required to store a section #
- *
- * PA_SECTION_SHIFT     physical address to/from section number
- * PFN_SECTION_SHIFT        pfn to/from section number
- */
-#define PA_SECTION_SHIFT    (SECTION_SIZE_BITS)
-#define PFN_SECTION_SHIFT   (SECTION_SIZE_BITS - PAGE_SHIFT)
-
-static inline struct mem_section *__pfn_to_section(unsigned long pfn)
-{
-    return __nr_to_section(pfn_to_section_nr(pfn));
-}
-
-// 获取所在的section
-// 变成，每隔 27bit 配备一个section 即为 128M 形成一个配置
-// @todo 所以可以保证每个section 中间对应的物理内存都存在吗 ?
-static inline unsigned long pfn_to_section_nr(unsigned long pfn)
-{
-    return pfn >> PFN_SECTION_SHIFT;
-}
-
-static inline struct mem_section *__nr_to_section(unsigned long nr)
-{
-#ifdef CONFIG_SPARSEMEM_EXTREME
-    if (!mem_section)
-        return NULL;
-#endif
-    if (!mem_section[SECTION_NR_TO_ROOT(nr)])
-        return NULL;
-    return &mem_section[SECTION_NR_TO_ROOT(nr)][nr & SECTION_ROOT_MASK];
-}
-```
 
 ## free_unref_page_list
 1. shrink_page_list 将会对于此位置进行调用，在调用此之前，dirty，unmap，以及 radix_tree remove 工作已经完成

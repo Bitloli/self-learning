@@ -756,8 +756,6 @@ Rust,绝对不是浅尝辄止的内容。
 ## [a world run with code](https://blog.stephenwolfram.com/2019/05/a-world-run-with-code/)
 一份演讲的记录
 
-## [bash 经常会犯的错误](http://mywiki.wooledge.org/BashPitfalls)
-
 ## [北大acm icpc](https://lib-pku.github.io/#acm-icpc%E6%9A%91%E6%9C%9F%E8%AF%BE)
 看一下正宗大学的acm到底是搞什么玩意儿。
 
@@ -779,14 +777,8 @@ Rust,绝对不是浅尝辄止的内容。
 ## [opengl 教程](http://www.opengl-tutorial.org/beginners-tutorials/tutorial-2-the-first-triangle/)
 刚刚搭建完成环境，感觉是非常不错，我觉得project based learn 所有任务全部可以看一下
 
-## [hyper 3.0.0](https://github.com/zeit/hyper/releases/tag/3.0.0)
-似乎性能已经不成问题，如果配色可以搞定，那么可以立刻采用作为主要终端
-
 ## [linux 的编译系统](https://www.linuxjournal.com/content/kbuild-linux-kernel-build-system)
 查资料查到了，但是有必要将内核的编译，链接，装载过程搞清楚
-
-## [比较clang 和其他的开源编译器](https://clang.llvm.org/comparison.html)
-可以用这一个彻底的鄙视gcc
 
 ## [继承还是组合](https://lwn.net/SubscriberLink/787800/b7f5351b3a41421a/)
 是时候理解为什么继承的问题是什么了!

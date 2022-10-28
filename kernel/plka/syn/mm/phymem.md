@@ -29,7 +29,7 @@ setup_arch
     add_active_range
   init_memory_mapping
   contig_initmem_init // memblock 替换必定导致的区别
-  paging_init         
+  paging_init
     free_area_init_nodes
 ```
 
@@ -37,7 +37,7 @@ Arrangement of the Kernel in Memory : 痛苦根源，始终没有理解为什么
   * Initialization of Paging
 
 
-Registering Active Memory Regions : 
+Registering Active Memory Regions :
 Address Space Setup on AMD64 : va pa 之类的macro 讲解
 
 
@@ -886,56 +886,11 @@ static inline void *new_slab_objects(struct kmem_cache *s, gfp_t flags,
 
 
 
-```c
-#ifdef CONFIG_SPARSEMEM_EXTREME
-extern struct mem_section **mem_section;
-#else
-extern struct mem_section mem_section[NR_SECTION_ROOTS][SECTIONS_PER_ROOT];
-#endif
-
-// 难以定位知道page struct 中间的内容
-static inline struct mem_section *__nr_to_section(unsigned long nr)
-{
-#ifdef CONFIG_SPARSEMEM_EXTREME
-	if (!mem_section)
-		return NULL;
-#endif
-	if (!mem_section[SECTION_NR_TO_ROOT(nr)])
-		return NULL;
-	return &mem_section[SECTION_NR_TO_ROOT(nr)][nr & SECTION_ROOT_MASK];
-}
-```
-
-
-include/asm-generic/memory_model.h 非常有帮助的内容
-
-```c
-/* memmap is virtually contiguous.  */
-#define __pfn_to_page(pfn)	(vmemmap + (pfn))
-#define __page_to_pfn(page)	(unsigned long)((page) - vmemmap)
-```
-> 难以理解的注释
-> 如果就是如此使用
-> 1. 所有的page struct 都是被放到一起的
-> 2. 数组的开始下标是vmemmap
-> 3. page struct 显然没有使用物理地址的必要
->     1. 的确所有的page struct 都是直接对应函数，只有真正有意义的page struct 才会含有物体地址对应，所以早起的时候 populate 的处理
->     1. 规划的如此简单，mem_section 的作用是什么 ?
-
-> ucore 的过程： 第一个可以管理的page frame 的物理地址 到和base 做差，就是数组的下标
-
-> 非常奇怪的事情：vmemmap 似乎和mem_section 功能冲突了啊!
-https://stackoverflow.com/questions/34797918/where-can-i-find-the-address-of-the-linux-global-mem-map-array
-这一个问答解释，vmemmap 和 mem_section 就是相互冲突的，阅读其中代码，其实似乎没有起到什么功能。
-
-
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=8f6aac419bd
-
 # zone 和 node 初始化过程
 > 3.5.3 节
 
 # pageset
-hot-cold page 
+hot-cold page
 
 # buddy system 3.5 节
 描述关键内容在于page reclaimg 和 fragmentation，而不是
