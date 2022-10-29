@@ -565,13 +565,6 @@ static int run_init_process(const char *init_filename)
 
 #### (misc) cgroup 和 rlimit 是一个东西吗 ?
 
-#### ()
-https://lwn.net/Articles/789304/
-
-it couldn't deal well with large holes in the physical address space.
-
-
-#### (interesting) lruvec 在pg_data_t 中间的作用是什么?
 
 #### (rmap) init_swap_address_space
 曾经以为每一个文件才需要，现在居然swap 居然，需要，感觉逻辑上很怪异!

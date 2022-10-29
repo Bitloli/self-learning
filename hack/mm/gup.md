@@ -185,6 +185,27 @@ static inline pte_t maybe_mkwrite(pte_t pte, struct vm_area_struct *vma)
 也就是说，force 的是存在前提的，创建一个 cow page, 提供一个修改了文件的假象，毕竟，修改了 tracee 的二进制，然后忘记修改回来了，是非常糟糕的
 - [ ] check_vma_flags 调用 is_cow_mapping 检测 VM_MAYWRITE 的 flag 为什么可以成功啊, 这个 flag 是什么设置的
 
+## 想不到 gup 在这个时候可以被调用
+```txt
+#0  mark_page_accessed (page=page@entry=0xffffea0004e92940) at mm/folio-compat.c:50
+#1  0xffffffff812cf171 in follow_page_pte (vma=vma@entry=0xffff8881230a3390, address=<optimized out>, pmd=<optimized out>, flags=flags@entry=8215, pgmap=pgmap@entry=0xffffc90001a93da0) at mm/gup.c:653
+#2  0xffffffff812cf664 in follow_pmd_mask (pudp=<optimized out>, pudp=<optimized out>, ctx=0xffffc90001a93da0, flags=8215, address=<optimized out>, vma=0xffff8881230a3390) at mm/gup.c:765
+#3  0xffffffff812cfb8b in __get_user_pages (mm=mm@entry=0xffff888125b22200, start=<optimized out>, start@entry=140737488351206, nr_pages=<optimized out>, nr_pages@entry=1, gup_flags=gup_flags@entry=8215, pages=pages@entry=0xffffc90001a93e60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:1228
+#4  0xffffffff812d18d5 in __get_user_pages_locked (flags=8215, locked=0x0 <fixed_percpu_data>, vmas=0x0 <fixed_percpu_data>, pages=0xffffc90001a93e60, nr_pages=1, start=140737488351206, mm=0xffff888125b22200) at mm/gup.c:1434
+#5  __get_user_pages_remote (mm=0xffff888125b22200, start=start@entry=140737488351206, nr_pages=nr_pages@entry=1, gup_flags=gup_flags@entry=17, pages=pages@entry=0xffffc90001a93e60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:2187
+#6  0xffffffff812d1b45 in get_user_pages_remote (mm=<optimized out>, start=start@entry=140737488351206, nr_pages=nr_pages@entry=1, gup_flags=gup_flags@entry=17, pages=pages@entry=0xffffc90001a93e60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:2260
+#7  0xffffffff8136d26a in get_arg_page (bprm=bprm@entry=0xffff88812221b600, pos=pos@entry=140737488351206, write=write@entry=1) at fs/exec.c:220
+#8  0xffffffff8136d3d0 in copy_string_kernel (arg=0xffff8881212b7020 "/usr/local/sbin/c", bprm=bprm@entry=0xffff88812221b600) at fs/exec.c:637
+#9  0xffffffff8136e959 in do_execveat_common (fd=fd@entry=-100, filename=0xffff8881212b7000, flags=0, envp=..., argv=..., envp=..., argv=...) at fs/exec.c:1916
+#10 0xffffffff8136ebee in do_execve (__envp=0x5626a6f602a0, __argv=0x7f47952d96b0, filename=<optimized out>) at fs/exec.c:2016
+#11 __do_sys_execve (envp=0x5626a6f602a0, argv=0x7f47952d96b0, filename=<optimized out>) at fs/exec.c:2092
+#12 __se_sys_execve (envp=<optimized out>, argv=<optimized out>, filename=<optimized out>) at fs/exec.c:2087
+#13 __x64_sys_execve (regs=<optimized out>) at fs/exec.c:2087
+#14 0xffffffff81fa3bdb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001a93f58) at arch/x86/entry/common.c:50
+#15 do_syscall_64 (regs=0xffffc90001a93f58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#16 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+#17 0x0000000000000000 in ?? ()
+```
 
 [^1]: https://v1ckydxp.github.io/2020/04/22/2020-04-22-CVE-2016-5195%20%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/
 [^2]: https://medium.com/bindecy/huge-dirty-cow-cve-2017-1000405-110eca132de0

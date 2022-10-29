@@ -38,8 +38,8 @@ kernel=${kernel_dir}/arch/x86/boot/bzImage
 
 distribution=ubuntu-server-22.04
 distribution=centos7
-distribution=CentOS-Stream-8-x86_64 # good
-# distribution=openEuler-22.03-LTS-x86_64 # good
+distribution=CentOS-Stream-8-x86_64         # good
+distribution=openEuler-22.03-LTS-x86_64-dvd # good
 
 if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
   distribution="alpine-standard-3.16.2-x86_64"
@@ -227,11 +227,11 @@ if [ ! -f "${disk_img}" ]; then
   qemu-img create -f qcow2 "${disk_img}" 100G
   # 很多发行版的安装必须使用图形界面，如果在远程，那么需要 vnc
   arg_monitor="-vnc :0,password=on -monitor stdio"
-  arg_monitor=""
+  # arg_monitor=""
   qemu-system-x86_64 \
     -boot d \
-    -cdrom "$iso"
-  -cpu host \
+    -cdrom "$iso" \
+    -cpu host \
     -hda "${disk_img}" \
     -enable-kvm \
     -m 2G \
@@ -247,11 +247,11 @@ if [ $LAUNCH_GDB = true ]; then
 fi
 
 if [[ -z ${replace_kernel+x} ]]; then
+  qemu=qemu-system-x86_64
   arg_monitor="-vnc :0,password=on -monitor stdio"
   # arg_monitor="-nographic"
   # arg_monitor=""
   # @todo 应该是无需如此复杂的
-  qemu=qemu-system-x86_64
   ${qemu} \
     -cpu host $arg_img \
     -enable-kvm \

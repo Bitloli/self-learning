@@ -19,6 +19,8 @@
 - Sparse Memory
   - 在这个模式下，启用 vmemmap，也是目前主流的配置
 
+关于三者更加细节的讨论参考这里: [Memory: the flat, the discontiguous, and the sparse](https://lwn.net/Articles/789304/)
+
 ## 内核管理内存的粒度
 - memsection
 - pageblock : 用于进行 memory 的

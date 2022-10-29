@@ -5,6 +5,8 @@
 3. 涉及到硬件了吗 ?
 5. 前端和后端之间的接口是什么 ?
 
+- [ ] 至少存在 swap 下是如何使用文件和磁盘的分流的
+
 
 
 - http://www.wowotech.net/memory_management/zram.html : 就是这个吗 ?

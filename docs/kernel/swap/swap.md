@@ -3,6 +3,14 @@
 1. lurvec 和 pagevec 各自的作用: lrulist 封装和 batch 操作封装
 2. 本文件处理的内容和 swap 没有什么蛇皮关系，虽然主要的内容是 pagevec 的各种操作，但是实际上是向各种 lrulist 中间添加。
 
+```txt
+#0  lru_add_drain_cpu (cpu=3) at mm/swap.c:665
+#1  0xffffffff812a7d2b in lru_add_drain () at mm/swap.c:773
+#2  0xffffffff812a7d84 in __pagevec_release (pvec=pvec@entry=0xffffc9000005fb88) at mm/swap.c:1072
+#3  0xffffffff812a8ab1 in pagevec_release (pvec=0xffffc9000005fb88) at include/linux/pagevec.h:71
+#4  folio_batch_release (fbatch=0xffffc9000005fb88) at include/linux/pagevec.h:135
+```
+
 ## core sruct
 ```c
 // pg_data_t 中间的实现每个 node 独立分配的

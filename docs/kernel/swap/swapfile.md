@@ -1,5 +1,9 @@
 # swapfile.c
 
+The cornerstone of swap
+area management is the `swap_info` array defined in `mm/swapfile.c`; its entries store information on the
+individual swap areas in the system
+
 ## 问题
 2. swap_count_continued : 为什么 refcount 搞得这么复杂 ?
 3. extent 和 cluster 机制如何融合起来 ?

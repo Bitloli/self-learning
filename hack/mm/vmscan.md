@@ -16,7 +16,6 @@
 
 
 1. 理清楚一个调用路线图
-2. mark page accessed 和 page reference
 3. 和 dirty page 无穷无尽的关联
 
 理清楚 shrinker，page reclaim ，compaction 之间的联系 !
@@ -110,7 +109,6 @@ struct scan_control {
 // https://lwn.net/Articles/851184/ 似乎现在又发布了一个 LRU 了
 
 - [ ] https://mp.weixin.qq.com/s/7eDqHR06TIBh6hqUMTrZKg
-- [ ] LoyenWang seems cover this part too.
 
 // 简要说明一下在 mem/list_lru.c 中间的内容:
 
