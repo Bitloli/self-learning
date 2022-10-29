@@ -7,6 +7,8 @@
 - 如果整个分配都是在 zone 上进行，那么为什么 reclaim 机制又是在 node 上完成的
 - [ ] 按道理来说，所有的 page 分配之后，需要立刻加入的 lru list 中
 
+## shrink 的过程中 isolate_lru_folios 是什么作用
+
 ## lruvec
 - [ ] 全局搜索一下
 - [ ] 我记得 lrulist 是 per zone 的，例如每次都是 shrink zone 的
@@ -143,3 +145,5 @@ are implemented in mm/memory.c.
 #10 0x00005626a6dea0e0 in ?? ()
 #11 0x0000000000000000 in ?? ()
 ```
+
+## swappiness 的控制

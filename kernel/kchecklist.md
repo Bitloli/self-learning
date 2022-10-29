@@ -56,7 +56,7 @@ static inline int page_is_file_cache(struct page *page)
 1. VM_MERGEABLE 的含义是什么 ?  谁使用过 ?
 2. CONFIG_KSM ?
 3. PAGE_MAPPING_MOVABLE 的含义
-4. 
+4.
  * Please note that, confusingly, "page_mapping" refers to the inode
  * address_space which maps the page from disk; whereas "page_mapped"
  * refers to user virtual address space into which the page is mapped.
@@ -70,7 +70,7 @@ static inline int page_is_file_cache(struct page *page)
  * __page_set_anon_rmap - set up new anonymous rmap
  * @page:	Page or Hugepage to add to rmap
  * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping	
+ * @address:	User virtual address of the mapping
  * @exclusive:	the page is exclusively owned by the current process
  */
 static void __page_set_anon_rmap(struct page *page,
@@ -133,7 +133,7 @@ EXPORT_SYMBOL(page_mapping);
 
 3. PG_swapcache : 表示该 page 被用于 swap cache , 在那个 radix tree 中间
 4. PG_swapbacked : 该 page 被 swap backed ，在 disk 之类的含有备份。
-    1. PageAnon : anon page 
+    1. PageAnon : anon page
     2. @todo 所以，存在PG_swapcache 但是没有 PG_swapbacked 的吗 ?
 
 5. PG_uptodate 和 PG_dirty
@@ -192,7 +192,7 @@ EXPORT_SYMBOL(page_mapping);
  * to become unlocked.
  *
  * PG_uptodate tells whether the page's contents is valid.  When a read
- * completes, the page becomes uptodate, unless a disk I/O error happened. 
+ * completes, the page becomes uptodate, unless a disk I/O error happened.
  *
  * PG_referenced, PG_reclaim are used for page reclaim for anonymous and // @todo PG_reclaim 机制就像是从来没有使用过一样
  * file-backed pagecache (see mm/vmscan.c).
@@ -314,7 +314,7 @@ https://stackoverflow.com/questions/3058592/use-of-double-pointer-in-linux-kerne
 ## Why we need PageUptodate ?
 1. because someone else may access to the file simultaneously ?
     1. so how to inform the page ? (@todo should be easy!)
-    2. file_operations::sync @todo 
+    2. file_operations::sync @todo
 ```c
 static inline int PageUptodate(struct page *page)
 {
@@ -340,20 +340,9 @@ static inline int PageUptodate(struct page *page)
 
 分析一下vmscan 的内容:
 ```c
-f	int kswapd_run(int nid)	[:3921 3]
-f	void kswapd_stop(int nid)	[:3944 3]
-
-f	void wakeup_kswapd(struct zone *zone, gfp_t gfp_flags, int order,	[:3817 3]
 f	unsigned long shrink_all_memory(unsigned long nr_to_reclaim)	[:3863 3]
 
 f	unsigned long try_to_free_pages(struct zonelist *zonelist, int order,	[:3214 3]
-f	unsigned long mem_cgroup_shrink_node(struct mem_cgroup *memcg,	[:3260 3]
-f	unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,	[:3298 3]
-
-
-f	int isolate_lru_page(struct page *page)	[:1762 3]
-
-
 f	unsigned long reclaim_clean_pages_from_list(struct zone *zone,	[:1509 3]　// 这一个函数唯一使用, 位置在page_alloc 中间，默认不启用
 
 f	int remove_mapping(struct address_space *mapping, struct page *page)	[:972 3]
@@ -369,46 +358,6 @@ f	int prealloc_shrinker(struct shrinker *shrinker)	[:370 3]
 f	void free_prealloced_shrinker(struct shrinker *shrinker)	[:394 3]
 f	void register_shrinker_prepared(struct shrinker *shrinker)	[:406 3]
 ```
-
-```c
-static inline struct page *compound_head(struct page *page)
-{
-	unsigned long head = READ_ONCE(page->compound_head);
-
-	if (unlikely(head & 1))
-		return (struct page *) (head - 1);
-	return page;
-}
-```
-
-在page 几个并行的struct 中间:
-```c
-		struct {	/* Tail pages of compound page */
-			unsigned long compound_head;	/* Bit zero is set */
-
-			/* First tail page only */
-			unsigned char compound_dtor;
-			unsigned char compound_order;
-			atomic_t compound_mapcount;
-		};
-```
-
-> https://lwn.net/Articles/619333/
-
-
- a call to PageCompound() will return a true value if the passed-in page is a compound page. Head and tail pages can be distinguished, should the need arise, with PageHead() and PageTail()
-
- ```c
-static __always_inline int PageCompound(struct page *page)
-{
-	return test_bit(PG_head, &page->flags) || PageTail(page);
-}
-```
-
-Every tail page has a pointer to the head page stored in the `first_page` field of struct page.
-This field occupies the same storage as the private field, the spinlock used when the page holds page table entries, or the slab_cache pointer used when the page is owned by a slab allocator. The compound_head() helper function can be used to find the head page associated with any tail page.
-
-
 
 ## 线性地址的作用
 
@@ -479,7 +428,7 @@ unsigned long page_offset_base __ro_after_init = __PAGE_OFFSET_BASE_L4;
 2. @todo 三个调用位置都非常的诡异啊!
 
 ```c
-rmap.c : page_add_new_anon_rmap : @todo 这个函数的调用者简直就是一个神经病 
+rmap.c : page_add_new_anon_rmap : @todo 这个函数的调用者简直就是一个神经病
 
 memory.c : do_swap_page
 
@@ -488,7 +437,7 @@ mempolicy.c : alloc_pages_vma
 
 3. `__read_swap_cache_async` 调用 `__SetPageSwapBacked`:
 
-add_to_swap 
+add_to_swap
 1. 调用 add_to_swap_cache 用于实现 page 和 entry 关联(利用 radix tree)
     1. add_to_swap_cache 是 SetPageSwapCache 的唯三调用者，其余两个位置是 shmem.c 和 migrate.c 中间的，并没有什么实际的意义。
     2. 所以，可以说，当 page 被挂到 swap cache 中间的时候，那么这一个 flag 就会插上去。

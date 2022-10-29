@@ -1,4 +1,4 @@
-# mm/memcontrol.c
+# memcontrol.c
 
 1. memcontrol 到底控制了什么东西 ? swap 内存使用数量 ?
 2. 从哪里读取 limitation ?
@@ -6,6 +6,13 @@
 4. vm_swappiness 是如何控制的?
   - https://access.redhat.com/solutions/103833
   - [ ] 能不能让即使存在超级多的内存的时候就开始 swap
+
+- [ ] update tree 真的有用吗?
+
+- [ ] mem_cgroup_charge_statistics : 这个操作的 PGPGIN ，我无法理解
+
+## 基本操作
+- lscgroup 可以展示当前的 cgroups，默认的都是 systemd 启动的
 
 ## function for outside
 
@@ -31,13 +38,135 @@ static void shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
             sc->nr_scanned += nr_soft_scanned;
 ```
 
-## events
+## 跑点 backtrace 吧
+- [ ] mem_cgroup_move_account
+  - mem_cgroup_move_task : gdb 插入错误
+
+- try_charge_memcg : 超级频繁的调用，因为 systemd 本身
+- mem_cgroup_migrate
+
+```txt
+#0  mem_cgroup_move_task () at mm/memcontrol.c:6247
+#1  0xffffffff811cc6ff in cgroup_procs_write_finish (task=task@entry=0xffff888140180000, threadgroup_locked=<optimized out>) at kernel/cgroup/cgroup.c:2985
+#2  0xffffffff811cf13f in __cgroup_procs_write (of=0xffff8881222f6600, buf=<optimized out>, threadgroup=threadgroup@entry=true) at kernel/cgroup/cgroup.c:5161
+#3  0xffffffff811cf1ce in cgroup_procs_write (of=<optimized out>, buf=<optimized out>, nbytes=2, off=<optimized out>) at kernel/cgroup/cgroup.c:5171
+#4  0xffffffff813fed5e in kernfs_fop_write_iter (iocb=0xffffc9000005fea0, iter=<optimized out>) at fs/kernfs/file.c:330
+#5  0xffffffff81366a4c in call_write_iter (iter=0xffffc9000005fe78, kio=0xffffc9000005fea0, file=0xffff888124a38900) at include/linux/fs.h:2191
+#6  new_sync_write (ppos=0xffffc9000005ff08, len=2, buf=0x7fff79847d3a "1\n", filp=0xffff888124a38900) at fs/read_write.c:491
+#7  vfs_write (file=file@entry=0xffff888124a38900, buf=buf@entry=0x7fff79847d3a "1\n", count=count@entry=2, pos=pos@entry=0xffffc9000005ff08) at fs/read_write.c:584
+#8  0xffffffff81366e1a in ksys_write (fd=<optimized out>, buf=0x7fff79847d3a "1\n", count=2) at fs/read_write.c:637
+#9  0xffffffff81fa3beb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc9000005ff58) at arch/x86/entry/common.c:50
+#10 do_syscall_64 (regs=0xffffc9000005ff58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#11 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
+```txt
+#0  try_charge_memcg (memcg=memcg@entry=0xffff88812528b000, gfp_mask=gfp_mask@entry=3264, nr_pages=nr_pages@entry=1) at mm/memcontrol.c:2629
+#1  0xffffffff8134c6d3 in obj_cgroup_charge_pages (nr_pages=1, gfp=3264, objcg=0xffff88812577b500) at mm/memcontrol.c:3095
+#2  obj_cgroup_charge (objcg=objcg@entry=0xffff88812577b500, gfp=gfp@entry=3264, size=<optimized out>) at mm/memcontrol.c:3385
+#3  0xffffffff8132d600 in memcg_slab_pre_alloc_hook (flags=3264, objects=1, objcgp=<synthetic pointer>, lru=0x1138 <cpu_debug_store+312>, s=0xffff888100005300) at mm/slab.h:501
+#4  slab_pre_alloc_hook (flags=3264, size=1, objcgp=<synthetic pointer>, lru=0x1138 <cpu_debug_store+312>, s=0xffff888100005300) at mm/slab.h:715
+#5  slab_alloc_node (orig_size=192, addr=18446744071582522772, node=-1, gfpflags=3264, lru=0x1138 <cpu_debug_store+312>, s=0xffff888100005300) at mm/slub.c:3318
+#6  slab_alloc (orig_size=192, addr=18446744071582522772, gfpflags=3264, lru=0x1138 <cpu_debug_store+312>, s=0xffff888100005300) at mm/slub.c:3406
+#7  __kmem_cache_alloc_lru (gfpflags=<optimized out>, lru=<optimized out>, s=<optimized out>) at mm/slub.c:3413
+#8  kmem_cache_alloc_lru (s=0xffff888100005300, lru=lru@entry=0xffff88812200ec78, gfpflags=gfpflags@entry=3264) at mm/slub.c:3429
+#9  0xffffffff81381d94 in __d_alloc (sb=0xffff88812200e800, name=name@entry=0xffffc9000005fe90) at fs/dcache.c:1769
+#10 0xffffffff81381f70 in d_alloc (parent=parent@entry=0xffff888121f97180, name=name@entry=0xffffc9000005fe90) at fs/dcache.c:1849
+#11 0xffffffff813727de in __lookup_hash (name=name@entry=0xffffc9000005fe90, base=0xffff888121f97180, flags=flags@entry=1536) at fs/namei.c:1597
+#12 0xffffffff81377376 in filename_create (dfd=dfd@entry=-100, name=name@entry=0xffff888100bba000, path=path@entry=0xffffc9000005fed8, lookup_flags=<optimized out>) at fs/namei.c:3807
+#13 0xffffffff8137977f in do_mkdirat (dfd=dfd@entry=-100, name=0xffff888100bba000, mode=mode@entry=493) at fs/namei.c:4050
+#14 0xffffffff813799b3 in __do_sys_mkdir (mode=<optimized out>, pathname=<optimized out>) at fs/namei.c:4080
+#15 __se_sys_mkdir (mode=<optimized out>, pathname=<optimized out>) at fs/namei.c:4078
+#16 __x64_sys_mkdir (regs=<optimized out>) at fs/namei.c:4078
+#17 0xffffffff81fa3beb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc9000005ff58) at arch/x86/entry/common.c:50
+#18 do_syscall_64 (regs=0xffffc9000005ff58, nr=<optimized out>) at arch/x86/entry/common.c:80
+```
+
+## mem_cgroup_migrate
+
+- [ ] 为什么 cgroup 和物理位置有关，也许是 migrate 前后，页面数量不同?
+
+```txt
+#0  mem_cgroup_migrate (old=old@entry=0xffffea0004c18000, new=new@entry=0xffffea0005ee8000) at arch/x86/include/asm/bitops.h:206
+#1  0xffffffff8133084d in folio_migrate_flags (newfolio=newfolio@entry=0xffffea0005ee8000, folio=folio@entry=0xffffea0004c18000) at mm/migrate.c:613
+#2  0xffffffff81332090 in folio_migrate_copy (folio=0xffffea0004c18000, newfolio=0xffffea0005ee8000) at mm/migrate.c:620
+#3  migrate_folio_extra (mapping=<optimized out>, extra_count=<optimized out>, mode=MIGRATE_ASYNC, src=0xffffea0004c18000, dst=0xffffea0005ee8000) at mm/migrate.c:641
+#4  migrate_folio_extra (mapping=<optimized out>, dst=0xffffea0005ee8000, src=0xffffea0004c18000, mode=MIGRATE_ASYNC, extra_count=<optimized out>) at mm/migrate.c:628
+#5  0xffffffff813323d4 in migrate_folio (mode=MIGRATE_ASYNC, src=0xffffea0004c18000, dst=0xffffea0005ee8000, mapping=0x0 <fixed_percpu_data>) at mm/migrate.c:662
+#6  move_to_new_folio (dst=dst@entry=0xffffea0005ee8000, src=src@entry=0xffffea0004c18000, mode=mode@entry=MIGRATE_ASYNC) at mm/migrate.c:939
+#7  0xffffffff813335da in __unmap_and_move (mode=MIGRATE_ASYNC, force=0, dst=<optimized out>, src=<optimized out>) at mm/migrate.c:1112
+#8  unmap_and_move (ret=0xffffc90001a4fc70, reason=MR_NUMA_MISPLACED, mode=MIGRATE_ASYNC, force=0, page=0xffffea0004c18000, private=0, put_new_page=0x0 <fixed_percpu_data>, get_new_page=0xffffffff81331510 <alloc_misplaced_dst_page>) at mm/migrate.c:1184
+#9  migrate_pages (from=from@entry=0xffffc90001a4fd28, get_new_page=get_new_page@entry=0xffffffff81331510 <alloc_misplaced_dst_page>, put_new_page=put_new_page@entry=0x0 <fixed_percpu_data>, private=private@entry=0, mode=mode@entry=MIGRATE_ASYNC, reason=reason@entry=5, ret_succeeded=<optimized out>) at mm/migrate.c:1461
+#10 0xffffffff813345e1 in migrate_misplaced_page (page=page@entry=0xffffea0004c18000, vma=vma@entry=0xffff888169c9b098, node=node@entry=0) at mm/migrate.c:2186
+#11 0xffffffff8133731a in do_huge_pmd_numa_page (vmf=vmf@entry=0xffffc90001a4fdf8) at mm/huge_memory.c:1520
+#12 0xffffffff812dcab3 in __handle_mm_fault (vma=vma@entry=0xffff888169c9b098, address=address@entry=140275315900416, flags=flags@entry=596) at mm/memory.c:5083
+#13 0xffffffff812dd600 in handle_mm_fault (vma=0xffff888169c9b098, address=address@entry=140275315900416, flags=flags@entry=596, regs=regs@entry=0xffffc90001a4ff58) at mm/memory.c:5218
+#14 0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc90001a4ff58, error_code=error_code@entry=4, address=address@entry=140275315900416) at arch/x86/mm/fault.c:1428
+#15 0xffffffff81fa7e22 in handle_page_fault (address=140275315900416, error_code=4, regs=0xffffc90001a4ff58) at arch/x86/mm/fault.c:1519
+#16 exc_page_fault (regs=0xffffc90001a4ff58, error_code=4) at arch/x86/mm/fault.c:1575
+#17 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+```
+
+## memcg vmscan 的过程
+- try_to_free_mem_cgroup_pages : check if memory consumption is in the normal range : 什么叫做 normal range
+
+```txt
+#0  mem_cgroup_calculate_protection (root=root@entry=0xffff8881270e7000, memcg=memcg@entry=0xffff8881270e7000) at arch/x86/include/asm/jump_label.h:27
+#1  0xffffffff812afb63 in shrink_node_memcgs (sc=0xffffc90001befc68, pgdat=0xffff88813fffc000) at mm/vmscan.c:6049
+#2  shrink_node (pgdat=pgdat@entry=0xffff88813fffc000, sc=sc@entry=0xffffc90001befc68) at mm/vmscan.c:6105
+#3  0xffffffff812b0e10 in shrink_zones (sc=0xffffc90001befc68, zonelist=<optimized out>) at mm/vmscan.c:6343
+#4  do_try_to_free_pages (zonelist=zonelist@entry=0xffff88813fffda00, sc=sc@entry=0xffffc90001befc68) at mm/vmscan.c:6405
+#5  0xffffffff812b1c70 in try_to_free_mem_cgroup_pages (memcg=memcg@entry=0xffff8881270e7000, nr_pages=nr_pages@entry=1, gfp_mask=gfp_mask@entry=3264, reclaim_options=reclaim_options@entry=2) at mm/vmscan.c:6720
+#6  0xffffffff8134aa07 in try_charge_memcg (memcg=memcg@entry=0xffff8881270e7000, gfp_mask=gfp_mask@entry=3264, nr_pages=1) at mm/memcontrol.c:2681
+#7  0xffffffff8134b93d in try_charge (nr_pages=1, gfp_mask=3264, memcg=0xffff8881270e7000) at mm/memcontrol.c:2823
+#8  charge_memcg (folio=folio@entry=0xffffea0004b6f200, memcg=memcg@entry=0xffff8881270e7000, gfp=gfp@entry=3264) at mm/memcontrol.c:6879
+#9  0xffffffff8134d124 in __mem_cgroup_charge (folio=0xffffea0004b6f200, mm=<optimized out>, gfp=gfp@entry=3264) at mm/memcontrol.c:6900
+#10 0xffffffff812dcc56 in mem_cgroup_charge (gfp=3264, mm=<optimized out>, folio=<optimized out>) at include/linux/memcontrol.h:667
+#11 do_anonymous_page (vmf=0xffffc90001befdf8) at mm/memory.c:4118
+#12 handle_pte_fault (vmf=0xffffc90001befdf8) at mm/memory.c:4953
+#13 __handle_mm_fault (vma=vma@entry=0xffff88816b754558, address=address@entry=140170563596288, flags=flags@entry=597) at mm/memory.c:5097
+#14 0xffffffff812dd600 in handle_mm_fault (vma=0xffff88816b754558, address=address@entry=140170563596288, flags=flags@entry=597, regs=regs@entry=0xffffc90001beff58) at mm/memory.c:5218
+#15 0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc90001beff58, error_code=error_code@entry=6, address=address@entry=140170563596288) at arch/x86/mm/fault.c:1428
+#16 0xffffffff81fa7e22 in handle_page_fault (address=140170563596288, error_code=6, regs=0xffffc90001beff58) at arch/x86/mm/fault.c:1519
+#17 exc_page_fault (regs=0xffffc90001beff58, error_code=6) at arch/x86/mm/fault.c:1575
+#18 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+```
+
+## memcg_check_events
+
+调用的位置还是很多的:
 
 ```c
 memcg_check_events : 似乎像是，当事件累积到一定的程度的时候，然后进行处理的机制 mem_cgroup_update_tree 就是为了 soft_limit 而处理的
-// @todo 找到其 ref，为什么是那些地方 ?
 ```
 
+```txt
+#0  memcg_check_events (memcg=0xffff8881270e7000, nid=1) at mm/memcontrol.c:963
+#1  0xffffffff8134958f in uncharge_batch (ug=ug@entry=0xffffc90001bef920) at mm/memcontrol.c:7003
+#2  0xffffffff8134d388 in __mem_cgroup_uncharge_list (page_list=page_list@entry=0xffffc90001bef9b8) at mm/memcontrol.c:7098
+#3  0xffffffff812ad9fe in mem_cgroup_uncharge_list (page_list=0xffffc90001bef9b8) at include/linux/memcontrol.h:694
+#4  shrink_folio_list (folio_list=folio_list@entry=0xffffc90001befa90, pgdat=pgdat@entry=0xffff88813fffc000, sc=sc@entry=0xffffc90001befc68, stat=stat@entry=0xffffc90001befb18, ignore_references=ignore_references@entry=false) at mm/vmscan.c:2080
+#5  0xffffffff812af3b8 in shrink_inactive_list (lru=LRU_INACTIVE_ANON, sc=0xffffc90001befc68, lruvec=0xffff888127c33000, nr_to_scan=<optimized out>) at mm/vmscan.c:2489
+#6  shrink_list (sc=0xffffc90001befc68, lruvec=0xffff888127c33000, nr_to_scan=<optimized out>, lru=LRU_INACTIVE_ANON) at mm/vmscan.c:2716
+#7  shrink_lruvec (lruvec=lruvec@entry=0xffff888127c33000, sc=sc@entry=0xffffc90001befc68) at mm/vmscan.c:5885
+#8  0xffffffff812afc1f in shrink_node_memcgs (sc=0xffffc90001befc68, pgdat=0xffff88813fffc000) at mm/vmscan.c:6074
+#9  shrink_node (pgdat=pgdat@entry=0xffff88813fffc000, sc=sc@entry=0xffffc90001befc68) at mm/vmscan.c:6105
+#10 0xffffffff812b0e10 in shrink_zones (sc=0xffffc90001befc68, zonelist=<optimized out>) at mm/vmscan.c:6343
+#11 do_try_to_free_pages (zonelist=zonelist@entry=0xffff88813fffda00, sc=sc@entry=0xffffc90001befc68) at mm/vmscan.c:6405
+#12 0xffffffff812b1c70 in try_to_free_mem_cgroup_pages (memcg=memcg@entry=0xffff8881270e7000, nr_pages=nr_pages@entry=1, gfp_mask=gfp_mask@entry=3264, reclaim_options=reclaim_options@entry=2) at mm/vmscan.c:6720
+#13 0xffffffff8134aa07 in try_charge_memcg (memcg=memcg@entry=0xffff8881270e7000, gfp_mask=gfp_mask@entry=3264, nr_pages=1) at mm/memcontrol.c:2681
+#14 0xffffffff8134b93d in try_charge (nr_pages=1, gfp_mask=3264, memcg=0xffff8881270e7000) at mm/memcontrol.c:2823
+#15 charge_memcg (folio=folio@entry=0xffffea0004b6f200, memcg=memcg@entry=0xffff8881270e7000, gfp=gfp@entry=3264) at mm/memcontrol.c:6879
+#16 0xffffffff8134d124 in __mem_cgroup_charge (folio=0xffffea0004b6f200, mm=<optimized out>, gfp=gfp@entry=3264) at mm/memcontrol.c:6900
+#17 0xffffffff812dcc56 in mem_cgroup_charge (gfp=3264, mm=<optimized out>, folio=<optimized out>) at include/linux/memcontrol.h:667
+#18 do_anonymous_page (vmf=0xffffc90001befdf8) at mm/memory.c:4118
+#19 handle_pte_fault (vmf=0xffffc90001befdf8) at mm/memory.c:4953
+#20 __handle_mm_fault (vma=vma@entry=0xffff88816b754558, address=address@entry=140170563596288, flags=flags@entry=597) at mm/memory.c:5097
+#21 0xffffffff812dd600 in handle_mm_fault (vma=0xffff88816b754558, address=address@entry=140170563596288, flags=flags@entry=597, regs=regs@entry=0xffffc90001beff58) at mm/memory.c:5218
+#22 0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc90001beff58, error_code=error_code@entry=6, address=address@entry=140170563596288) at arch/x86/mm/fault.c:1428
+#23 0xffffffff81fa7e22 in handle_page_fault (address=140170563596288, error_code=6, regs=0xffffc90001beff58) at arch/x86/mm/fault.c:1519
+#24 exc_page_fault (regs=0xffffc90001beff58, error_code=6) at arch/x86/mm/fault.c:1575
+```
 
 
 ## threshold
@@ -260,12 +389,10 @@ Legacy consumer-oriented counters
 
 ```c
 soft_limit_excess : 简单的比较两个数值
-
-
 ```
 
 ## events
-![](../../img/source/mem_cgroup_update_tree.png)
+![](../../kernel/plka/img/source//mem_cgroup_update_tree.png)
 
 ```c
 /*
@@ -603,136 +730,6 @@ static struct cftype memory_files[] = {
     { } /* terminate */
 };
 
-static struct cftype mem_cgroup_legacy_files[] = {
-    {
-        .name = "usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEM, RES_USAGE),
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "max_usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEM, RES_MAX_USAGE),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "limit_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEM, RES_LIMIT),
-        .write = mem_cgroup_write,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "soft_limit_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEM, RES_SOFT_LIMIT),
-        .write = mem_cgroup_write,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "failcnt",
-        .private = MEMFILE_PRIVATE(_MEM, RES_FAILCNT),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "stat",
-        .seq_show = memcg_stat_show,
-    },
-    {
-        .name = "force_empty",
-        .write = mem_cgroup_force_empty_write,
-    },
-    {
-        .name = "use_hierarchy",
-        .write_u64 = mem_cgroup_hierarchy_write,
-        .read_u64 = mem_cgroup_hierarchy_read,
-    },
-    {
-        .name = "cgroup.event_control",     /* XXX: for compat */
-        .write = memcg_write_event_control,
-        .flags = CFTYPE_NO_PREFIX | CFTYPE_WORLD_WRITABLE,
-    },
-    {
-        .name = "swappiness",
-        .read_u64 = mem_cgroup_swappiness_read,
-        .write_u64 = mem_cgroup_swappiness_write,
-    },
-    {
-        .name = "move_charge_at_immigrate",
-        .read_u64 = mem_cgroup_move_charge_read,
-        .write_u64 = mem_cgroup_move_charge_write,
-    },
-    {
-        .name = "oom_control",
-        .seq_show = mem_cgroup_oom_control_read,
-        .write_u64 = mem_cgroup_oom_control_write,
-        .private = MEMFILE_PRIVATE(_OOM_TYPE, OOM_CONTROL),
-    },
-    {
-        .name = "pressure_level",
-    },
-#ifdef CONFIG_NUMA
-    {
-        .name = "numa_stat",
-        .seq_show = memcg_numa_stat_show,
-    },
-#endif
-    {
-        .name = "kmem.limit_in_bytes",
-        .private = MEMFILE_PRIVATE(_KMEM, RES_LIMIT),
-        .write = mem_cgroup_write,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "kmem.usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_KMEM, RES_USAGE),
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "kmem.failcnt",
-        .private = MEMFILE_PRIVATE(_KMEM, RES_FAILCNT),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "kmem.max_usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_KMEM, RES_MAX_USAGE),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-#if defined(CONFIG_SLAB) || defined(CONFIG_SLUB_DEBUG)
-    {
-        .name = "kmem.slabinfo",
-        .seq_start = memcg_slab_start,
-        .seq_next = memcg_slab_next,
-        .seq_stop = memcg_slab_stop,
-        .seq_show = memcg_slab_show,
-    },
-#endif
-    {
-        .name = "kmem.tcp.limit_in_bytes",
-        .private = MEMFILE_PRIVATE(_TCP, RES_LIMIT),
-        .write = mem_cgroup_write,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "kmem.tcp.usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_TCP, RES_USAGE),
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "kmem.tcp.failcnt",
-        .private = MEMFILE_PRIVATE(_TCP, RES_FAILCNT),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "kmem.tcp.max_usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_TCP, RES_MAX_USAGE),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    { },    /* terminate */
-};
 
 static struct cftype swap_files[] = {
     {
@@ -754,31 +751,322 @@ static struct cftype swap_files[] = {
     },
     { } /* terminate */
 };
+```
 
-static struct cftype memsw_cgroup_files[] = {
-    {
-        .name = "memsw.usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEMSWAP, RES_USAGE),
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "memsw.max_usage_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEMSWAP, RES_MAX_USAGE),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "memsw.limit_in_bytes",
-        .private = MEMFILE_PRIVATE(_MEMSWAP, RES_LIMIT),
-        .write = mem_cgroup_write,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    {
-        .name = "memsw.failcnt",
-        .private = MEMFILE_PRIVATE(_MEMSWAP, RES_FAILCNT),
-        .write = mem_cgroup_reset,
-        .read_u64 = mem_cgroup_read_u64,
-    },
-    { },    /* terminate */
+## memcg
+
+[How to use memcg, explain every entry in cgroup](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/index.html)
+
+[How memcg implemented](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/memcg_test.html)
+
+```c
+struct cgroup_subsys memory_cgrp_subsys __read_mostly;
+EXPORT_SYMBOL(memory_cgrp_subsys);
+
+struct mem_cgroup *root_mem_cgroup __read_mostly;
+```
+
+- There is only one `cgroup_subsys` for memcg
+- Every `mem_cgroup` has a `struct cgroup_subsys_state`
+
+- [ ] manage `mem_cgroup` in a hierarchy
+
+
+#### memcg obj_cgroup
+```c
+/*
+ * Bucket for arbitrarily byte-sized objects charged to a memory
+ * cgroup. The bucket can be reparented in one piece when the cgroup
+ * is destroyed, without having to round up the individual references
+ * of all live memory objects in the wild.
+ */
+struct obj_cgroup {
+  struct percpu_ref refcnt;
+  struct mem_cgroup *memcg;
+  atomic_t nr_charged_bytes;
+  union {
+    struct list_head list;
+    struct rcu_head rcu;
+  };
 };
+```
+As the name suggested, is used in slab and percpu allocation.
+
+
+#### memcg task_struct
+```c
+/**
+ * get_mem_cgroup_from_mm: Obtain a reference on given mm_struct's memcg.
+ * @mm: mm from which memcg should be extracted. It can be NULL.
+ *
+ * Obtain a reference on mm->memcg and returns it if successful. Otherwise
+ * root_mem_cgroup is returned. However if mem_cgroup is disabled, NULL is
+ * returned.
+ */
+struct mem_cgroup *get_mem_cgroup_from_mm(struct mm_struct *mm)
+{
+  struct mem_cgroup *memcg;
+
+  if (mem_cgroup_disabled())
+    return NULL;
+
+  rcu_read_lock();
+  do {
+    /*
+     * Page cache insertions can happen withou an
+     * actual mm context, e.g. during disk probing
+     * on boot, loopback IO, acct() writes etc.
+     */
+    if (unlikely(!mm))
+      memcg = root_mem_cgroup;
+    else {
+      memcg = mem_cgroup_from_task(rcu_dereference(mm->owner));
+      if (unlikely(!memcg))
+        memcg = root_mem_cgroup;
+    }
+  } while (!css_tryget(&memcg->css));
+  rcu_read_unlock();
+  return memcg;
+}
+```
+
+This is only way to access task's css_set
+```c
+/**
+ * task_css_set - obtain a task's css_set
+ * @task: the task to obtain css_set for
+ *
+ * See task_css_set_check().
+ */
+static inline struct css_set *task_css_set(struct task_struct *task)
+{
+  return task_css_set_check(task, false);
+}
+```
+
+
+#### memcg charge
+page_cgroup_ino : page -> memcg -> parent memcg -> kernfs_node -> ino
+
+- mem_cgroup_charge : page fault, `__add_to_page_cache_locked`, `shmem_add_to_page_cache`, ...
+   - try_charge
+   - commit_charge
+- mem_cgroup_uncharge : paired with mem_cgroup_charge
+- mem_cgroup_uncharge_skmem : skmem means skbuff
+- mem_cgroup_uncharge_list : uncharge page list, called by `shrink_active_list` `shrink_inactive_list` and `shrink_page_list`
+- mem_cgroup_uncharge_swap && mem_cgroup_try_charge_swap : only called by get_swap_page
+
+
+[Why kmem should be disabled ?](https://www.spinics.net/lists/mm-commits/msg140715.html)
+`__memcg_kmem_charge` : call `try_charge` in the end
+  - `__memcg_kmem_charge_page`
+  - obj_cgroup_charge
+
+
+- [ ] I guess mem_cgroup_uncharge is base of them, but not.
+
+- [ ] swap_group.c
+
+
+
+#### memcg overview
+- [ ] [In fact, we can check the user api before hack it](https://segmentfault.com/a/1190000008125359)
+    - [ ]  [similar tutorial](https://fuckcloudnative.io/posts/understanding-cgroups-part-3-memory/)
+
+- [ ] why swap works different with memory_cgrp_subsys ?
+  - [ ] mem_cgroup_swap_init
+
+- [ ] mem_cgroup_scan_tasks
+
+- [ ] parent_mem_cgroup
+
+```c
+struct cgroup_subsys memory_cgrp_subsys = {
+  .css_alloc = mem_cgroup_css_alloc,
+  .css_online = mem_cgroup_css_online,
+  .css_offline = mem_cgroup_css_offline,
+  .css_released = mem_cgroup_css_released,
+  .css_free = mem_cgroup_css_free,
+  .css_reset = mem_cgroup_css_reset,
+  .can_attach = mem_cgroup_can_attach,
+  .cancel_attach = mem_cgroup_cancel_attach,
+  .post_attach = mem_cgroup_move_task,
+  .bind = mem_cgroup_bind,
+  .dfl_cftypes = memory_files,
+  .legacy_cftypes = mem_cgroup_legacy_files,
+  .early_init = 0,
+};
+```
+
+- [ ] css
+
+
+```plain
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  cgroup.clone_children
+.-w--w--w- root root 0 B Fri Oct 23 13:41:52 2020  cgroup.event_control
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  cgroup.procs
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.failcnt
+.-w------- root root 0 B Fri Oct 23 13:41:52 2020  memory.force_empty
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.failcnt
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.limit_in_bytes
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.max_usage_in_bytes
+.r--r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.slabinfo
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.tcp.failcnt
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.tcp.limit_in_bytes
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.tcp.max_usage_in_bytes
+.r--r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.tcp.usage_in_bytes
+.r--r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.kmem.usage_in_bytes
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.limit_in_bytes
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.max_usage_in_bytes
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.move_charge_at_immigrate
+.r--r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.numa_stat
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.oom_control
+.--------- root root 0 B Fri Oct 23 13:41:52 2020  memory.pressure_level
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.soft_limit_in_bytes
+.r--r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.stat
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.swappiness
+.r--r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.usage_in_bytes
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  memory.use_hierarchy
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  notify_on_release
+drwxr-xr-x root root 0 B Fri Oct 23 13:41:52 2020  session-1.scope
+.rw-r--r-- root root 0 B Fri Oct 23 13:41:52 2020  tasks
+drwxr-xr-x root root 0 B Fri Oct 23 13:41:52 2020  user-runtime-dir@1000.service
+drwxr-xr-x root root 0 B Fri Oct 23 10:54:42 2020  user@1000.service
+```
+
+#### memcg force_empty
+
+```c
+static ssize_t mem_cgroup_force_empty_write(struct kernfs_open_file *of,
+              char *buf, size_t nbytes,
+              loff_t off)
+{
+  struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
+
+  if (mem_cgroup_is_root(memcg))
+    return -EINVAL;
+  return mem_cgroup_force_empty(memcg) ?: nbytes;
+}
+
+```
+
+- [ ] kernfs_open_file : oh shit, the fucking kernfs
+
+- [ ]
+
+#### memcg shrinker
+- [ ] shrink_node_memcgs
+  - [ ] mem_cgroup_calculate_protection
+
+#### memcg oom
+mem_cgroup_oom_synchronize
+
+#### memcg writeback
+- [ ] mem_cgroup_wb_stats
+- [ ] domain_dirty_limits
+
+```c
+static struct dirty_throttle_control *mdtc_gdtc(struct dirty_throttle_control *mdtc)
+{
+  return mdtc->gdtc;
+}
+```
+
+#### memcg files
+```c
+/* for encoding cft->private value on file */
+enum res_type {
+  _MEM,
+  _MEMSWAP,
+  _OOM_TYPE,
+  _KMEM,
+  _TCP,
+};
+
+enum {
+  RES_USAGE,
+  RES_LIMIT,
+  RES_MAX_USAGE,
+  RES_FAILCNT,
+  RES_SOFT_LIMIT,
+};
+```
+
+Used in `struct cftype` for distinguished different memory control types
+
+
+```plain
+mem_cgroup_write(used for legacy) \
+                                   \---> try_to_free_cgroup_pages ---> do_try_to_free_pages : this is classical path to reclaim page
+memory_high_write ----------------/
+```
+
+#### memcg mem_cgroup_legacy_files
+
+#### memcg memory_files
+
+1. memcg memory.stat
+```plain
+➜  user-1000.slice cat memory.stat
+cache 0
+rss 0
+rss_huge 0
+shmem 0
+mapped_file 0
+dirty 0
+writeback 0
+pgpgin 0
+pgpgout 0
+pgfault 0
+pgmajfault 0
+inactive_anon 0
+active_anon 0
+inactive_file 0
+active_file 0
+unevictable 0
+hierarchical_memory_limit 9223372036854771712
+total_cache 4071890944
+total_rss 9852420096
+total_rss_huge 0
+total_shmem 999370752
+total_mapped_file 1125949440
+total_dirty 1351680
+total_writeback 405504
+total_pgpgin 294122860
+total_pgpgout 290723233
+total_pgfault 255027451
+total_pgmajfault 617992
+total_inactive_anon 1164046336
+total_active_anon 9625313280
+total_inactive_file 1025933312
+total_active_file 2080468992
+total_unevictable 29466624
+```
+memory_stat_show
+
+#### memcg memsw_files
+
+#### memcg swap_files
+
+## memgroup
+
+```txt
+memory.current
+memory.events
+memory.events.local
+memory.high
+memory.low
+memory.max
+memory.min
+memory.numa_stat
+memory.oom.group
+memory.peak
+memory.reclaim
+memory.stat
+memory.swap.current
+memory.swap.events
+memory.swap.high
+memory.swap.max
+memory.zswap.current
+memory.zswap.max
 ```

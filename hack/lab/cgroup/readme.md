@@ -17,7 +17,7 @@ watch --interval 1 cgget -g memory:mem # 此时，其中大多数都是 0
 
 2. 在另一个 shell 中运行
 ```sh
-cgexec -g memory:mem stress --vm-bytes 150M --vm-keep -m 1
+cgexec -g memory:mem stress-ng --vm-bytes 150M --vm-keep -m 1
 ```
 
 3. 两边都关闭，然后设置 limit
