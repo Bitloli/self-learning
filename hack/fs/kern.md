@@ -31,3 +31,5 @@ struct kernfs_ops {
 - [ ] It seems there is another libfs provide `seq_next`
   - Oh yes, it's /home/maritns3/core/linux/fs/seq_file.c
 
+
+- [ ] kernfs_open_file : oh shit, the fucking kernfs

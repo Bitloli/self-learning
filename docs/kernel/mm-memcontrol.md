@@ -8,8 +8,13 @@
   - [ ] 能不能让即使存在超级多的内存的时候就开始 swap
 
 - [ ] update tree 真的有用吗?
+  - 确定只是和 softlimit 有关的 ?
 
 - [ ] mem_cgroup_charge_statistics : 这个操作的 PGPGIN ，我无法理解
+
+- [ ] low min high 是如何影响回收的
+- [ ] memcg 是如何和 zone 的联系起来的
+- [ ] get_mctgt_type
 
 ## 基本操作
 - lscgroup 可以展示当前的 cgroups，默认的都是 systemd 启动的
@@ -107,9 +112,10 @@ static void shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 #17 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
 ```
 
-## memcg vmscan 的过程
+## 核心流程
 - try_to_free_mem_cgroup_pages : check if memory consumption is in the normal range : 什么叫做 normal range
 
+- 最后也是走到常规路径来回收
 ```txt
 #0  mem_cgroup_calculate_protection (root=root@entry=0xffff8881270e7000, memcg=memcg@entry=0xffff8881270e7000) at arch/x86/include/asm/jump_label.h:27
 #1  0xffffffff812afb63 in shrink_node_memcgs (sc=0xffffc90001befc68, pgdat=0xffff88813fffc000) at mm/vmscan.c:6049
@@ -131,6 +137,12 @@ static void shrink_zones(struct zonelist *zonelist, struct scan_control *sc)
 #17 exc_page_fault (regs=0xffffc90001beff58, error_code=6) at arch/x86/mm/fault.c:1575
 #18 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
 ```
+
+- try_charge_memcg
+  - page_counter_try_charge : 从下向上，分配内存，如果充足，那么可以直接返回
+  - try_to_free_mem_cgroup_pages : 尝试回收内存
+    - 在其中 swap 的时候，被 swap 锁限制
+  - mem_cgroup_out_of_memory : 内存不够，结束!
 
 ## memcg_check_events
 
@@ -168,12 +180,38 @@ memcg_check_events : 似乎像是，当事件累积到一定的程度的时候�
 #24 exc_page_fault (regs=0xffffc90001beff58, error_code=6) at arch/x86/mm/fault.c:1575
 ```
 
+## oom
+- try_charge_memcg
+  - mem_cgroup_oom
+- mem_cgroup_oom_synchronize : 其注释说 oom 是支持 user space 通知的，但是没有调查具体如何操作
+
+
+```txt
+[ 6377.444341]  mem_cgroup_out_of_memory+0x131/0x150
+[ 6377.444341]  try_charge_memcg+0x741/0x810
+[ 6377.444341]  charge_memcg+0x2d/0xa0
+[ 6377.444341]  __mem_cgroup_charge+0x24/0x80
+[ 6377.444341]  __filemap_add_folio+0x351/0x430
+[ 6377.444341]  ? scan_shadow_nodes+0x30/0x30
+[ 6377.444341]  filemap_add_folio+0x32/0xa0
+[ 6377.444341]  __filemap_get_folio+0x1f8/0x330
+[ 6377.444341]  filemap_fault+0x14c/0xa00
+[ 6377.444341]  ? filemap_map_pages+0x12b/0x620
+[ 6377.444341]  __do_fault+0x2f/0xb0
+[ 6377.444341]  do_fault+0x1e1/0x590
+[ 6377.444341]  __handle_mm_fault+0x5e4/0x1200
+[ 6377.444341]  ? kvm_sched_clock_read+0x14/0x40
+[ 6377.444341]  handle_mm_fault+0xc0/0x2b0
+[ 6377.444341]  do_user_addr_fault+0x1c3/0x660
+[ 6377.444341]  ? kvm_read_and_reset_apf_flags+0x45/0x60
+[ 6377.444341]  exc_page_fault+0x62/0x150
+[ 6377.444341]  asm_exc_page_fault+0x22/0x30
+```
 
 ## threshold
 ```c
 mem_cgroup_threshold
 ```
-
 
 ## tree
 > tree 机制似乎还是为了 mem_cgroup_soft_limit_reclaim 的机制
@@ -364,7 +402,6 @@ static void mem_cgroup_remove_from_trees(struct mem_cgroup *memcg)
 
 
 ## What does it control
-1. CONFIG_MEMCG_KMEM 连 kernel 的内存也需要控制
 2. CONFIG_CGROUP_WRITEBACK
 
 
@@ -385,11 +422,7 @@ Legacy consumer-oriented counters
 
 ## soft limit
 
-![](../../img/source/soft_limit_excess.png)
-
-```c
 soft_limit_excess : 简单的比较两个数值
-```
 
 ## events
 ![](../../kernel/plka/img/source//mem_cgroup_update_tree.png)
@@ -415,9 +448,6 @@ struct mem_cgroup_stat_cpu {
     unsigned long targets[MEM_CGROUP_NTARGETS];
 };
 ```
-
-## oom
-
 
 ## charge
 
@@ -488,149 +518,94 @@ static ssize_t memcg_write_event_control(struct kernfs_open_file *of,
 
 ## relation with swap
 
-```c
-enum mem_cgroup_protection mem_cgroup_protected(struct mem_cgroup *root,
-                        struct mem_cgroup *memcg)
+1. mem_cgroup_swapin_charge_folio
+
+```txt
+#0  mem_cgroup_swapin_charge_folio (folio=folio@entry=0xffffea0004d0dcc0, mm=mm@entry=0x0 <fixed_percpu_data>, gfp=gfp@entry=1051850, entry=entry@entry=...) at arch/x86/include/asm/jump_label.h:27
+#1  0xffffffff81308833 in __read_swap_cache_async (entry=entry@entry=..., gfp_mask=gfp_mask@entry=1051850, vma=vma@entry=0xffff8881009a0da8, addr=addr@entry=140232185872384, new_page_allocated=new_page_allocated@entry=0xffffc900019ffd06) at mm/swap_state.c:486
+#2  0xffffffff81308a86 in swap_cluster_readahead (entry=..., gfp_mask=gfp_mask@entry=1051850, vmf=vmf@entry=0xffffc900019ffdf8) at mm/swap_state.c:641
+#3  0xffffffff81308fcf in swapin_readahead (entry=..., entry@entry=..., gfp_mask=gfp_mask@entry=1051850, vmf=vmf@entry=0xffffc900019ffdf8) at mm/swap_state.c:855
+#4  0xffffffff812d834c in do_swap_page (vmf=vmf@entry=0xffffc900019ffdf8) at mm/memory.c:3822
+#5  0xffffffff812dcb2c in handle_pte_fault (vmf=0xffffc900019ffdf8) at mm/memory.c:4959
+#6  __handle_mm_fault (vma=vma@entry=0xffff8881009a0da8, address=address@entry=140232185872384, flags=flags@entry=596) at mm/memory.c:5097
+#7  0xffffffff812dd600 in handle_mm_fault (vma=0xffff8881009a0da8, address=address@entry=140232185872384, flags=flags@entry=596, regs=regs@entry=0xffffc900019fff58) at mm/memory.c:5218
+#8  0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc900019fff58, error_code=error_code@entry=4, address=address@entry=140232185872384) at arch/x86/mm/fault.c:1428
+#9  0xffffffff81fa7e22 in handle_page_fault (address=140232185872384, error_code=4, regs=0xffffc900019fff58) at arch/x86/mm/fault.c:1519
+#10 exc_page_fault (regs=0xffffc900019fff58, error_code=4) at arch/x86/mm/fault.c:1575
+#11 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
 ```
 
+2. swap 的过程中进行 charge
+
+```txt
+#0  __mem_cgroup_try_charge_swap (folio=folio@entry=0xffffea0005d98100, entry=...) at mm/memcontrol.c:7390
+#1  0xffffffff8130f44d in mem_cgroup_try_charge_swap (entry=..., folio=0xffffea0005d98100) at include/linux/swap.h:677
+#2  folio_alloc_swap (folio=folio@entry=0xffffea0005d98100) at mm/swap_slots.c:345
+#3  0xffffffff81307fe0 in add_to_swap (folio=folio@entry=0xffffea0005d98100) at mm/swap_state.c:182
+#4  0xffffffff812adbe1 in shrink_folio_list (folio_list=folio_list@entry=0xffffc90001abf888, pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc90001abfa60, stat=stat@entry=0xffffc90001abf910, ignore_references=ignore_references@entry=false) at mm/vmscan.c:1834
+#5  0xffffffff812af3b8 in shrink_inactive_list (lru=LRU_INACTIVE_ANON, sc=0xffffc90001abfa60, lruvec=0xffff888161d0a800, nr_to_scan=<optimized out>) at mm/vmscan.c:2489
+#6  shrink_list (sc=0xffffc90001abfa60, lruvec=0xffff888161d0a800, nr_to_scan=<optimized out>, lru=LRU_INACTIVE_ANON) at mm/vmscan.c:2716
+#7  shrink_lruvec (lruvec=lruvec@entry=0xffff888161d0a800, sc=sc@entry=0xffffc90001abfa60) at mm/vmscan.c:5885
+#8  0xffffffff812afc1f in shrink_node_memcgs (sc=0xffffc90001abfa60, pgdat=0xffff88823fff9000) at mm/vmscan.c:6074
+#9  shrink_node (pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc90001abfa60) at mm/vmscan.c:6105
+#10 0xffffffff812b0e10 in shrink_zones (sc=0xffffc90001abfa60, zonelist=<optimized out>) at mm/vmscan.c:6343
+#11 do_try_to_free_pages (zonelist=zonelist@entry=0xffff88823fffaa00, sc=sc@entry=0xffffc90001abfa60) at mm/vmscan.c:6405
+#12 0xffffffff812b1c70 in try_to_free_mem_cgroup_pages (memcg=memcg@entry=0xffff88812d7eb000, nr_pages=nr_pages@entry=1, gfp_mask=gfp_mask@entry=1125578, reclaim_options=reclaim_options@entry=2) at mm/vmscan.c:6720
+#13 0xffffffff8134aa07 in try_charge_memcg (memcg=memcg@entry=0xffff88812d7eb000, gfp_mask=gfp_mask@entry=1125578, nr_pages=1) at mm/memcontrol.c:2681
+#14 0xffffffff8134b93d in try_charge (nr_pages=1, gfp_mask=1125578, memcg=0xffff88812d7eb000) at mm/memcontrol.c:2823
+#15 charge_memcg (folio=folio@entry=0xffffea0005d85340, memcg=memcg@entry=0xffff88812d7eb000, gfp=gfp@entry=1125578) at mm/memcontrol.c:6879
+#16 0xffffffff8134d124 in __mem_cgroup_charge (folio=folio@entry=0xffffea0005d85340, mm=mm@entry=0x0 <fixed_percpu_data>, gfp=gfp@entry=1125578) at mm/memcontrol.c:6900
+#17 0xffffffff812969a1 in mem_cgroup_charge (mm=0x0 <fixed_percpu_data>, gfp=1125578, folio=0xffffea0005d85340) at include/linux/memcontrol.h:667
+#18 __filemap_add_folio (mapping=mapping@entry=0xffff888127c55e80, folio=folio@entry=0xffffea0005d85340, index=index@entry=213, gfp=gfp@entry=1125578, shadowp=shadowp@entry=0xffffc90001abfc58) at mm/filemap.c:852
+#19 0xffffffff81296ab2 in filemap_add_folio (mapping=mapping@entry=0xffff888127c55e80, folio=folio@entry=0xffffea0005d85340, index=index@entry=213, gfp=gfp@entry=1125578) at mm/filemap.c:934
+#20 0xffffffff812a458f in page_cache_ra_unbounded (ractl=ractl@entry=0xffffc90001abfd18, nr_to_read=1006, lookahead_size=<optimized out>) at mm/readahead.c:251
+#21 0xffffffff812a4c07 in do_page_cache_ra (lookahead_size=<optimized out>, nr_to_read=<optimized out>, ractl=0xffffc90001abfd18) at mm/readahead.c:300
+#22 0xffffffff8129a09a in do_sync_mmap_readahead (vmf=0xffffc90001abfdf8) at mm/filemap.c:3043
+#23 filemap_fault (vmf=0xffffc90001abfdf8) at mm/filemap.c:3135
+#24 0xffffffff812d383f in __do_fault (vmf=vmf@entry=0xffffc90001abfdf8) at mm/memory.c:4203
+#25 0xffffffff812d7d41 in do_read_fault (vmf=0xffffc90001abfdf8) at mm/memory.c:4554
+#26 do_fault (vmf=vmf@entry=0xffffc90001abfdf8) at mm/memory.c:4683
+#27 0xffffffff812dc924 in handle_pte_fault (vmf=0xffffc90001abfdf8) at mm/memory.c:4955
+#28 __handle_mm_fault (vma=vma@entry=0xffff888163d84e40, address=address@entry=94234024679720, flags=flags@entry=852) at mm/memory.c:5097
+#29 0xffffffff812dd600 in handle_mm_fault (vma=0xffff888163d84e40, address=address@entry=94234024679720, flags=flags@entry=852, regs=regs@entry=0xffffc90001abff58) at mm/memory.c:5218
+#30 0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc90001abff58, error_code=error_code@entry=20, address=address@entry=94234024679720) at arch/x86/mm/fault.c:1428
+#31 0xffffffff81fa7e22 in handle_page_fault (address=94234024679720, error_code=20, regs=0xffffc90001abff58) at arch/x86/mm/fault.c:1519
+#32 exc_page_fault (regs=0xffffc90001abff58, error_code=20) at arch/x86/mm/fault.c:1575
+#33 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+```
+
+1. mem_cgroup_swapout : 这是处理 swap cache 的位置
+```txt
+#0  mem_cgroup_swapout (folio=folio@entry=0xffffea0004cdb540, entry=entry@entry=...) at mm/memcontrol.c:7328
+#1  0xffffffff812ab593 in __remove_mapping (mapping=0xffff888100b12000, folio=folio@entry=0xffffea0004cdb540, reclaimed=reclaimed@entry=true, target_memcg=0xffff88812d7eb000) at mm/vmscan.c:1352
+#2  0xffffffff812adb6a in shrink_folio_list (folio_list=folio_list@entry=0xffffc900019ffa90, pgdat=pgdat@entry=0xffff88813fffc000, sc=sc@entry=0xffffc900019ffc68, stat=stat@entry=0xffffc900019ffb18, ignore_references=ignore_references@entry=false) at mm/vmscan.c:2016
+#3  0xffffffff812af3b8 in shrink_inactive_list (lru=LRU_INACTIVE_ANON, sc=0xffffc900019ffc68, lruvec=0xffff88812d50a800, nr_to_scan=<optimized out>) at mm/vmscan.c:2489
+#4  shrink_list (sc=0xffffc900019ffc68, lruvec=0xffff88812d50a800, nr_to_scan=<optimized out>, lru=LRU_INACTIVE_ANON) at mm/vmscan.c:2716
+#5  shrink_lruvec (lruvec=lruvec@entry=0xffff88812d50a800, sc=sc@entry=0xffffc900019ffc68) at mm/vmscan.c:5885
+#6  0xffffffff812afc1f in shrink_node_memcgs (sc=0xffffc900019ffc68, pgdat=0xffff88813fffc000) at mm/vmscan.c:6074
+#7  shrink_node (pgdat=pgdat@entry=0xffff88813fffc000, sc=sc@entry=0xffffc900019ffc68) at mm/vmscan.c:6105
+#8  0xffffffff812b0e10 in shrink_zones (sc=0xffffc900019ffc68, zonelist=<optimized out>) at mm/vmscan.c:6343
+#9  do_try_to_free_pages (zonelist=zonelist@entry=0xffff88813fffda00, sc=sc@entry=0xffffc900019ffc68) at mm/vmscan.c:6405
+#10 0xffffffff812b1c70 in try_to_free_mem_cgroup_pages (memcg=memcg@entry=0xffff88812d7eb000, nr_pages=nr_pages@entry=1, gfp_mask=gfp_mask@entry=3264, reclaim_options=reclaim_options@entry=2) at mm/vmscan.c:6720
+#11 0xffffffff8134aa07 in try_charge_memcg (memcg=memcg@entry=0xffff88812d7eb000, gfp_mask=gfp_mask@entry=3264, nr_pages=1) at mm/memcontrol.c:2681
+#12 0xffffffff8134b93d in try_charge (nr_pages=1, gfp_mask=3264, memcg=0xffff88812d7eb000) at mm/memcontrol.c:2823
+#13 charge_memcg (folio=folio@entry=0xffffea0000214680, memcg=memcg@entry=0xffff88812d7eb000, gfp=gfp@entry=3264) at mm/memcontrol.c:6879
+#14 0xffffffff8134d124 in __mem_cgroup_charge (folio=0xffffea0000214680, mm=<optimized out>, gfp=gfp@entry=3264) at mm/memcontrol.c:6900
+#15 0xffffffff812dcc56 in mem_cgroup_charge (gfp=3264, mm=<optimized out>, folio=<optimized out>) at include/linux/memcontrol.h:667
+#16 do_anonymous_page (vmf=0xffffc900019ffdf8) at mm/memory.c:4118
+#17 handle_pte_fault (vmf=0xffffc900019ffdf8) at mm/memory.c:4953
+#18 __handle_mm_fault (vma=vma@entry=0xffff8881009a0da8, address=address@entry=140232374849536, flags=flags@entry=597) at mm/memory.c:5097
+#19 0xffffffff812dd600 in handle_mm_fault (vma=0xffff8881009a0da8, address=address@entry=140232374849536, flags=flags@entry=597, regs=regs@entry=0xffffc900019fff58) at mm/memory.c:5218
+#20 0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc900019fff58, error_code=error_code@entry=6, address=address@entry=140232374849536) at arch/x86/mm/fault.c:1428
+#21 0xffffffff81fa7e22 in handle_page_fault (address=140232374849536, error_code=6, regs=0xffffc900019fff58) at arch/x86/mm/fault.c:1519
+#22 exc_page_fault (regs=0xffffc900019fff58, error_code=6) at arch/x86/mm/fault.c:1575
+#23 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+```
 
 ## subsys_initcall
 
 ## kmem_cache
 这是 slab 的内容 :
-
-
-## mem_cgroup
-
-```c
-/*
- * The memory controller data structure. The memory controller controls both
- * page cache and RSS per cgroup. We would eventually like to provide
- * statistics based on the statistics developed by Rik Van Riel for clock-pro,
- * to help the administrator determine what knobs to tune.
- */
-struct mem_cgroup {
-    struct cgroup_subsys_state css;
-
-    /* Private memcg ID. Used to ID objects that outlive the cgroup */
-    struct mem_cgroup_id id;
-
-    /* Accounted resources */
-    struct page_counter memory;
-    struct page_counter swap;
-
-    /* Legacy consumer-oriented counters */
-    struct page_counter memsw;
-    struct page_counter kmem;
-    struct page_counter tcpmem;
-
-
-    /* Upper bound of normal memory consumption range */
-    unsigned long high;
-
-    /* Range enforcement for interrupt charges */
-    struct work_struct high_work;
-
-    unsigned long soft_limit;
-
-    /* vmpressure notifications */
-    struct vmpressure vmpressure;
-
-    /*
-     * Should the accounting and control be hierarchical, per subtree?
-     */
-    bool use_hierarchy;
-
-    /*
-     * Should the OOM killer kill all belonging tasks, had it kill one?
-     */
-    bool oom_group;
-
-    /* protected by memcg_oom_lock */
-    bool        oom_lock;
-    int     under_oom;
-
-    int swappiness;
-    /* OOM-Killer disable */
-    int     oom_kill_disable;
-
-    /* memory.events */
-    struct cgroup_file events_file;
-
-    /* handle for "memory.swap.events" */
-    struct cgroup_file swap_events_file;
-
-    /* protect arrays of thresholds */
-    struct mutex thresholds_lock;
-
-    /* thresholds for memory usage. RCU-protected */
-    struct mem_cgroup_thresholds thresholds;
-
-    /* thresholds for mem+swap usage. RCU-protected */
-    struct mem_cgroup_thresholds memsw_thresholds;
-
-    /* For oom notifier event fd */
-    struct list_head oom_notify;
-
-    /*
-     * Should we move charges of a task when a task is moved into this
-     * mem_cgroup ? And what type of charges should we move ?
-     */
-    unsigned long move_charge_at_immigrate;
-    /* taken only while moving_account > 0 */
-    spinlock_t      move_lock;
-    unsigned long       move_lock_flags;
-
-    MEMCG_PADDING(_pad1_);
-
-    /*
-     * set > 0 if pages under this cgroup are moving to other cgroup.
-     */
-    atomic_t        moving_account;
-    struct task_struct  *move_lock_task;
-
-    /* memory.stat */
-    struct mem_cgroup_stat_cpu __percpu *stat_cpu;
-
-    MEMCG_PADDING(_pad2_);
-
-    atomic_long_t       stat[MEMCG_NR_STAT];
-    atomic_long_t       events[NR_VM_EVENT_ITEMS];
-    atomic_long_t memory_events[MEMCG_NR_MEMORY_EVENTS];
-
-    unsigned long       socket_pressure;
-
-    /* Legacy tcp memory accounting */
-    bool            tcpmem_active;
-    int         tcpmem_pressure;
-
-#ifdef CONFIG_MEMCG_KMEM
-        /* Index in the kmem_cache->memcg_params.memcg_caches array */
-    int kmemcg_id;
-    enum memcg_kmem_state kmem_state;
-    struct list_head kmem_caches;
-#endif
-
-    int last_scanned_node;
-#if MAX_NUMNODES > 1
-    nodemask_t  scan_nodes;
-    atomic_t    numainfo_events;
-    atomic_t    numainfo_updating;
-#endif
-
-#ifdef CONFIG_CGROUP_WRITEBACK
-    struct list_head cgwb_list;
-    struct wb_domain cgwb_domain;
-#endif
-
-    /* List of events which userspace want to receive */
-    struct list_head event_list;
-    spinlock_t event_list_lock;
-
-    struct mem_cgroup_per_node *nodeinfo[0];
-    /* WARNING: nodeinfo must be the last member here */
-};
-```
 
 ## page_counter
 
@@ -662,96 +637,6 @@ struct page_counter {
 ## core struct instance
 1. 一共四个 cftype，但是其中只有两个被注册到 memory_cgrp_subsys 中间，另外两个 subsys_initcall(mem_cgroup_swap_init);
 2. subsys_initcall(mem_cgroup_init);
-
-```c
-struct cgroup_subsys memory_cgrp_subsys = {
-    .css_alloc = mem_cgroup_css_alloc,
-    .css_online = mem_cgroup_css_online,
-    .css_offline = mem_cgroup_css_offline,
-    .css_released = mem_cgroup_css_released,
-    .css_free = mem_cgroup_css_free,
-    .css_reset = mem_cgroup_css_reset,
-    .can_attach = mem_cgroup_can_attach,
-    .cancel_attach = mem_cgroup_cancel_attach,
-    .post_attach = mem_cgroup_move_task,
-    .bind = mem_cgroup_bind,
-    .dfl_cftypes = memory_files,
-    .legacy_cftypes = mem_cgroup_legacy_files,
-    .early_init = 0,
-};
-
-static struct cftype memory_files[] = {
-    {
-        .name = "current",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .read_u64 = memory_current_read,
-    },
-    {
-        .name = "min",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .seq_show = memory_min_show,
-        .write = memory_min_write,
-    },
-    {
-        .name = "low",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .seq_show = memory_low_show,
-        .write = memory_low_write,
-    },
-    {
-        .name = "high",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .seq_show = memory_high_show,
-        .write = memory_high_write,
-    },
-    {
-        .name = "max",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .seq_show = memory_max_show,
-        .write = memory_max_write,
-    },
-    {
-        .name = "events",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .file_offset = offsetof(struct mem_cgroup, events_file),
-        .seq_show = memory_events_show,
-    },
-    {
-        .name = "stat",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .seq_show = memory_stat_show,
-    },
-    {
-        .name = "oom.group",
-        .flags = CFTYPE_NOT_ON_ROOT | CFTYPE_NS_DELEGATABLE,
-        .seq_show = memory_oom_group_show,
-        .write = memory_oom_group_write,
-    },
-    { } /* terminate */
-};
-
-
-static struct cftype swap_files[] = {
-    {
-        .name = "swap.current",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .read_u64 = swap_current_read,
-    },
-    {
-        .name = "swap.max",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .seq_show = swap_max_show,
-        .write = swap_max_write,
-    },
-    {
-        .name = "swap.events",
-        .flags = CFTYPE_NOT_ON_ROOT,
-        .file_offset = offsetof(struct mem_cgroup, swap_events_file),
-        .seq_show = swap_events_show,
-    },
-    { } /* terminate */
-};
-```
 
 ## memcg
 
@@ -870,8 +755,6 @@ page_cgroup_ino : page -> memcg -> parent memcg -> kernfs_node -> ino
 
 
 #### memcg overview
-- [ ] [In fact, we can check the user api before hack it](https://segmentfault.com/a/1190000008125359)
-    - [ ]  [similar tutorial](https://fuckcloudnative.io/posts/understanding-cgroups-part-3-memory/)
 
 - [ ] why swap works different with memory_cgrp_subsys ?
   - [ ] mem_cgroup_swap_init
@@ -950,20 +833,10 @@ static ssize_t mem_cgroup_force_empty_write(struct kernfs_open_file *of,
 
 ```
 
-- [ ] kernfs_open_file : oh shit, the fucking kernfs
-
-- [ ]
-
-#### memcg shrinker
-- [ ] shrink_node_memcgs
-  - [ ] mem_cgroup_calculate_protection
-
-#### memcg oom
 mem_cgroup_oom_synchronize
 
 #### memcg writeback
-- [ ] mem_cgroup_wb_stats
-- [ ] domain_dirty_limits
+- mem_cgroup_wb_stats
 
 ```c
 static struct dirty_throttle_control *mdtc_gdtc(struct dirty_throttle_control *mdtc)
@@ -1000,8 +873,6 @@ mem_cgroup_write(used for legacy) \
                                    \---> try_to_free_cgroup_pages ---> do_try_to_free_pages : this is classical path to reclaim page
 memory_high_write ----------------/
 ```
-
-#### memcg mem_cgroup_legacy_files
 
 #### memcg memory_files
 
@@ -1043,10 +914,6 @@ total_active_file 2080468992
 total_unevictable 29466624
 ```
 memory_stat_show
-
-#### memcg memsw_files
-
-#### memcg swap_files
 
 ## memgroup
 
