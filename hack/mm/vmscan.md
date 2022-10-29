@@ -22,7 +22,8 @@
 似乎是唯一的和 shrinerk 的 lwn  https://lwn.net/Articles/550463/
 1. For the inode cache, that is done by a "shrinker" function provided by the virtual filesystem layer.[^2]
 
-1. vmscan.c 的 direct reclaim 的过程
+## 基本流程
+1. direct reclaim 的过程
 
 - try_to_free_pages
   - do_try_to_free_pages
@@ -31,7 +32,23 @@
         - shrink_lruvec + shrink_slab
           - shrink_list
             - shrink_inactive_list (shrink_active_list)
-              - shrink_page_list
+              - shrink_folio_list
+
+2. kswapd 的 reclaim 过程
+```txt
+#0  shrink_folio_list (folio_list=folio_list@entry=0xffffc9000126fc30, pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc9000126fdd8, stat=stat@entry=0xffffc9000126fcb8, ignore_references=ignore_references@entry=false) at mm/vmscan.c:1632
+#1  0xffffffff812af3b8 in shrink_inactive_list (lru=LRU_INACTIVE_FILE, sc=0xffffc9000126fdd8, lruvec=0xffff888162038800, nr_to_scan=<optimized out>) at mm/vmscan.c:2489
+#2  shrink_list (sc=0xffffc9000126fdd8, lruvec=0xffff888162038800, nr_to_scan=<optimized out>, lru=LRU_INACTIVE_FILE) at mm/vmscan.c:2716
+#3  shrink_lruvec (lruvec=lruvec@entry=0xffff888162038800, sc=sc@entry=0xffffc9000126fdd8) at mm/vmscan.c:5885
+#4  0xffffffff812afc1f in shrink_node_memcgs (sc=0xffffc9000126fdd8, pgdat=0xffff88823fff9000) at mm/vmscan.c:6074
+#5  shrink_node (pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc9000126fdd8) at mm/vmscan.c:6105
+#6  0xffffffff812b0357 in kswapd_shrink_node (sc=0xffffc9000126fdd8, pgdat=0xffff88823fff9000) at mm/vmscan.c:6894
+#7  balance_pgdat (pgdat=pgdat@entry=0xffff88823fff9000, order=order@entry=0, highest_zoneidx=highest_zoneidx@entry=3) at mm/vmscan.c:7084
+#8  0xffffffff812b090b in kswapd (p=0xffff88823fff9000) at mm/vmscan.c:7344
+#9  0xffffffff81133853 in kthread (_create=0xffff8881211ff440) at kernel/kthread.c:376
+#10 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
+#11 0x0000000000000000 in ?? ()
+```
 
 ```c
 struct scan_control {
@@ -106,9 +123,9 @@ struct scan_control {
 #### lru
 // 首先阅读的内容 : https://lwn.net/Articles/550463/
 
-// https://lwn.net/Articles/851184/ 似乎现在又发布了一个 LRU 了
+## multi generation LRU
+https://lwn.net/Articles/851184/ 似乎现在又发布了一个 LRU 了
 
-- [ ] https://mp.weixin.qq.com/s/7eDqHR06TIBh6hqUMTrZKg
 
 // 简要说明一下在 mem/list_lru.c 中间的内容:
 
@@ -270,3 +287,9 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
                     struct shrinker *shrinker, int priority)
 ```
 然后，根据上方的调用路线，课题知道，猜测应该是对的，对于 page 和 slab 分成两个，slab 利用各种 shrinker 进行
+
+## Per memcg lru locking
+- [Per memcg lru locking 合并的过程](https://mp.weixin.qq.com/s/7eDqHR06TIBh6hqUMTrZKg)
+
+- shrink_zones / balance_pgdat
+  - mem_cgroup_soft_limit_reclaim

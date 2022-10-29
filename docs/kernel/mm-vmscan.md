@@ -12,15 +12,13 @@
 - [ ] 我记得 lrulist 是 per zone 的，例如每次都是 shrink zone 的
 - lruvec 在 pg_data_t 中间的作用是什么?
 
-
 通过 lru_add_drain_cpu 将 cpu_fbatches 的内容加入到 lruvec 中。
+
 ## kswapd
 - 描述主动和被动触发的流程
 - [ ] 每一个 numa 一个 kswapd，确认下
 
 ## [ ] mem_cgroup_lruvec
-
-## [ ]
 
 ## pagevec
 
@@ -51,11 +49,6 @@ struct cpu_fbatches {
 };
 ```
 
-`pagevec_release` decrements the usage counter of all pages in the vector batchwise. Pages
-whose usage counter value reaches 0 — these are therefore no longer in use — are automatically returned to the buddy system.
-If the page was on an *LRU list* of the system, it is removed
-from the list, regardless of the value of its usage counter.
-
 - lru_cache_add
   - folio_batch_add_and_move 参数为 lru_add_fn
     - folio_batch_move_lru
@@ -81,7 +74,6 @@ are implemented in mm/memory.c.
 
 - mark_page_accessed
   - [ ] 为什么 kvm 要调用这个?
-  - [ ] 感觉申请的匿名页从来不会调用这个
 - folio_check_references
   - 在扫描 inactive list 的时候调用，返回决定该 page 的四个状态
 
@@ -108,4 +100,46 @@ are implemented in mm/memory.c.
 #18 do_syscall_64 (regs=0xffffc90001a93f58, nr=<optimized out>) at arch/x86/entry/common.c:80
 #19 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
 #20 0x0000000000000000 in ?? ()
+```
+
+一般来说，是这个调用路径
+```txt
+#0  touch_buffer (bh=<optimized out>) at fs/buffer.c:62
+#1  __find_get_block (bdev=0xffff888161ba9200, block=11534947, size=<optimized out>) at fs/buffer.c:1311
+#2  0xffffffff813adb3f in __getblk_gfp (bdev=0xffff888161ba9200, block=block@entry=11534947, size=4096, gfp=gfp@entry=8) at fs/buffer.c:1329
+#3  0xffffffff8142408c in sb_getblk (block=11534947, sb=0xffff8881215e4800) at include/linux/buffer_head.h:356
+#4  __ext4_get_inode_loc (sb=0xffff8881215e4800, ino=2892864, inode=inode@entry=0xffff888166f24610, iloc=iloc@entry=0xffffc9000175bcb0, ret_block=ret_block@entry=0xffffc9000175bc58) at fs/ext4/inode.c:4479
+#5  0xffffffff81426389 in ext4_get_inode_loc (inode=inode@entry=0xffff888166f24610, iloc=iloc@entry=0xffffc9000175bcb0) at fs/ext4/inode.c:4607
+#6  0xffffffff81427d96 in ext4_reserve_inode_write (handle=handle@entry=0xffff888166c415e8, inode=inode@entry=0xffff888166f24610, iloc=iloc@entry=0xffffc9000175bcb0) at fs/ext4/inode.c:5804
+#7  0xffffffff81428012 in __ext4_mark_inode_dirty (handle=handle@entry=0xffff888166c415e8, inode=inode@entry=0xffff888166f24610, func=func@entry=0xffffffff8244ceb0 <__func__.36> "ext4_ext_tree_init", line=line@entry=879) at fs/ext4/inode.c:5973
+#8  0xffffffff8140afd7 in ext4_ext_tree_init (handle=handle@entry=0xffff888166c415e8, inode=inode@entry=0xffff888166f24610) at fs/ext4/extents.c:879
+#9  0xffffffff8141b797 in __ext4_new_inode (mnt_userns=mnt_userns@entry=0xffffffff82a627c0 <init_user_ns>, handle=0xffff888166c415e8, handle@entry=0x0 <fixed_percpu_data>, dir=dir@entry=0xffff8881240ee1a0, mode=mode@entry=41471, qstr=qstr@entry=0xffff888166debb60, goal=<optimized out>, goal@entry=0, owner=<optimized out>, i_flags=<optimized out>, handle_type=<optimized out>, line_no=<optimized out>, nblocks=<optimized out>) at fs/ext4/ialloc.c:1333
+#10 0xffffffff81443977 in ext4_symlink (mnt_userns=0xffffffff82a627c0 <init_user_ns>, dir=0xffff8881240ee1a0, dentry=<optimized out>, symname=<optimized out>) at fs/ext4/namei.c:3361
+#11 0xffffffff813745ac in vfs_symlink (oldname=0xffff888162cd8020 "/pid-1092/host-localhost.localdomain", dentry=0xffff888166debb40, dir=0xffff8881240ee1a0, mnt_userns=0xffffffff82a627c0 <init_user_ns>) at fs/namei.c:4400
+#12 vfs_symlink (mnt_userns=0xffffffff82a627c0 <init_user_ns>, dir=0xffff8881240ee1a0, dentry=0xffff888166debb40, oldname=0xffff888162cd8020 "/pid-1092/host-localhost.localdomain") at fs/namei.c:4385
+#13 0xffffffff8137a0f5 in do_symlinkat (from=0xffff888162cd8000, newdfd=newdfd@entry=-100, to=to@entry=0xffff888162cde000) at fs/namei.c:4429
+#14 0xffffffff8137a293 in __do_sys_symlink (newname=<optimized out>, oldname=0x5626a6d08830 "/pid-1092/host-localhost.localdomain") at fs/namei.c:4451
+#15 __se_sys_symlink (newname=<optimized out>, oldname=<optimized out>) at fs/namei.c:4449
+#16 __x64_sys_symlink (regs=<optimized out>) at fs/namei.c:4449
+#17 0xffffffff81fa3bdb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc9000175bf58) at arch/x86/entry/common.c:50
+#18 do_syscall_64 (regs=0xffffc9000175bf58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#19 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
+## 确认所有的页面都是加入到 lru 中的
+
+是的，例如这个例子
+```txt
+#0  folio_add_lru (folio=0xffffea00059a5040) at arch/x86/include/asm/atomic.h:95
+#1  0xffffffff812a7926 in folio_add_lru_vma (folio=<optimized out>, vma=<optimized out>) at mm/swap.c:554
+#2  0xffffffff812dd086 in do_anonymous_page (vmf=0xffffc9000175bdf8) at mm/memory.c:4154
+#3  handle_pte_fault (vmf=0xffffc9000175bdf8) at mm/memory.c:4953
+#4  __handle_mm_fault (vma=vma@entry=0xffff888125ae3000, address=address@entry=139945414307856, flags=flags@entry=597) at mm/memory.c:5097
+#5  0xffffffff812dd600 in handle_mm_fault (vma=0xffff888125ae3000, address=address@entry=139945414307856, flags=flags@entry=597, regs=regs@entry=0xffffc9000175bf58) at mm/memory.c:5218
+#6  0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc9000175bf58, error_code=error_code@entry=6, address=address@entry=139945414307856) at arch/x86/mm/fault.c:1428
+#7  0xffffffff81fa7e12 in handle_page_fault (address=139945414307856, error_code=6, regs=0xffffc9000175bf58) at arch/x86/mm/fault.c:1519
+#8  exc_page_fault (regs=0xffffc9000175bf58, error_code=6) at arch/x86/mm/fault.c:1575
+#9  0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+#10 0x00005626a6dea0e0 in ?? ()
+#11 0x0000000000000000 in ?? ()
 ```
