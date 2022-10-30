@@ -1,12 +1,6 @@
 # memcontrol.c
 
-1. memcontrol 到底控制了什么东西 ? swap 内存使用数量 ?
-2. 从哪里读取 limitation ?
 3. softlimit 查找其 ref
-4. vm_swappiness 是如何控制的?
-  - https://access.redhat.com/solutions/103833
-  - [ ] 能不能让即使存在超级多的内存的时候就开始 swap
-
 - [ ] update tree 真的有用吗?
   - 确定只是和 softlimit 有关的 ?
 
@@ -14,7 +8,24 @@
 
 - [ ] low min high 是如何影响回收的
 - [ ] memcg 是如何和 zone 的联系起来的
+  - 所以，是不是 memcg 也是需要有一个 lruvec 的
 - [ ] get_mctgt_type
+
+
+## memcg 和 zone, node 的关系
+- shrink_node_memcgs
+  - mem_cgroup_lruvec : 获取一个 Node 关联的 lruvec
+  - shrink_lruvec
+
+- mem_cgroup::mem_cgroup_per_node : 中持有一个 lrvu
+
+## memcg 在 Node 中平衡的问题
+
+- 为什么是 shrink_zones 来调用 shrink_node
+  - 应该是从上层传输过来的，例如有的分配会指定自己从那些地方获取
+  - 相同的 zone 处理过之后，不会去处理下一个 zone 的
+
+- 回收是体现在 node 级别的，因为每一个 node 是持有一个 lruvec
 
 ## 基本操作
 - lscgroup 可以展示当前的 cgroups，默认的都是 systemd 启动的
@@ -872,6 +883,27 @@ Used in `struct cftype` for distinguished different memory control types
 mem_cgroup_write(used for legacy) \
                                    \---> try_to_free_cgroup_pages ---> do_try_to_free_pages : this is classical path to reclaim page
 memory_high_write ----------------/
+```
+
+## swappiness
+
+- /proc/sys/vm/swappiness 是全局的，如何影响到具体的 cgroup 的
+
+- [ ] shrink_lruvec 使用过
+
+```c
+static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
+{
+	/* Cgroup2 doesn't have per-cgroup swappiness */
+	if (cgroup_subsys_on_dfl(memory_cgrp_subsys))
+		return vm_swappiness;
+
+	/* root ? */
+	if (mem_cgroup_disabled() || mem_cgroup_is_root(memcg))
+		return vm_swappiness;
+
+	return memcg->swappiness;
+}
 ```
 
 #### memcg memory_files

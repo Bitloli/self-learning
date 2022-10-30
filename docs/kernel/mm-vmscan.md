@@ -146,4 +146,8 @@ are implemented in mm/memory.c.
 #11 0x0000000000000000 in ?? ()
 ```
 
-## swappiness 的控制
+## [ ] swappiness 的控制
+
+## 多个 lruvec 是如何排序的
+
+各自排序各自的情况，如果一个 node 上很忙，你自己最好不要过来分配，这个 mempolicy 的事情

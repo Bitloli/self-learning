@@ -16,20 +16,6 @@ Available policies are
 2. mbind
 3. migrate_page
 
-## mempolicy
-
-1. Memory policies are a programming interface that a NUMA-aware application can take advantage of.
-2. cpusets which is an administrative mechanism for restricting the nodes from which memory may be allocated by a set of processes.  cpuset 和 numa mempolicy 同时出现的时候，cpuset 优先
-3. 一共四个模式 和 两个 flags MPOL_F_STATIC_NODES 和 MPOL_F_RELATIVE_NODES (**flag 的作用有点迷**)
-4. 还分析了一下 mol_put 和 mol_get 的问题
-
-```c
-// 获取 vma 对应的 policy ，解析出来 preferred_nid 和 nodemask 然后
-struct page * alloc_pages_vma(gfp_t gfp, int order, struct vm_area_struct *vma, unsigned long addr, int node, bool hugepage)
-```
-> 感觉 mempolicy 并没有什么特殊的地方，只是提供一个 syscall 给用户。
-
-
 ## 问题
 
 - [ ] 如何理解这个？

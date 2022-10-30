@@ -50,6 +50,9 @@
 #11 0x0000000000000000 in ?? ()
 ```
 
+- [ ] shrink_lruvec 是什么操作
+- [ ] shrink_node_memcgs 这个名字取得好啊
+
 ```c
 struct scan_control {
     /* How many pages shrink_list() should reclaim */

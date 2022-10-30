@@ -86,7 +86,7 @@ a specific address has been specified by the user**. If the architecture wants t
 location itself, it must set the pre-processor symbol HAVE_ARCH_UNMAPPED_AREA and define the
 function `arch_get_unmapped_area` accordingly
 3. New locations for memory mappings are usually found by starting the search from lower memory locations and progressing toward higher addresses
-4. Usually, the stack grows from bottom to top. 
+4. Usually, the stack grows from bottom to top.
 > 1. 总之，刚刚分析的变量表示虚拟地址空间可以通过其中的那些参数可以配置的，而且也大概表示了虚拟地址空间的主要成分
 > 2. 在mm/mmap.c:2003 中间定义了 `arch_get_unmapped_area_topdown` 但是sys_x86_64.c 同样定义了  `arch_get_unmapped_area_topdown`，ccls 的跳转工具显示，后者才是真正被使用的，函数指针的赋值位置: `arch/x86/mm/mmap.c`
 > 3. 总的来说和书中间说的一致，但是如果`#ifndef HAVE_ARCH_UNMAPPED_AREA_TOPDOWN`的条件成立，编译的时候不就是含有两个符号吗?
@@ -144,7 +144,7 @@ IA-32 systems start at 0x08048000, leaving a gap of *roughly* 128 MiB between th
 lowest possible address and the start of the text mapping that is used to catch **NULL pointers**
 > 0. 注意: 不要和IA-32 上的内核开始位置搞混了，那是0x80000000
 > 1. 忽然想到了下一次题目的内容，从NULL pointer 错误触发的全部过程
-> 2. 有点不对的地方, ucore 中间用户的stack 是如何设置的? 
+> 2. 有点不对的地方, ucore 中间用户的stack 是如何设置的?
 
 The argument list and environment of a process are stored as initial stack elements
 
@@ -201,7 +201,7 @@ static struct linux_binfmt elf_format = {
 };
 ```
 > something strange here, `elf_format` is assigned in the `load_elf_binary`, the latter is a member of former
-> `load_elf_binary` 不就是ucore lab8 的哪一个超级长的令人窒息的函数吗? 
+> `load_elf_binary` 不就是ucore lab8 的哪一个超级长的令人窒息的函数吗?
 
 Let us go back to `load_elf_binary`. Finally, the function needs to create the stack at the appropriate location:
 
@@ -236,7 +236,7 @@ Allocating and filling pages on demand is known as demand paging.
 1. The physical page is incorporated into the address space of the user process with the help of the
 page tables, and the application resumes.
 
-## 4.4 Data Structures 
+## 4.4 Data Structures
 
 ```c
 struct mm_struct {
@@ -334,12 +334,12 @@ struct vm_area_struct {
 whereas incorporation in the red-black tree is the responsibility of `vm_rb`.
 4. `vm_page_prot` stores the access permissions for the region in the constants discussed in
 Section 3.3.1, which are also used for pages in memory.
-> 也就是*PTE-Specific Entries*, 问题是如果此处已经进行了含有那些 `_PAGE_KERNEL_RO`之类的flags, 
+> 也就是*PTE-Specific Entries*, 问题是如果此处已经进行了含有那些 `_PAGE_KERNEL_RO`之类的flags,
 > 那么为什么需要 每一个 page 上面又重新放一个
 5. `vm_flags` is a set of flags describing the region.
 
 6. A mapping of a file into the virtual address space of a process is uniquely determined by the
-interval in the file and the corresponding interval in memory. 
+interval in the file and the corresponding interval in memory.
 To keep track of all intervals associated with a process, the kernel uses a linked list and a red-black tree as described above.
 However, it is also necessary to go the other way round: *Given an interval in a file, the kernel
 sometimes needs to know all processes into which the interval is mapped.* Such mappings are
@@ -685,142 +685,6 @@ static inline struct vm_area_struct * find_vma_intersection(struct mm_struct * m
 When a new region is added to the address space of a process, the kernel checks whether it can be merged
 with one or more existing regions
 
-```c
-/*
- * Given a mapping request (addr,end,vm_flags,file,pgoff), figure out
- * whether that can be merged with its predecessor or its successor.
- * Or both (it neatly fills a hole).
- *
- * In most cases - when called for mmap, brk or mremap - [addr,end) is
- * certain not to be mapped by the time vma_merge is called; but when
- * called for mprotect, it is certain to be already mapped (either at
- * an offset within prev, or at the start of next), and the flags of
- * this area are about to be changed to vm_flags - and the no-change
- * case has already been eliminated.
- *
- * The following mprotect cases have to be considered, where AAAA is
- * the area passed down from mprotect_fixup, never extending beyond one
- * vma, PPPPPP is the prev vma specified, and NNNNNN the next vma after:
- *
- *     AAAA             AAAA                AAAA          AAAA
- *    PPPPPPNNNNNN    PPPPPPNNNNNN    PPPPPPNNNNNN    PPPPNNNNXXXX
- *    cannot merge    might become    might become    might become
- *                    PPNNNNNNNNNN    PPPPPPPPPPNN    PPPPPPPPPPPP 6 or
- *    mmap, brk or    case 4 below    case 5 below    PPPPPPPPXXXX 7 or
- *    mremap move:                                    PPPPXXXXXXXX 8
- *        AAAA
- *    PPPP    NNNN    PPPPPPPPPPPP    PPPPPPPPNNNN    PPPPNNNNNNNN
- *    might become    case 1 below    case 2 below    case 3 below
- *
- * It is important for case 8 that the vma NNNN overlapping the
- * region AAAA is never going to extended over XXXX. Instead XXXX must
- * be extended in region AAAA and NNNN must be removed. This way in
- * all cases where vma_merge succeeds, the moment vma_adjust drops the
- * rmap_locks, the properties of the merged vma will be already
- * correct for the whole merged range. Some of those properties like
- * vm_page_prot/vm_flags may be accessed by rmap_walks and they must
- * be correct for the whole merged range immediately after the
- * rmap_locks are released. Otherwise if XXXX would be removed and
- * NNNN would be extended over the XXXX range, remove_migration_ptes
- * or other rmap walkers (if working on addresses beyond the "end"
- * parameter) may establish ptes with the wrong permissions of NNNN
- * instead of the right permissions of XXXX.
- */
-struct vm_area_struct *vma_merge(struct mm_struct *mm,
-			struct vm_area_struct *prev, unsigned long addr,
-			unsigned long end, unsigned long vm_flags,
-			struct anon_vma *anon_vma, struct file *file,
-			pgoff_t pgoff, struct mempolicy *policy,
-			struct vm_userfaultfd_ctx vm_userfaultfd_ctx)
-{
-	pgoff_t pglen = (end - addr) >> PAGE_SHIFT;
-	struct vm_area_struct *area, *next;
-	int err;
-
-	/*
-	 * We later require that vma->vm_flags == vm_flags,
-	 * so this tests vma->vm_flags & VM_SPECIAL, too.
-	 */
-	if (vm_flags & VM_SPECIAL)
-		return NULL;
-
-	if (prev)
-		next = prev->vm_next;
-	else
-		next = mm->mmap;
-	area = next;
-	if (area && area->vm_end == end)		/* cases 6, 7, 8 */
-		next = next->vm_next;
-
-	/* verify some invariant that must be enforced by the caller */
-	VM_WARN_ON(prev && addr <= prev->vm_start);
-	VM_WARN_ON(area && end > area->vm_end);
-	VM_WARN_ON(addr >= end);
-
-	/*
-	 * Can it merge with the predecessor?
-	 */
-	if (prev && prev->vm_end == addr &&
-			mpol_equal(vma_policy(prev), policy) &&
-			can_vma_merge_after(prev, vm_flags,
-					    anon_vma, file, pgoff,
-					    vm_userfaultfd_ctx)) {
-		/*
-		 * OK, it can.  Can we now merge in the successor as well?
-		 */
-		if (next && end == next->vm_start &&
-				mpol_equal(policy, vma_policy(next)) &&
-				can_vma_merge_before(next, vm_flags,
-						     anon_vma, file,
-						     pgoff+pglen,
-						     vm_userfaultfd_ctx) &&
-				is_mergeable_anon_vma(prev->anon_vma,
-						      next->anon_vma, NULL)) {
-							/* cases 1, 6 */
-			err = __vma_adjust(prev, prev->vm_start,
-					 next->vm_end, prev->vm_pgoff, NULL,
-					 prev);
-		} else					/* cases 2, 5, 7 */
-			err = __vma_adjust(prev, prev->vm_start,
-					 end, prev->vm_pgoff, NULL, prev);
-		if (err)
-			return NULL;
-		khugepaged_enter_vma_merge(prev, vm_flags);
-		return prev;
-	}
-
-	/*
-	 * Can this new request be merged in front of next?
-	 */
-	if (next && end == next->vm_start &&
-			mpol_equal(policy, vma_policy(next)) &&
-			can_vma_merge_before(next, vm_flags,
-					     anon_vma, file, pgoff+pglen,
-					     vm_userfaultfd_ctx)) {
-		if (prev && addr < prev->vm_end)	/* case 4 */
-			err = __vma_adjust(prev, prev->vm_start,
-					 addr, prev->vm_pgoff, NULL, next);
-		else {					/* cases 3, 8 */
-			err = __vma_adjust(area, addr, next->vm_end,
-					 next->vm_pgoff - pglen, NULL, next);
-			/*
-			 * In case 3 area is already equal to next and
-			 * this is a noop, but in case 8 "area" has
-			 * been removed and next was expanded over it.
-			 */
-			area = next;
-		}
-		if (err)
-			return NULL;
-		khugepaged_enter_vma_merge(area, vm_flags);
-		return area;
-	}
-
-	return NULL;
-}
-```
-> merge 的操作感觉还是很简单的, 但是注释到底说的是什么东西
-
 
 ```c
 /*
@@ -913,7 +777,7 @@ int insert_vm_struct(struct mm_struct *mm, struct vm_area_struct *vma)
 }
 ```
 
-`insert_vm_struct` is the standard function used by the kernel to insert new regions. 
+`insert_vm_struct` is the standard function used by the kernel to insert new regions.
 The actual work is delegated to two helper functions
 
 `find_vma_prepare` is first invoked to obtain the information listed below by reference to the start
@@ -1055,7 +919,7 @@ provides an operation to
 read pages not yet in physical memory although their contents have already been mapped there
 However, the operation has no information on the mapping type or on its properties.
 As there are numerous kinds of file mappings (regular files on different filesystem types, device files, etc.),
-more information is required. 
+more information is required.
 In fact, the kernel needs a more detailed description of the address space of the data source.
 The `address_space` structure mentioned briefly above is defined for this purpose and contains additional
 information on a mapping.
@@ -1158,7 +1022,7 @@ operations on the mapped region have no effect on the data in the file.
 fd and off parameters are ignored. This type of mapping can be used to allocate malloc-like
 memory for applications.
 
-A combination of `PROT_EXEC`, `PROT_READ`, `PROT_WRITE`, and `PROT_NONE` values can be used to define access 
+A combination of `PROT_EXEC`, `PROT_READ`, `PROT_WRITE`, and `PROT_NONE` values can be used to define access
 permission in prot.
 
 `sys_x86_64.c`
@@ -1254,7 +1118,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 
 
 `do_mmap` used to be one of the longest functions in the kernel. It is now effectively split into two
-parts, which are, however, still rather voluminous. 
+parts, which are, however, still rather voluminous.
 1. One part has to thoroughly check the parameters of the user application,
 2. As second part, we look only at a representative standard situation — mapping of a regular file with `MAP_SHARED`
 
@@ -1275,7 +1139,7 @@ to `generic_file_vm_ops`
 > mmap_region 中间，根据参数vm_flags确定注册何种 vm_ops 的。
 
 `filemap_fault` enlists the help of low-level routines of
-the underlying filesystem to fetch the desired data and — transparently to the application — read them into RAM memory. 
+the underlying filesystem to fetch the desired data and — transparently to the application — read them into RAM memory.
 > 是filemap_fault 实现了do_pgfault 的实现基础
 
 
@@ -1294,7 +1158,7 @@ boundaries of virtual address space
 > SKIP
 
 #### 4.7.3 Nonlinear Mappings
-As just demonstrated, normal mappings map a continuous section from a file into a likewise continuous section of virtual memory. 
+As just demonstrated, normal mappings map a continuous section from a file into a likewise continuous section of virtual memory.
 If various parts of a file are mapped in a different sequence into an otherwise
 contiguous area of virtual memory, it is generally necessary to use several mappings, which is more
 costly in terms of resources (particularly in `vm_area_structs`). A simpler way of achieving the same
@@ -1449,7 +1313,7 @@ Both functions then merge into `__page_set_anon_rmap`
  * __page_set_anon_rmap - set up new anonymous rmap
  * @page:	Page or Hugepage to add to rmap
  * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping	
+ * @address:	User virtual address of the mapping
  * @exclusive:	the page is exclusively owned by the current process
  */
 static void __page_set_anon_rmap(struct page *page,
@@ -1477,7 +1341,7 @@ static void __page_set_anon_rmap(struct page *page,
 ```
 
 The address of the `anon_vma` list head is stored in the mapping element of the page instance after
-`PAGE_MAPPING_ANON` has been added to the pointer. 
+`PAGE_MAPPING_ANON` has been added to the pointer.
 This enables the kernel to distinguish between anonymous pages and pages with a regular mapping by checking whether the least significant bit is 0 (if
 PAGE_MAPPING_ANON is not set) or 1 (if `PAGE_MAPPING_ANON` is set) as discussed above. Recall that this
 trick is valid because the lowest-order bit of a page pointer is guaranteed to be zero because of alignment
@@ -1759,7 +1623,7 @@ static int do_brk_flags(unsigned long addr, unsigned long len, unsigned long fla
 ```
 > 扩张brk
 
-> 从注释上分析，anonymous 就是支持heap 
+> 从注释上分析，anonymous 就是支持heap
 
 
 ## 4.10 Handling of Page Faults
@@ -1833,7 +1697,7 @@ only permitted if access took place in kernel mode and the fault was not trigger
 in other words, neither bit 2 nor bits 3 and 0 of the error code may be set.
 > emmmmm ? 什么时候介绍过　bits 3的
 
-The kernel uses the auxiliary function `vmalloc_fault` to synchronize the page tables. 
+The kernel uses the auxiliary function `vmalloc_fault` to synchronize the page tables.
 I won’t show the code in detail because all it does is copy the relevant entry from the page table of init — this is the
 kernel master table on IA-32 systems — into the current page table. If no matching entry is found there,
 the kernel invokes `fixup_exception` in a final attempt to recover the fault; I discuss this shortly.
@@ -1899,7 +1763,7 @@ the region. There may be two reasons for this:
 > 2. emmmm , stack 居然也会 page fault
 
 
-The presence of a mapping for the fault address does not necessarily mean that access is actually permitted. 
+The presence of a mapping for the fault address does not necessarily mean that access is actually permitted.
 The kernel must check the access permissions by examining bits 0 and 1 (because 20 + 21 = 3). The
 following situations may apply:
 1. `VM_WRITE` must be set in the event of a write access (bit 1 set, cases 3 and 2). Otherwise, access is
@@ -2071,7 +1935,7 @@ Three cases must be distinguished if the page is not present in physical memory�
 1. if no page table entry is present (`page_none`), the kernel must load the page from scratch —
 this is known as `demand allocation` for anonymous mappings and `demand paging` for
 file-based mappings.
-This does not apply if there is no `vm_operations_struct` registered in `vm_ops` — 
+This does not apply if there is no `vm_operations_struct` registered in `vm_ops` —
 in this case, the kernel must return an anonymous page using `do_anonymous_page`.
 ```c
 static inline bool vma_is_anonymous(struct vm_area_struct *vma)
@@ -2096,7 +1960,7 @@ handles the fault.
 
 
 A further potential case arises if the region grants write permission for the page
-but the *access mechanisms of the hardware do not 
+but the *access mechanisms of the hardware do not
 (thus triggering the fault)*. Notice that since the page is present in this case,
 the above if case is executed and the kernel drops right through to the following code:
 ```c
@@ -2224,7 +2088,7 @@ object.
 
 
 Given the `vm_area_struct` region involved, how can the kernel choose which method to use to read the page?
-1. The mapped file object is found using `vm_area_struct->vm_file`. 
+1. The mapped file object is found using `vm_area_struct->vm_file`.
 2. A pointer to the mapping itself can be found in `file->f_mapping`.
 3. Each address space has special address space operations from which the readpage method
 can be selected. The data are transferred from the file into RAM memory using `mapping-> a_ops->readpage(file, page)`.
@@ -2326,7 +2190,7 @@ static int shmem_getpage_gfp(struct inode *inode, pgoff_t index,
 > @todo 这里将会进入到shmem中间。
 
 #### 4.11.2 Anonymous Pages
-`do_anonymous_page` is invoked to map pages not associated with a file as a backing store. 
+`do_anonymous_page` is invoked to map pages not associated with a file as a backing store.
 Except that **no
 data must be read into a page**, the procedure **hardly** differs from the way in which file-based data are
 mapped. A new page is created in the *highmem* area, and all its contents are deleted. The page is then
@@ -2340,7 +2204,7 @@ Copy on write is handled in `do_wp_page`, whose code flow diagram is shown in Fi
 
 The kernel first invokes `vm_normal_page` to find the struct page instance of the page by reference to
 the page table entry — essentially, this function builds on `pte_pfn` and `pfn_to_page`, which must be
-defined on all architectures. 
+defined on all architectures.
 The former finds the page number for an associated page table entry, and
 the latter determines the page instance associated with the page number.
 This is possible because the
@@ -2460,9 +2324,9 @@ void page_move_anon_rmap(struct page *page, struct vm_area_struct *vma)　// @to
 
 /**
  * __page_set_anon_rmap - set up new anonymous rmap
- * @page:	Page to add to rmap	
+ * @page:	Page to add to rmap
  * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping	
+ * @address:	User virtual address of the mapping
  * @exclusive:	the page is exclusively owned by the current process
  */
 static void __page_set_anon_rmap(struct page *page,
@@ -2491,7 +2355,7 @@ static void __page_set_anon_rmap(struct page *page,
 1. interval_tree 的工作原理是什么?
 2. struct anon_vma_chain { 和 vm_area_struct 中间的关系是什么 anon_vma_chain
 3. 如果现在搞清楚了 rmap 中间的内容，还需要回答说问题:
-  1. 其他装置是如何使用 rmap 的：page fault, cow 
+  1. 其他装置是如何使用 rmap 的：page fault, cow
   2.
 
 
@@ -2616,7 +2480,7 @@ int anon_vma_clone(struct vm_area_struct *dst, struct vm_area_struct *src)
 只是加入到的anon_vma的红黑树不同，之后会看到。
 > 同一个 vma 为什么可以对应的多个 avc
 > anon_vma 的红黑树用来的做什么
- 
+
 
 ```c
 // 最根本的情况
@@ -2651,8 +2515,8 @@ struct vm_area_struct *copy_vma(struct vm_area_struct **vmap,
 	bool *need_rmap_locks)
 
 // copy 和 dup 的关系是什么 ?
-// 1. 被move_vma调用，　进一步被 mremap_to() 和 mremap() syscall 
-// 
+// 1. 被move_vma调用，　进一步被 mremap_to() 和 mremap() syscall
+//
 // 总之，修改其中的vma 就是可以了
 ```
 
@@ -2720,7 +2584,7 @@ vma 和 anon_vma 是一一对应的，而avc 逐级增加，放到 vma.anon_vma_
 这个东西似乎根本不是用来查找vma的，而是用来查找一个给定的page 命中那些函数才可以的。
 
 https://github.com/IvanPinezhaninov/IntervalTree
-> 查询的key是什么 ? 
+> 查询的key是什么 ?
 ```c
 static ITSTRUCT *							      \
 ITPREFIX ## _subtree_search(ITSTRUCT *node, ITTYPE start, ITTYPE last)	      \
@@ -2760,7 +2624,7 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
  * This means the inc-and-test can be bypassed.
  * Page does not have to be locked.
  */
- // TODO Same as page_add_anon_rmap but most 
+ // TODO Same as page_add_anon_rmap but most
 void page_add_new_anon_rmap(struct page *page,
 	struct vm_area_struct *vma, unsigned long address, bool compound)
 
@@ -2786,12 +2650,12 @@ static void __page_set_anon_rmap(struct page *page,
 static vm_fault_t do_wp_page(struct vm_fault *vmf)
 	__releases(vmf->ptl)
 
-// 获取pte对应的 page struct 
+// 获取pte对应的 page struct
 struct page *_vm_normal_page(struct vm_area_struct *vma, unsigned long addr,
 			     pte_t pte, bool with_public_device)
 
   // TODO 这一个检查的内容就非常离谱，注释已经说明，但是结果还是蛇皮。
-  // This routine handles present pages, when users try to write to a shared page. 
+  // This routine handles present pages, when users try to write to a shared page.
 	vmf->page = vm_normal_page(vma, vmf->address, vmf->orig_pte);
 	if (!vmf->page) {
 ```
@@ -2869,4 +2733,3 @@ int anon_vma_fork(struct vm_area_struct *vma, struct vm_area_struct *pvma)
 > 直接通过物理页查找! anon_vma_chain 中间的rb tree 实现查找
 
 2. 接下来看看父进程创建子进程完毕后，父子进程映射没有访问过的页时发生的情况，并看看反向映射的结果。
-
