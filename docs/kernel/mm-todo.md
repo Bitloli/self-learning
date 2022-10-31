@@ -16,3 +16,27 @@
 - 当使用 DMA32 同时所有内存只有 4G 的时候，那岂不是就没有 ZONE_MOVABLE 和 ZONE_NORMAL ?
 - numa remote access 是如何确定的
 - vmpressure.c 是做什么的
+- mmu notifier
+
+## 似乎 numastat -p 的结果是错误的
+
+```txt
+stress-ng --vm-bytes 2000M --vm-keep -m 1
+
+➜  ~ numastat  1988
+
+Per-node process memory usage (in MBs) for PID 1988 (stress-ng)
+                           Node 0          Node 1           Total
+                  --------------- --------------- ---------------
+Huge                         0.00            0.00            0.00
+Heap                         0.00            0.04            0.04
+Stack                        0.00            0.02            0.02
+Private                      2.32            3.72            6.05
+----------------  --------------- --------------- ---------------
+Total                        2.32            3.78            6.10
+➜  ~
+```
+- 而且，这个同时导致了一个问题，migrate 1988 0 1 几乎是瞬间完成，无论正反过来。
+- 而且，numastat -m 显示占用的内存的位置没有发生变化。
+
+是对于 stress-ng 理解有什么问题吗?

@@ -1,16 +1,91 @@
-## get user page
+# get user page
 
+- 主要的函数
+  - fault_in_writable
+
+## follow_page
+- 根据虚拟地址找到物理地址，例如 move_pages(2) 中查找每一个 page 中所在的 Node
+
+
+- follow_p4d_mask
+- follow_page_mask
+
+为什么，这个有时候是从 p4d，有时候直接从 pmd 开始的
+```txt
+#0  follow_p4d_mask (ctx=<optimized out>, flags=<optimized out>, pgdp=<optimized out>, address=<optimized out>, vma=<optimized out>) at mm/gup.c:836
+#1  follow_page_mask (vma=vma@entry=0xffff888166ec4da8, address=140737488351202, flags=flags@entry=8215, ctx=ctx@entry=0xffffc90001a8bda0) at mm/gup.c:900
+#2  0xffffffff812cfbab in __get_user_pages (mm=mm@entry=0xffff8881620a2ec0, start=<optimized out>, start@entry=140737488351202, nr_pages=<optimized out>, nr_pages@entry=1, gup_flags=gup_flags@entry=8215, pages=pages@entry=0xffffc90001a8be60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:1228
+#3  0xffffffff812d18f5 in __get_user_pages_locked (flags=8215, locked=0x0 <fixed_percpu_data>, vmas=0x0 <fixed_percpu_data>, pages=0xffffc90001a8be60, nr_pages=1, start=140737488351202, mm=0xffff8881620a2ec0) at mm/gup.c:1434
+#4  __get_user_pages_remote (mm=0xffff8881620a2ec0, start=start@entry=140737488351202, nr_pages=nr_pages@entry=1, gup_flags=gup_flags@entry=17, pages=pages@entry=0xffffc90001a8be60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:2187
+#5  0xffffffff812d1b65 in get_user_pages_remote (mm=<optimized out>, start=start@entry=140737488351202, nr_pages=nr_pages@entry=1, gup_flags=gup_flags@entry=17, pages=pages@entry=0xffffc90001a8be60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:2260
+#6  0xffffffff8136d28a in get_arg_page (bprm=bprm@entry=0xffff888165b3ea00, pos=pos@entry=140737488351202, write=write@entry=1) at fs/exec.c:220
+#7  0xffffffff8136d3f0 in copy_string_kernel (arg=0xffff888164c1a020 "/usr/bin/migratepages", bprm=bprm@entry=0xffff888165b3ea00) at fs/exec.c:637
+#8  0xffffffff8136e979 in do_execveat_common (fd=fd@entry=-100, filename=0xffff888164c1a000, flags=0, envp=..., argv=..., envp=..., argv=...) at fs/exec.c:1916
+#9  0xffffffff8136ec0e in do_execve (__envp=0x5558dcccc390, __argv=0x7f1a9c21b890, filename=<optimized out>) at fs/exec.c:2016
+#10 __do_sys_execve (envp=0x5558dcccc390, argv=0x7f1a9c21b890, filename=<optimized out>) at fs/exec.c:2092
+#11 __se_sys_execve (envp=<optimized out>, argv=<optimized out>, filename=<optimized out>) at fs/exec.c:2087
+#12 __x64_sys_execve (regs=<optimized out>) at fs/exec.c:2087
+#13 0xffffffff81fa4bcb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001a8bf58) at arch/x86/entry/common.c:50
+#14 do_syscall_64 (regs=0xffffc90001a8bf58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#15 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
+```txt
+#0  follow_page_pte (vma=vma@entry=0xffff888166ec4da8, address=140737488351202, pmd=0xffff88816ccbfff8, flags=flags@entry=8215, pgmap=pgmap@entry=0xffffc90001a8bda0) at mm/gup.c:530
+#1  0xffffffff812cf684 in follow_pmd_mask (pudp=<optimized out>, pudp=<optimized out>, ctx=0xffffc90001a8bda0, flags=8215, address=<optimized out>, vma=0xffff888166ec4da8) at mm/gup.c:765
+#2  0xffffffff812cfbab in __get_user_pages (mm=mm@entry=0xffff8881620a2ec0, start=<optimized out>, start@entry=140737488351202, nr_pages=<optimized out>, nr_pages@entry=1, gup_flags=gup_flags@entry=8215, pages=pages@entry=0xffffc90001a8be60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:1228
+#3  0xffffffff812d18f5 in __get_user_pages_locked (flags=8215, locked=0x0 <fixed_percpu_data>, vmas=0x0 <fixed_percpu_data>, pages=0xffffc90001a8be60, nr_pages=1, start=140737488351202, mm=0xffff8881620a2ec0) at mm/gup.c:1434
+#4  __get_user_pages_remote (mm=0xffff8881620a2ec0, start=start@entry=140737488351202, nr_pages=nr_pages@entry=1, gup_flags=gup_flags@entry=17, pages=pages@entry=0xffffc90001a8be60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:2187
+#5  0xffffffff812d1b65 in get_user_pages_remote (mm=<optimized out>, start=start@entry=140737488351202, nr_pages=nr_pages@entry=1, gup_flags=gup_flags@entry=17, pages=pages@entry=0xffffc90001a8be60, vmas=vmas@entry=0x0 <fixed_percpu_data>, locked=0x0 <fixed_percpu_data>) at mm/gup.c:2260
+#6  0xffffffff8136d28a in get_arg_page (bprm=bprm@entry=0xffff888165b3ea00, pos=pos@entry=140737488351202, write=write@entry=1) at fs/exec.c:220
+#7  0xffffffff8136d3f0 in copy_string_kernel (arg=0xffff888164c1a020 "/usr/bin/migratepages", bprm=bprm@entry=0xffff888165b3ea00) at fs/exec.c:637
+#8  0xffffffff8136e979 in do_execveat_common (fd=fd@entry=-100, filename=0xffff888164c1a000, flags=0, envp=..., argv=..., envp=..., argv=...) at fs/exec.c:1916
+#9  0xffffffff8136ec0e in do_execve (__envp=0x5558dcccc390, __argv=0x7f1a9c21b890, filename=<optimized out>) at fs/exec.c:2016
+#10 __do_sys_execve (envp=0x5558dcccc390, argv=0x7f1a9c21b890, filename=<optimized out>) at fs/exec.c:2092
+#11 __se_sys_execve (envp=<optimized out>, argv=<optimized out>, filename=<optimized out>) at fs/exec.c:2087
+#12 __x64_sys_execve (regs=<optimized out>) at fs/exec.c:2087
+#13 0xffffffff81fa4bcb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001a8bf58) at arch/x86/entry/common.c:50
+#14 do_syscall_64 (regs=0xffffc90001a8bf58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#15 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+#16 0x0000000000000000 in ?? ()
+```
+
+## gup 的接口
+
+类似这种函数:
+- gup_*_huge
+- gup_*_range
+
+- get_user_pages_fast_only : 用户主要是 kvm
+- pin_user_pages_fast : svm
+- get_user_pages_fast : futex mempolicy
+  - internal_get_user_pages_fast
+
+一个经典调用路径:
+- kvm_faultin_pfn
+  - `__gfn_to_pfn_memslot`
+    - hva_to_pfn
+      - hva_to_pfn_fast
+        - get_user_page_fast_only
+      - hva_to_pfn_slow
+
+- 被 pin 的页面是不可以换出的吗?
+
+
+
+## 收集的资料
 - https://offlinemark.com/2021/05/12/an-obscure-quirk-of-proc/
 
 [使用 gup 的例子](https://stackoverflow.com/questions/36337942/how-does-get-user-pages-work-for-linux-driver)
 1. 为什么 hugepage 会更加麻烦 ?
 
 
-- [ ] comments in `@VM_FAULT_WRITE:		Special case for get_user_pages`
+- [ ] comments in `@VM_FAULT_WRITE:     Special case for get_user_pages`
   - [ ] check functin `do_wp_page`
 
 - rebuild it http://martins3.gitee.io/dirtycow and add it to Notes.wiki
 
+## https://docs.kernel.org/core-api/pin_user_pages.html
 内核文档[^8]主要分析下面三个接口:
 ```c
 pin_user_pages()
@@ -23,6 +98,7 @@ pin_user_pages_remote()
 。。。// TO BE CONTINUE
 
 
+## https://lwn.net/Articles/807108/
 lwn 的文章[^9]说明的内容:
 To simplify the situation somewhat, the problems with get_user_pages() come about in two ways. One of those happens when the kernel thinks that the contents of a page will not change, but some peripheral device writes new data there. The other arises with memory that is located on **persistent-memory devices** managed by a filesystem; pinning pages into memory deprives the filesystem of the ability to make layout changes involving those pages. The latter problem has been "solved" for now by disallowing long-lasting page pins on persistent-memory devices, but there are use cases calling for creating just that kind of pin, so better solutions are being sought.
 get_user_pages 的问题来源于两个部分 :
@@ -47,7 +123,6 @@ Part of the problem comes down to the fact that get_user_pages() does not perfor
 
 
 - [ ] 猜测 gup.c 的主要问题是处理各种 lock
-  - 实际上现在只有 2000 多行的样子，根本吓不到人
   - [ ] 处理 hugepage 的位置
   - [x] 实际上做事的位置在于 `_get_user_pages`
   - [ ] 部分位置处理了 mlock 的依赖 : populate_vma_page_range 等
@@ -113,10 +188,10 @@ https://stackoverflow.com/questions/48241187/memory-region-flags-in-linux-why-bo
 
 - follow_page_pte 的部分代码如下:
 ```c
-	if ((flags & FOLL_WRITE) && !can_follow_write_pte(pte, flags)) {
-		pte_unmap_unlock(ptep, ptl);
-		return NULL;
-	}
+    if ((flags & FOLL_WRITE) && !can_follow_write_pte(pte, flags)) {
+        pte_unmap_unlock(ptep, ptl);
+        return NULL;
+    }
 ```
 因为 maybe_mkwrite 的使用，即使是 cow 出来的一个 page, 也是 read only 的。只有当 vma 上的 flag 决定了 pte 的 flag。
 - [x] 如果 pte 上没有 write flags，之后怎么可以写啊!
@@ -133,8 +208,8 @@ https://stackoverflow.com/questions/48241187/memory-region-flags-in-linux-why-bo
  */
 static inline bool can_follow_write_pte(pte_t pte, unsigned int flags)
 {
-	return pte_write(pte) ||
-		((flags & FOLL_FORCE) && (flags & FOLL_COW) && pte_dirty(pte));
+    return pte_write(pte) ||
+        ((flags & FOLL_FORCE) && (flags & FOLL_COW) && pte_dirty(pte));
 }
 ```
 
@@ -166,9 +241,9 @@ In that case, the `pte_maybe_mkwrite` function won’t set the write bit, howeve
  */
 static inline pte_t maybe_mkwrite(pte_t pte, struct vm_area_struct *vma)
 {
-	if (likely(vma->vm_flags & VM_WRITE))
-		pte = pte_mkwrite(pte);
-	return pte;
+    if (likely(vma->vm_flags & VM_WRITE))
+        pte = pte_mkwrite(pte);
+    return pte;
 }
 ```
 

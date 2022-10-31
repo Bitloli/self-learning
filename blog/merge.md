@@ -646,9 +646,6 @@ c++ 心里苦啊!
 ## [初级应用topology](https://www.math.upenn.edu/~ghrist/notes.html)
 > 高中一直想看的书籍
 
-## [dirty cow](https://dirtycow.ninja/)
-没有细看，ucore 相关的问题
-
 ## [Man watch](https://unix.stackexchange.com/questions/8699/is-there-a-utility-that-interprets-proc-interrupts-data-in-time)
 
 ## [elf](https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/)
