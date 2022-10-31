@@ -3,7 +3,8 @@
 https://docs.kernel.org/admin-guide/mm/numa_memory_policy.html
 - alloc_pages_vma
 
-- [ ] 默认算法是从 Local Node 上找，如果没有就去 remote 的 Node 上尝试
+-  默认算法是从 Local Node 上找，如果没有就去 remote 的 Node 上尝试
+  - get_page_from_freelist 中调用 for_next_zone_zonelist_nodemask 将所有的 Node 都遍历一次
 
 ## vma_dup_policy : 当 frok 的时候，默认集成上一个的 policy
 ```txt

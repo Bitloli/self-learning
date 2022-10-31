@@ -26,11 +26,11 @@ pin_user_pages_remote()
 lwn 的文章[^9]说明的内容:
 To simplify the situation somewhat, the problems with get_user_pages() come about in two ways. One of those happens when the kernel thinks that the contents of a page will not change, but some peripheral device writes new data there. The other arises with memory that is located on **persistent-memory devices** managed by a filesystem; pinning pages into memory deprives the filesystem of the ability to make layout changes involving those pages. The latter problem has been "solved" for now by disallowing long-lasting page pins on persistent-memory devices, but there are use cases calling for creating just that kind of pin, so better solutions are being sought.
 get_user_pages 的问题来源于两个部分 :
-1. 内核以为pin 的 page 没有发生修改，但是实际上外设偷偷的对于该内存修改过。(难道不是用户对于这种未经提示的修改感到奇怪吗 ? 类似的事情不是也会发生在 任何将内存映射到设备上的情况吗? )
+1. 内核以为 pin 的 page 没有发生修改，但是实际上外设偷偷的对于该内存修改过。(难道不是用户对于这种未经提示的修改感到奇怪吗 ? 类似的事情不是也会发生在 任何将内存映射到设备上的情况吗? )
 2. persistent memory device : emmmm 这似乎是 DAX 相关的
 
 Part of the problem comes down to the fact that get_user_pages() does not perform any sort of special tracking of the pages it pins into RAM. It does increment the reference count for each page, preventing it from being evicted from memory, but pages that have been pinned in this way are indistinguishable from pages that have acquired references in any of a vast number of other ways. So, while one can ask whether a page has references, it is not possible for kernel code to ask whether a page has been pinned for purposes like DMA I/O.
-1. 虽然通过 reference 可以防止 page 被 evicted (evicted 指的是回收吗 ? 但是这个page 是用户通过 brk 分配的，如果用户进程 exit 了，内核如何知道这个 page 如何回收啊 !)
+1. 虽然通过 reference 可以防止 page 被 evicted (evicted 指的是回收吗 ? 但是这个 page 是用户通过 brk 分配的，如果用户进程 exit 了，内核如何知道这个 page 如何回收啊 !)
 2. 而且为什么需要单独区分这个东西啊！
 。。。// TO BE CONTINUE 写不错，但是没有耐心了
 
@@ -66,7 +66,7 @@ Part of the problem comes down to the fact that get_user_pages() does not perfor
   - [ ] get_page 会一定导致 user page 不可以 swap out 吗 ?
 
 - [ ] 为什么在 dune 中间 gup 会触发 mmu_notifier ?
-```
+```txt
 [25556.799013] Hardware name: Timi TM1701/TM1701, BIOS XMAKB5R0P0603 02/02/2018
 [25556.799013] Call Trace:
 [25556.799019]  dump_stack+0x6d/0x9a
@@ -101,7 +101,7 @@ https://stackoverflow.com/questions/48241187/memory-region-flags-in-linux-why-bo
 
 从理解上，mmap 一个文件，然后对于一个文件写，必然产生一个原始的 page cache 页面，但是，由于没有权限，所以只能产生一个 cow page 出来，在 cow page 上写，
 如果这个 cow page 被 刷掉了，在重新的进行 fault 的时候，没有添加上
-但是此时访问请求标记没有了FOLL_WRITE，所以会认为是一个读访问，不会触发COW，这次缺页处理会填充pte对应原始物理页，再次调用follow_page成功获取原始页，所以正常情况会在cowed page上进行读写操作，
+但是此时访问请求标记没有了 FOLL_WRITE，所以会认为是一个读访问，不会触发 COW，这次缺页处理会填充 pte 对应原始物理页，再次调用 follow_page 成功获取原始页，所以正常情况会在 cowed page 上进行读写操作，
 
 - [ ] 问题的关键在于，在 `__get_user_pages` 中，在后续的访问中去掉 FOLL_WRITE
   - [x] 为什么 `__get_user_pages` 是一个 while 循环，因为可能需要 gup 很多 page
@@ -143,6 +143,7 @@ In that case, the `pte_maybe_mkwrite` function won’t set the write bit, howeve
 
 - [ ]  maybe_mkwrite 的作用 : 设置 pte 的 write flag 位置, 但是 gup 有所不同
 
+```txt
        MADV_DONTNEED
               Do not expect access in the near future.  (For the time being, the application is finished with the given range, so the kernel can free resources associated with it.)
 
@@ -154,6 +155,7 @@ In that case, the `pte_maybe_mkwrite` function won’t set the write bit, howeve
 
               MADV_DONTNEED cannot be applied to locked pages, Huge TLB pages, or VM_PFNMAP pages.  (Pages marked with the kernel-internal VM_PFNMAP flag are special memory areas that are not managed by the virtual memory subsystem.  Such pages are typically created by device
               drivers that map the pages into user space.)
+```
 
 ```c
 /*

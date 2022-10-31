@@ -22,7 +22,7 @@ cgexec -g memory:mem stress-ng --vm-bytes 150M --vm-keep -m 1
 
 3. 两边都关闭，然后设置 limit
 ```sh
-cgset -r memory.limit_in_bytes=100m mem
+cgset -r memory.max=100m mem
 ```
 
 4. 重新运行 stress 之后，可以得到:

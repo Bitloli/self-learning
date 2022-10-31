@@ -3,9 +3,9 @@
 ## keynote
 - `lru_add_drain` transfer all pages from the per-CPU LRU caches to the global lists
 
+- get_scan_count : 没有 swap 分区的时候，不会处理 anonymous page lru
 
 ## TODO
-- [ ] 奔跑吧 P315 workingset.c refault 这个主题
 - [ ] 奔跑吧 P310 对于 shrink 函数逐行分析，并没有阅读
 
 
