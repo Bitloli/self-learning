@@ -1,7 +1,9 @@
 # get user page
 
-- 主要的函数
-  - fault_in_writable
+## TODO
+- [ ] 为什么 hugepage 会更加麻烦 ?
+- fault_in_writable
+- [ ] copy from user 到底是如何进行的，必然需要 pin 吗?
 
 ## follow_page
 - 根据虚拟地址找到物理地址，例如 move_pages(2) 中查找每一个 page 中所在的 Node
@@ -69,16 +71,26 @@
         - get_user_page_fast_only
       - hva_to_pfn_slow
 
-- 被 pin 的页面是不可以换出的吗?
+## 如何保证被 pin 的页面是不可以换出
+- 在 try_grab_page 中，如果 flags 中存在 FOLL_PIN ，那么增加 page 的 refcount，进而让该 page 无法进入到 lruvec 中。
 
+## mlock 是不是也是使用了这种方法
 
+## 使用案例
 
-## 收集的资料
+### /proc/$pid/mem 的实现
 - https://offlinemark.com/2021/05/12/an-obscure-quirk-of-proc/
 
-[使用 gup 的例子](https://stackoverflow.com/questions/36337942/how-does-get-user-pages-work-for-linux-driver)
-1. 为什么 hugepage 会更加麻烦 ?
+通过 gup 和 cow ，如何实现修改没有权限的页面
 
+- access_remote_vm 是 /proc/$pid/cmdline,mem,environ 的实现基础
+
+- access_remote_vm
+  - get_user_pages_remote() : 初始化 flags = FOLL_FORCE | (write ? FOLL_WRITE : 0);
+
+### [kernel](https://stackoverflow.com/questions/36337942/how-does-get-user-pages-work-for-linux-driver)
+
+## 和 cow 的关系
 
 - [ ] comments in `@VM_FAULT_WRITE:     Special case for get_user_pages`
   - [ ] check functin `do_wp_page`
@@ -140,25 +152,6 @@ Part of the problem comes down to the fact that get_user_pages() does not perfor
   - [ ] 总结一下，到底那些 memory 的 refcount 的作用
   - [ ] get_page 会一定导致 user page 不可以 swap out 吗 ?
 
-- [ ] 为什么在 dune 中间 gup 会触发 mmu_notifier ?
-```txt
-[25556.799013] Hardware name: Timi TM1701/TM1701, BIOS XMAKB5R0P0603 02/02/2018
-[25556.799013] Call Trace:
-[25556.799019]  dump_stack+0x6d/0x9a
-[25556.799037]  ept_mmu_notifier_invalidate_range_start.cold+0x5/0xfe [dune]
-[25556.799039]  __mmu_notifier_invalidate_range_start+0x5e/0xa0
-[25556.799041]  wp_page_copy+0x6be/0x790
-[25556.799042]  ? vsnprintf+0x39e/0x4e0
-[25556.799043]  do_wp_page+0x94/0x6a0
-[25556.799045]  ? sched_clock+0x9/0x10
-[25556.799046]  __handle_mm_fault+0x771/0x7a0
-[25556.799047]  handle_mm_fault+0xca/0x200
-[25556.799048]  __get_user_pages+0x251/0x7d0
-[25556.799049]  get_user_pages_unlocked+0x145/0x1f0
-[25556.799050]  get_user_pages_fast+0x180/0x1a0
-[25556.799051]  ? ept_lookup_gpa.isra.0+0xb2/0x1a0 [dune]
-[25556.799053]  vmx_do_ept_fault+0xe3/0x450 [dune]
-```
 
 ## 从 gup 到 dirty cow
 - [ ] 把这里的傻吊玩意儿整理出来 : http://martins3.gitee.io/dirtycow/#

@@ -4,27 +4,27 @@
 
 <!-- vim-markdown-toc GFM -->
 
-- [doc](#doc)
-  - [TODO](#todo)
-      - [kvmtool](#kvmtool)
-      - [TLB](#tlb)
-  - [设计](#设计)
-  - [question before write](#question-before-write)
-  - [clean and old](#clean-and-old)
-  - [test](#test)
-  - [kernel mode](#kernel-mode)
-  - [user mode](#user-mode)
-    - [entry.c](#entryc)
-    - [percpu](#percpu)
-    - [vm.c](#vmc)
-    - [signal](#signal)
-  - [*process*](#process)
-  - [horrible](#horrible)
-  - [Not Now](#not-now)
-  - [design](#design)
-      - [use kvm as much as possible](#use-kvm-as-much-as-possible)
-      - [ebase](#ebase)
-      - [initial guset state](#initial-guset-state)
+* [doc](#doc)
+  * [TODO](#todo)
+      * [kvmtool](#kvmtool)
+      * [TLB](#tlb)
+  * [设计](#设计)
+  * [question before write](#question-before-write)
+  * [clean and old](#clean-and-old)
+  * [test](#test)
+  * [kernel mode](#kernel-mode)
+  * [user mode](#user-mode)
+    * [entry.c](#entryc)
+    * [percpu](#percpu)
+    * [vm.c](#vmc)
+    * [signal](#signal)
+  * [*process*](#process)
+  * [horrible](#horrible)
+  * [Not Now](#not-now)
+  * [design](#design)
+      * [use kvm as much as possible](#use-kvm-as-much-as-possible)
+      * [ebase](#ebase)
+      * [initial guset state](#initial-guset-state)
 
 <!-- vim-markdown-toc -->
 
@@ -42,7 +42,7 @@
 2. MIPS 特殊之处是什么
 - [x] memslot 如何设置的
 - [x] we can control every register
-- [ ] Can I set TLB from host ? 
+- [ ] Can I set TLB from host ?
 
 #### TLB
 - [ ] 能否小心的写入 TLB 的数值，其实根本不需要 kernel space 的 mapping 的 ?
@@ -54,7 +54,7 @@
         - chen,P125 指出 TLB 的大小可以为 1G
         - 估计是不存在 注入 TLB 的 interface 的，但是因为映射关系很简单，可以使用
           - [ ] mmap_base 和 stack_base 还是会限制可以映射的范围，即使内存不存在
-          - x86 如何让自己的 TLB 知道加载了 hugepage 
+          - x86 如何让自己的 TLB 知道加载了 hugepage
 
 - kvm_mips_dump_guest_tlbs
 
@@ -88,7 +88,7 @@
   - We have to recompile glibc
   - [x] enter the guest mode in the usermode, maybe we have to adjust some register value to indicate the usermode.
     - x86 : 如果没有配置 MSR_LSTAR 的话，而是使用 int 80, 那么会执行 idt 中间的地址
-    - [x] mips : syscall 的手册 : 
+    - [x] mips : syscall 的手册 :
   - [x] MIPS virtualization manual :  4.7.4 Exception Priority
     - [x] A guest enabled interrupt occurred. / A root enabled interrupt occurred. : how to confict ? junru wang's paper says it's dangerous
   - [ ] x86-dune 似乎是可以在内核态中间，继续系统调用，从而进入标准入口, 所以 MIPS 也可以这样吗 ?
@@ -98,11 +98,11 @@
 - tdp
   - [x] pte_mkclean / pte_mkold
     - pte_mkold : used by notifier
-    - pte_mkclean : used by map page fast 
+    - pte_mkclean : used by map page fast
   - [x] mmu notifier
     - [x] invalidate_range_start
     - [x] invalidate_range_end
-    - [x] clear_flush_young  
+    - [x] clear_flush_young
     - [x] clear_young
     - [x] test_young
     - [x] change_pte : **I think dune will never call this function**, 实际上，从 x86-dune 的 log, 实际上，存在很多的代码的。
@@ -138,7 +138,7 @@
 
 ## kernel mode
 - [ ] kvm_main.c 的 memslot
-- [ ] 拷贝的代码，理解的部分的总结 
+- [ ] 拷贝的代码，理解的部分的总结
     - [ ] hugepage 的
 - [ ] 还有什么地方没有拷贝
   - [ ] 从 exception 到 mmu.c 的部分
@@ -189,7 +189,7 @@
 
 - dune_init_and_enter
   - dune_init : 地址空间，syscall, signal 的设置，一个 dune 进程应该仅仅创建一次 ?
-  - dune_enter : 
+  - dune_enter :
 
 - [x] percpu
   - bind to vcpu (yes)
@@ -268,7 +268,7 @@ vcpu::guest_kernel_gs_base
 
 - [ ] `ptent_t *pgroot;` 是 libdune/entry.c 提供全局变量, 以 wedge/test.c 为例子，最开始创建的线程都是 guest kernel thread, 其之后创建出来的都是 user mode thread
 
-- page 
+- page
   - page table format
     - [ ] how can I verify it ?
   - page 是如何处理 fork 的
@@ -308,7 +308,7 @@ vcpu::guest_kernel_gs_base
 
 - [ ] thread local variable : fs register
 
-- [ ] vmx_run_vcpu 
+- [ ] vmx_run_vcpu
   - [ ] `Lkvm_vmx_return` : we are relying on some wired symbol ?
 
 - [ ] 为什么说修改 glibc 最后会导致性能可以稍微提升一点点。
@@ -335,7 +335,7 @@ sorry for the page fault
 7ffef9073020
 5
 ```
-- [ ] sthread.c : schedule : how it works 
+- [ ] sthread.c : schedule : how it works
 
 - [ ] mmu notifier 的 log 显然是不对的，利用 dump_stack 显示，刚刚创建的 page 几乎总是立刻就会被清理掉。
 
@@ -354,7 +354,7 @@ static int kvm_vz_vcpu_run(struct kvm_run *run, struct kvm_vcpu *vcpu)
 
 	kvm_timer_callbacks->acquire_htimer(vcpu); //  TODO So it will cause something special ?
 	/* Check if we have any exceptions/interrupts pending */
-	kvm_mips_deliver_interrupts(vcpu, read_gc0_cause()); // TODO 
+	kvm_mips_deliver_interrupts(vcpu, read_gc0_cause()); // TODO
 
 	kvm_vz_check_requests(vcpu, cpu); // TODO remote TLB flush
 	kvm_vz_vcpu_load_tlb(vcpu, cpu); // TODO TLB flush if I change to another CPU
@@ -369,7 +369,7 @@ static int kvm_vz_vcpu_run(struct kvm_run *run, struct kvm_vcpu *vcpu)
 ```
 
 - kvm_vcpu_arch 的每一个字母都不可以放过
-  - maar 
+  - maar
 
 - kvm_mips_csr_die_notify
 
@@ -378,7 +378,7 @@ static int kvm_vz_vcpu_run(struct kvm_run *run, struct kvm_vcpu *vcpu)
 
 - [ ] manual-III 中间，4.13.3 TLB Initialization
   - 到底需要如何实现 TLB 的初始化
-  
+
 - [ ] 当使用上 kvm 的时候，就完全不用再去处理 signal 了，但是信号在 x86-dune 中间如何处理的，我们有需要如何处理其。
 
 - [ ] vz 为什么需要 handle tlbri ?
@@ -403,7 +403,7 @@ static int kvm_vz_vcpu_run(struct kvm_run *run, struct kvm_vcpu *vcpu)
 #### use kvm as much as possible
 1. how to register hypercall : semihosting ?
   - Currently, the only challenge is syscall, and fork family syscall is most tricky one.
-  - [ ] What's happending if a kvm process fork/clone 
+  - [ ] What's happending if a kvm process fork/clone
 2. setup register
     - dune setup by a trick which lead the program execute a program at first
 3. setup address space

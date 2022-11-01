@@ -14,6 +14,8 @@
 - 使用 QEMU 模拟 scsi 的: https://blogs.oracle.com/linux/post/how-to-emulate-block-devices-with-qemu
 - megasas 是啥?
 
+-device vhost-user-scsi-pci vs -device virtio-scsi-pci
+
 启动的时候必然遇到这个:
 ```txt
 #0  scsi_block_when_processing_errors (sdev=sdev@entry=0xffff888100aac000) at drivers/scsi/scsi_error.c:380

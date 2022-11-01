@@ -14,6 +14,26 @@ static const struct mmu_notifier_ops kvm_mmu_notifier_ops = {
 };
 ```
 
+- dune 中观察到，需要让 ept 的二级映射指向新创建出来的 page 上:
+```txt
+[25556.799013] Hardware name: Timi TM1701/TM1701, BIOS XMAKB5R0P0603 02/02/2018
+[25556.799013] Call Trace:
+[25556.799019]  dump_stack+0x6d/0x9a
+[25556.799037]  ept_mmu_notifier_invalidate_range_start.cold+0x5/0xfe [dune]
+[25556.799039]  __mmu_notifier_invalidate_range_start+0x5e/0xa0
+[25556.799041]  wp_page_copy+0x6be/0x790
+[25556.799042]  ? vsnprintf+0x39e/0x4e0
+[25556.799043]  do_wp_page+0x94/0x6a0
+[25556.799045]  ? sched_clock+0x9/0x10
+[25556.799046]  __handle_mm_fault+0x771/0x7a0
+[25556.799047]  handle_mm_fault+0xca/0x200
+[25556.799048]  __get_user_pages+0x251/0x7d0
+[25556.799049]  get_user_pages_unlocked+0x145/0x1f0
+[25556.799050]  get_user_pages_fast+0x180/0x1a0
+[25556.799051]  ? ept_lookup_gpa.isra.0+0xb2/0x1a0 [dune]
+[25556.799053]  vmx_do_ept_fault+0xe3/0x450 [dune]
+```
+
 - https://www.linux-kvm.org/images/3/33/KvmForum2008%24kdf2008_15.pdf
 
 #### mmu notifier
