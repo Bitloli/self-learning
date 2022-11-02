@@ -1,5 +1,10 @@
 # intel 中断虚拟化，基于 狮子书
 
+# 8254 / 8259
+KVM_CREATE_IRQCHIP :
+
+https://en.wikipedia.org/wiki/Intel_8253
+
 # 之前记录的笔记
 https://lwn.net/Articles/44139/
 

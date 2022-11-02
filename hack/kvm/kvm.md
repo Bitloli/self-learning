@@ -32,6 +32,10 @@ kvm_pvclock_update                               13    0.0        4
 kvm_halt_poll_ns                                 42    0.0        3
 Total                                       2187824          167463
 ```
+
+## 过一下官方文档
+https://www.kernel.org/doc/html/latest/virt/kvm/index.html
+
 ## [ ] kvm ring
 https://kvmforum2020.sched.com/event/eE4R/kvm-dirty-ring-a-new-approach-to-logging-peter-xu-red-hat
 
@@ -85,69 +89,6 @@ Registration of syscall handler can be achieved via setting special registers na
 > 其实代码的所有的细节应该被仔细的理解清楚 TODO
 > 1. 经典的 while(1) 循环，然后处理各种情况的结构在哪里
 > 2. 似乎直接介绍了内核的运行方式而已
-
-
-## virtio
-问题 :
-2. 利用 virtqueue 解决了高效传输的数据的问题，那么中断虚拟化怎么办 ?
-
-
-
-[^4] 的记录:
-The end goal of the process is to try to create a straightforward, efficient, and extensible standard.
-
-- "Straightforward" implies that, to the greatest extent possible, devices should use existing bus interfaces. Virtio devices see something that looks like a standard PCI bus, for example; there is to be no "boutique hypervisor bus" for drivers to deal with.
--  "Efficient" means that batching of operations is both possible and encouraged; interrupt suppression is supported, as is notification suppression on the device side.
-- "Extensible" is handled with feature bits on both the device and driver sides with a negotiation phase at device setup time; this mechanism, Rusty said, has worked well so far. And the standard defines a common ring buffer and descripor mechanism (a "virtqueue") that is used by all devices; the same devices can work transparently over different transports.
-> changes for virtio 1.0 之后没看，先看个更加简单的吧!
-
-[^5] 的记录:
-Linux offers a variety of hypervisor solutions with different attributes and advantages. Examples include the Kernel-based Virtual Machine (KVM), lguest, and User-mode Linux
-> @todo 忽然不知道什么叫做 hypervisor 了
-
-Rather than have a variety of device emulation mechanisms (for network, block, and other drivers), virtio provides a common front end for these device emulations to standardize the interface and increase the reuse of code across the platforms.
-
-> paravirtualization 和 virtualization 的关系
-In the full virtualization scheme, the hypervisor must emulate device hardware, which is emulating at the lowest level of the conversation (for example, to a network driver). Although the emulation is clean at this abstraction, it’s also the most inefficient and highly complicated. In the paravirtualization scheme, the guest and the hypervisor can work cooperatively to make this emulation efficient. The downside to the paravirtualization approach is that the operating system is aware that it’s being virtualized and requires modifications to work.
-![](https://developer.ibm.com/developer/articles/l-virtio/images/figure1.gif)
-
-Here, the guest operating system is aware that it’s running on a hypervisor and includes drivers that act as the front end. The hypervisor implements the back-end drivers for the particular device emulation. These front-end and back-end drivers are where virtio comes in, providing a standardized interface for the development of emulated device access to propagate code reuse and increase efficiency.
-
-![](https://developer.ibm.com/developer/articles/l-virtio/images/figure2.gif)
-
-> 代码结构
-![](https://developer.ibm.com/developer/articles/l-virtio/images/figure4.gif)
-
-
-Guest (front-end) drivers communicate with hypervisor (back-end) drivers through buffers. For an I/O, the guest provides one or more buffers representing the request.
-
-Linking the guest driver and hypervisor driver occurs through the `virtio_device` and most commonly through `virtqueues`. The `virtqueue` supports its own API consisting of five functions.
-1. add_buf
-2. kick
-3. get_buf
-4. enable_cb
-5. disable_cb
-
-> 具体的例子 : blk 大致 1000 行，net 大致 3000 行，在 virtio 中间大致 6000 行
-You can find the source to the various front-end drivers within the ./drivers subdirectory of the Linux kernel.
-1. The virtio network driver can be found in ./drivers/net/virtio_net.c, and
-2. the virtio block driver can be found in ./drivers/block/virtio_blk.c.
-3. The subdirectory ./drivers/virtio provides the implementation of the virtio interfaces (virtio device, driver, virtqueue, and ring).
-
-## Intel VT-x
-[wiki](https://en.wikipedia.org/wiki/X86_virtualization#Intel_virtualization_(VT-x))
-
-
-
-https://github.com/cloudius-systems/osv/wiki/Running-OSv-image-under-KVM-QEMU : 有意思，可以测试一下
-
-[^2]: https://github.com/kvmtool/kvmtool
-[^4]: [Standardizing virtio](https://lwn.net/Articles/580186/)
-[^5]: https://developer.ibm.com/articles/l-virtio/
-[^8]: https://david942j.blogspot.com/2018/10/noe-learning-kvm-implement-your-own.htmlt
-[^9]: https://binarydebt.wordpress.com/201810/14/intel-virtualisation-how-vt-x-kvm-and-qemu-work-together//
-[^10]: https://www.kernel.org/doc/html/latest/virt/kvm/index.html
-
 
 ## 分析一下
 https://www.owalle.com/2019/02/20/kvm-src-analysis
@@ -222,11 +163,6 @@ struct kvm_mmu {
           - kvm_vmx_exit_handlers
             - `__kvm_get_msr`
               - `vmx_get_msr`
-
-```c
-gpa_t kvm_mmu_gva_to_gpa_read(struct kvm_vcpu *vcpu, gva_t gva, struct x86_exception *exception)
-// 最终在 handle_exception_nmi
-```
 
 ## x86.c overview
 - VMCS 的 IO
@@ -335,24 +271,10 @@ struct opcode {
 };
 ```
 
-## direct_map
-- [x] 被调用路径: tdp 的注册函数
-- [ ] 做什么的
+## intel processor tracing
 
-kvm_tdp_page_fault
-=> direct_page_fault : 制作一些 cache
-=> `__direct_map`
-
-`__direct_map`
-1. for_each_shadow_entry : 在 tdp 中间为什么为什么存在 shadow entry
-
-#### `__direct_map`
-1. for_each_shadow_entry : 因为多个 shadow page 映射一个 page table
-
-
-## vmx.c
-
-pt : https://lwn.net/Articles/741093/ : processor tracing
+- patch : https://lwn.net/Articles/741093/
+- https://man7.org/linux/man-pages/man1/perf-intel-pt.1.html
 
 #### `vmx_x86_ops`
 
@@ -393,12 +315,6 @@ int kvm_arch_hardware_setup(void *opaque)
 实在是有点看不懂:
 https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/hyper-v-architecture
 
-
-## 8254 / 8259
-KVM_CREATE_IRQCHIP :
-
-https://en.wikipedia.org/wiki/Intel_8253
-
 ## irq.c
 似乎很短，但是 lapic 很长!
 
@@ -414,143 +330,7 @@ https://luohao-brian.gitbooks.io/interrupt-virtualization/content/qemu-kvm-zhong
 
 kvm_kipc_state 的信息如何告知 CPU ? 通过 kvm_pic_read_irq
 
-#### https://luohao-brian.gitbooks.io/interrupt-virtualization/content/kvmzhi-nei-cun-xu-ni531628-kvm-mmu-virtualization.html
-
-获得缺页异常发生时的CR2,及当时访问的虚拟地址；
-进入
-```
-kvm_mmu_page_fault()(vmx.c)->
-r = vcpu->arch.mmu.page_fault(vcpu, cr2, error_code);(mmu.c)->
-FNAME(page_fault)(struct kvm_vcpu *vcpu, gva_t addr, u32 error_code)(paging_tmpl.h)->
-FNAME(walk_addr)()
-```
-查guest页表，物理地址是否存在， 这时肯定是不存在的
-The page is not mapped by the guest. Let the guest handle it.
-`inject_page_fault()->kvm_inject_page_fault()` 异常注入流程；
-
-> 只要是 mmu 中间访问失败都是需要进行 vm exit 的，如果发现是 guest 的问题，那么通知 guest
-> TODO 找到对于 guest 的 page table 进行 walk 的方法
-> Guest 搞定之后，那么
-> TODO TLB 的查找不到，被 VMM 截获应该是需要 硬件支持的吧!
-
-为了快速检索GUEST页表所对应的的影子页表，KVM 为每个GUEST都维护了一个哈希
-表，影子页表和GUEST页表通过此哈希表进行映射。对于每一个GUEST来说，GUEST
-的页目录和页表都有唯一的GUEST物理地址，通过页目录/页表的客户机物理地址就
-可以在哈希链表中快速地找到对应的影子页目录/页表。
-> 显然不可能使用保存所有的物理地址，从虚拟机只会将虚拟机使用的物理地址处理掉
-
-> 填充过程
-
-mmu_alloc_root =>
-`__direct_map` => kvm_mmu_get_page =>
-
-
-感觉这里还是 shadow 的处理机制，那么 ept 在哪里 ?
-```c
-static int __direct_map(struct kvm_vcpu *vcpu, gpa_t gpa, int write,
-            int map_writable, int max_level, kvm_pfn_t pfn,
-            bool prefault, bool account_disallowed_nx_lpage)
-{
-  // TODO 是在对于谁进行 walk ? 应该不是是对于 shadow page 进行的
-  // shadow page 也是划分为 leaf 和 nonleaf 的，也就是这是对于 shadow 的
-  //
-  // shadow page 形成一个层次结构的目的是什么 ?
-    struct kvm_shadow_walk_iterator it;
-    struct kvm_mmu_page *sp;
-    int level, ret;
-    gfn_t gfn = gpa >> PAGE_SHIFT;
-    gfn_t base_gfn = gfn;
-
-    if (WARN_ON(!VALID_PAGE(vcpu->arch.mmu->root_hpa)))
-        return RET_PF_RETRY;
-
-  // TODO level generation 的含义
-  // level : 难道 shadow page table 也是需要多个 level
-    level = kvm_mmu_hugepage_adjust(vcpu, gfn, max_level, &pfn);
-
-    for_each_shadow_entry(vcpu, gpa, it) {
-        /*
-         * We cannot overwrite existing page tables with an NX
-         * large page, as the leaf could be executable.
-         */
-        disallowed_hugepage_adjust(it, gfn, &pfn, &level);
-
-        base_gfn = gfn & ~(KVM_PAGES_PER_HPAGE(it.level) - 1);
-        if (it.level == level)
-            break;
-
-        drop_large_spte(vcpu, it.sptep);
-        if (!is_shadow_present_pte(*it.sptep)) {
-            sp = kvm_mmu_get_page(vcpu, base_gfn, it.addr,
-                          it.level - 1, true, ACC_ALL);
-
-            link_shadow_page(vcpu, it.sptep, sp);
-            if (account_disallowed_nx_lpage)
-                account_huge_nx_page(vcpu->kvm, sp);
-        }
-    }
-
-    ret = mmu_set_spte(vcpu, it.sptep, ACC_ALL,
-               write, level, base_gfn, pfn, prefault,
-               map_writable);
-    direct_pte_prefetch(vcpu, it.sptep);
-    ++vcpu->stat.pf_fixed;
-    return ret;
-}
-```
-==> kvm_mmu_get_page : 应该修改为 get_shadow_page
-==> kvm_page_table_hashfn : 利用 gfn 作为 hash 快速定位 shadow_page
-==> kvm_mmu_alloc_page : 分配并且初始化一个 shadow page table
-
-注意 : shadow page table 似乎可以存放 shadow page table entry 的
-
-**TODO** 调查 kvm_mmu_alloc_page 的创建的 kvm_mmu_page 的管理内容, 似乎 rule 说明了很多东西
-
-The hypervisor computes the guest virtual to
-host physical mapping on the fly and stores it in
-a new set of page tables
-
-https://www.linux-kvm.org/images/e/e5/KvmForum2007%24shadowy-depths-of-the-kvm-mmu.pdfhttps://www.linux-kvm.org/images/e/e5/KvmForum2007%24shadowy-depths-of-the-kvm-mmu.pdf
-
-emmmm : 一个物理页面，在 host 看来是给 host 使用的，write protect  可以在 guest 中间，
-也是可以放在 host 中间。
-
-emmmm : 什么情况下，一个 hva 可以被多个 gpa 映射 ?
-
-对于 guest 的那些 page table，需要通过 `page->private` 关联起来.
-
-- When we shadow a guest page, we iterate over
-the reverse map and remove write access
-
-- When adding write permission to a page, we
-check whether the page has a shadow
-
-- **We can have multiple shadow pages for a
-single guest page – one for each role**
-
-#### shadow page descriptor
-TODO : shadow page table 在 TLB miss 的时候，触发 exception 吗 ?
-
-- [x] 既然 hash table 可以查询，为什么还要建立 hierarchy 的 shadow page table ?
-- [x] hash page table 中间放置所有的从 gva 到 hpa 的地址 ?
-
-- 建立 hash 是为了让 guest 的 page table 和 host 的 shadow page table 之间可以快速查找.
-- shadow page table : gva 到 hpa 的映射，这个映射是一个 tree 的结构
-
-
-## sync shadow page
-1. 利用 generation 来实现定位 ?
-
-```c
-static bool is_obsolete_sp(struct kvm *kvm, struct kvm_mmu_page *sp)
-{
-    return sp->role.invalid ||
-           unlikely(sp->mmu_valid_gen != kvm->arch.mmu_valid_gen);
-}
-```
-
 ## trace mmu
-
 
 ## mmu_spte_update
 TODO : 为什么会存在一个 writable spte 和 read-only spte 的区分 ?
@@ -583,57 +363,6 @@ gfn_to_pfn(); GPA到HPA的转化分两步完成，分别通过gfn_to_hva、hva_t
 
 kvm_tdp_page_fault 和 ept_page_fault 的关系是什么 ?
 
-## paging_tmpl.h
-
-We need the mmu code to access both 32-bit and 64-bit guest ptes,
-so the code in this file is compiled twice, once per pte size.
-
-- [x] 如何实现多次编译 ? 目的应该是提供三种不同编译属性的文件，其中只是少量偏移量的修改。通过三次 include 解决.
-- [ ] 如果 guest 使用 transparent huge page 的时候，其提供的 page walk 怎么办 ?
-
-
-```c
-static void shadow_mmu_init_context(struct kvm_vcpu *vcpu, struct kvm_mmu *context,
-                    u32 cr0, u32 cr4, u32 efer,
-                    union kvm_mmu_role new_role)
-{
-    if (!(cr0 & X86_CR0_PG))
-        nonpaging_init_context(vcpu, context);
-    else if (efer & EFER_LMA)
-        paging64_init_context(vcpu, context);
-    else if (cr4 & X86_CR4_PAE)
-        paging32E_init_context(vcpu, context);
-    else
-        paging32_init_context(vcpu, context);
-
-    context->mmu_role.as_u64 = new_role.as_u64;
-    reset_shadow_zero_bits_mask(vcpu, context);
-}
-```
-> 都是提供的 shadow 的情况，那么 ept 和 tdp 所以没有出现 ?
-
-## shadow page table
-- [ ] shadow page table 是放在 qemu 的空间中间，还是内核地址空间
-  - guest 通过 cr3 可以来访问
-  - 内核可以操控 page table
-- [ ] guest 的内核 vmalloc 修改 page table，是首先修改 shadow page table 造成的异常，然后之后才修改 guest page table ?
-    - [ ] shadow page table 各个级别存放的地址是什么 ? 物理地址，因为是让 cr3 使用的
-    - [x] guest page table 的内容 ? GVA 也就是 host 的虚拟地址
-- [x] `FNAME(walk_addr)()` 存储的地址都是 guest 的虚拟地址 ? 是的，所以应该很容易 walk.
-
-> FNAME(walk_addr)() 查 guest页表，物理地址是否存在，这时肯定是不存在的
-`inject_page_fault()->kvm_inject_page_fault()` 异常注入流程；
-
-在 Host 中间检查发现不存在，然后在使用 inject pg 到 guest.
-因为 guest page table 存在多个模型
-
-让 Host 越俎代庖来走一遍 guest 的 page walk，shadow page table 是 CR3 中间实际使用的 page table.
--> 使用 spt ，出现 exception 是不知道到底哪一个层次出现问题的, 所以都是需要抛出来检查的
--> *那么当 guest 通过 cr3 进行修改 shadow page table 的时候，通过 write protection 可以找到 ?*
--> *好像 shadow page 只能存放 512 个 page table entry,  利用 cr3 访问真的没有问题吗 ?*
-
-> 影子页表又是载入到CR3中真正为物理MMU所利用进行寻址的页表，因此开始时任何的内存访问操作都会引起缺页异常；导致vm发生VM Exit；进入handle_exception();
-
 ## ept page table
 - [ ] ept 和 shadow page table 不应该共享结构啊
 
@@ -654,15 +383,7 @@ ept : 应该是 GPA 到 HPA
 
 pgd : page global directory
 
-
 kvm_mmu_load_pgd : `vcpu->arch.mmu->root_hpa` 作为参数传递出去
-
-kvm_init_mmu : 处理三种 mmu 初始化
-  -> init_kvm_softmmu : shadow
-  -> init_kvm_tdp_mmu
-
-## 找到 shadow 以及 ept 的 page table entry
-
 
 ## mmu_alloc_root
 调用 kvm_mmu_get_page，但是其利用 hash 来查找，说好的 hash 是用于 id 的啊
@@ -729,137 +450,6 @@ struct kvm_memory_slot {
     int user_alloc;
 };
 ```
-
-## rmap
-https://www.cnblogs.com/ck1020/p/6920765.html
-
-在KVM中，逆向映射机制的作用是类似的，但是完成的却不是从HPA到对应的EPT页表项的定位，
-而是从gfn到*对应的页表项*的定位。
-*理论上讲根据gfn一步步遍历EPT也未尝不可，但是效率较低*况且在EPT所维护的页面不同于host的页表，*理论上讲是虚拟机之间是禁止主动的共享内存的*，为了提高效率，就有了当前的逆向映射机制。
-
-- rmap: from guest page to shadow ptes that map it
-- Shadow hash: from guest page to its shadow
-- Parent pte chain: from shaow page to upperlevel shadow page
-- Shadow pte: from shadow page to lower-level shadow page
-- LRU: all active shadow pages
-
-Walk the shadow page table, instantiating page tables as necessary
-- Can involve an rmap walk and *write protecting the guest page table*
-
-
-```c
-struct kvm_arch_memory_slot {
-  // 应该是一种 page size 然后提供一种 rmap 吧
-    struct kvm_rmap_head *rmap[KVM_NR_PAGE_SIZES];
-    struct kvm_lpage_info *lpage_info[KVM_NR_PAGE_SIZES - 1];
-    unsigned short *gfn_track[KVM_PAGE_TRACK_MAX];
-};
-
-#define KVM_MAX_HUGEPAGE_LEVEL  PG_LEVEL_1G
-#define KVM_NR_PAGE_SIZES   (KVM_MAX_HUGEPAGE_LEVEL - PG_LEVEL_4K + 1)
-
-enum pg_level {
-    PG_LEVEL_NONE,
-    PG_LEVEL_4K,
-    PG_LEVEL_2M,
-    PG_LEVEL_1G,
-    PG_LEVEL_512G,
-    PG_LEVEL_NUM
-};
-```
-
-```c
-static int kvm_alloc_memslot_metadata(struct kvm_memory_slot *slot,
-                      unsigned long npages)
-    // 每一个 page 都会建立一个
-        slot->arch.rmap[i] =
-            kvcalloc(lpages, sizeof(*slot->arch.rmap[i]),
-    // ....
-}
-
-// mmu_set_spte 的地方调用
-static int rmap_add(struct kvm_vcpu *vcpu, u64 *spte, gfn_t gfn)
-{
-    struct kvm_mmu_page *sp;
-    struct kvm_rmap_head *rmap_head;
-
-  // 通过 pte 的指针，获取 spte 指向的 pte 所在的 page 的
-    sp = sptep_to_sp(spte);
-  // shadow 和 direct 都是需要 rmap
-  // 但是，direct 其实并不会注册
-    kvm_mmu_page_set_gfn(sp, spte - sp->spt, gfn);
-    rmap_head = gfn_to_rmap(vcpu->kvm, gfn, sp);
-    return pte_list_add(vcpu, spte, rmap_head);
-}
-```
-
-```c
-static gfn_t kvm_mmu_page_get_gfn(struct kvm_mmu_page *sp, int index)
-{
-    if (!sp->role.direct)
-        return sp->gfns[index];
-
-  // TODO guest 的物理页面应该就是连续的啊!
-  // 当 level 在最底层的时候，sp->gfn + index 就可以了啊!
-    return sp->gfn + (index << ((sp->role.level - 1) * PT64_LEVEL_BITS));
-}
-
-
-static struct kvm_rmap_head *gfn_to_rmap(struct kvm *kvm, gfn_t gfn,
-                     struct kvm_mmu_page *sp)
-{
-    struct kvm_memslots *slots;
-    struct kvm_memory_slot *slot;
-
-    slots = kvm_memslots_for_spte_role(kvm, sp->role);
-    slot = __gfn_to_memslot(slots, gfn);
-    return __gfn_to_rmap(gfn, sp->role.level, slot);
-}
-```
-
-
-- [ ] 建立反向映射的原因是 : 当 shadow page table 进行修改之后，需要知道其所在的 gfn
-  - [ ] 真的存在根据 shadow page table 到 gfn 的需求吗 ?
-- [ ] direct 需要 rmap 吗 ? 显然需要，不然 direct_map 不会调用 rmap_add
-
-
-```c
-    kvm_mmu_page_set_gfn(sp, spte - sp->spt, gfn); // 一个 shadow page 和 gfn 的关系
-    rmap_head = gfn_to_rmap(vcpu->kvm, gfn, sp);
-    return pte_list_add(vcpu, spte, rmap_head); // slot 的每一个 page 都会被 rmap
-```
-
-实际上，存在两个 rmap
-- `sp->gfns` 获取每一个 pte 对应的 gfn
-- `rmap_head->val` = spte : 这不是 rmap 吧
-
-#### parent rmap
-```c
-static void mmu_page_add_parent_pte(struct kvm_vcpu *vcpu,
-                    struct kvm_mmu_page *sp, u64 *parent_pte)
-{
-    if (!parent_pte)
-        return;
-
-    pte_list_add(vcpu, parent_pte, &sp->parent_ptes);
-}
-```
-
-#### rmap iterator
-- [x] rmap 总是构建的 rmap_head 到 sptep 吗 ?
-  - rmap_add 和 mmu_page_add_parent_pte 都是的
-
-解析 for_each_rmap_spte
-```c
-#define for_each_rmap_spte(_rmap_head_, _iter_, _spte_)         \
-    for (_spte_ = rmap_get_first(_rmap_head_, _iter_);      \
-         _spte_; _spte_ = rmap_get_next(_iter_))
-```
-使用位置:
-kvm_mmu_write_protect_pt_masked : 给定 gfn_offset，将关联的所有的 spte 全部添加 flags
-
-kvm_set_pte_rmapp : 将 rmap_head 的持有的所有的 sptep 进行设置
-
 
 
 ## parent_ptes

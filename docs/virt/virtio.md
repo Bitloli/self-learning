@@ -680,3 +680,49 @@ Coroutine at 0x7ffff7212320:
 #21 0x00007ffff76762f5 in __libc_start_main_impl () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
 #22 0x0000555555827051 in _start () at ../sysdeps/x86_64/start.S:116
 ```
+
+## virtio
+
+[^4] 的记录:
+The end goal of the process is to try to create a straightforward, efficient, and extensible standard.
+
+- "Straightforward" implies that, to the greatest extent possible, devices should use existing bus interfaces. Virtio devices see something that looks like a standard PCI bus, for example; there is to be no "boutique hypervisor bus" for drivers to deal with.
+-  "Efficient" means that batching of operations is both possible and encouraged; interrupt suppression is supported, as is notification suppression on the device side.
+- "Extensible" is handled with feature bits on both the device and driver sides with a negotiation phase at device setup time; this mechanism, Rusty said, has worked well so far. And the standard defines a common ring buffer and descripor mechanism (a "virtqueue") that is used by all devices; the same devices can work transparently over different transports.
+> changes for virtio 1.0 之后没看，先看个更加简单的吧!
+
+[^5] 的记录:
+Linux offers a variety of hypervisor solutions with different attributes and advantages. Examples include the Kernel-based Virtual Machine (KVM), lguest, and User-mode Linux
+> @todo 忽然不知道什么叫做 hypervisor 了
+
+Rather than have a variety of device emulation mechanisms (for network, block, and other drivers), virtio provides a common front end for these device emulations to standardize the interface and increase the reuse of code across the platforms.
+
+> paravirtualization 和 virtualization 的关系
+In the full virtualization scheme, the hypervisor must emulate device hardware, which is emulating at the lowest level of the conversation (for example, to a network driver). Although the emulation is clean at this abstraction, it’s also the most inefficient and highly complicated. In the paravirtualization scheme, the guest and the hypervisor can work cooperatively to make this emulation efficient. The downside to the paravirtualization approach is that the operating system is aware that it’s being virtualized and requires modifications to work.
+![](https://developer.ibm.com/developer/articles/l-virtio/images/figure1.gif)
+
+Here, the guest operating system is aware that it’s running on a hypervisor and includes drivers that act as the front end. The hypervisor implements the back-end drivers for the particular device emulation. These front-end and back-end drivers are where virtio comes in, providing a standardized interface for the development of emulated device access to propagate code reuse and increase efficiency.
+
+![](https://developer.ibm.com/developer/articles/l-virtio/images/figure2.gif)
+
+> 代码结构
+![](https://developer.ibm.com/developer/articles/l-virtio/images/figure4.gif)
+
+
+Guest (front-end) drivers communicate with hypervisor (back-end) drivers through buffers. For an I/O, the guest provides one or more buffers representing the request.
+
+Linking the guest driver and hypervisor driver occurs through the `virtio_device` and most commonly through `virtqueues`. The `virtqueue` supports its own API consisting of five functions.
+1. add_buf
+2. kick
+3. get_buf
+4. enable_cb
+5. disable_cb
+
+> 具体的例子 : blk 大致 1000 行，net 大致 3000 行，在 virtio 中间大致 6000 行
+You can find the source to the various front-end drivers within the ./drivers subdirectory of the Linux kernel.
+1. The virtio network driver can be found in ./drivers/net/virtio_net.c, and
+2. the virtio block driver can be found in ./drivers/block/virtio_blk.c.
+3. The subdirectory ./drivers/virtio provides the implementation of the virtio interfaces (virtio device, driver, virtqueue, and ring).
+
+[^4]: [Standardizing virtio](https://lwn.net/Articles/580186/)
+[^5]: https://developer.ibm.com/articles/l-virtio/
