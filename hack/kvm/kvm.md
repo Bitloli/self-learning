@@ -102,13 +102,6 @@ Registration of syscall handler can be achieved via setting special registers na
 > 2. 似乎直接介绍了内核的运行方式而已
 
 
-## container
-kata 和 firecracker :
-
-
-[^3] 的记录，clearcontainer 停止维护，只是一个宣传的文章，关于 memory overhead 的使用 DAX 有点意思。
-
-
 ## virtio
 问题 :
 2. 利用 virtqueue 解决了高效传输的数据的问题，那么中断虚拟化怎么办 ?
@@ -133,9 +126,6 @@ guest OS
 Vring
   - Vring is a memory mapped region between QEMU and guest OS
   - Vring is the memory layout of the virtqueue abstraction
-
-
-
 
 [^4] 的记录:
 The end goal of the process is to try to create a straightforward, efficient, and extensible standard.
@@ -184,14 +174,9 @@ You can find the source to the various front-end drivers within the ./drivers su
 
 
 https://github.com/cloudius-systems/osv/wiki/Running-OSv-image-under-KVM-QEMU : 有意思，可以测试一下
-## 待处理的资源
-https://github.com/google/novm : 快速开发，然后忽然停止, go 语言写的，10000行左右
-
-
 
 [^1]: https://lwn.net/Articles/658511/
 [^2]: https://github.com/kvmtool/kvmtool
-[^3]: [An Introduction to Clear Containers](https://lwn.net/Articles/644675/)
 [^4]: [Standardizing virtio](https://lwn.net/Articles/580186/)
 [^5]: https://developer.ibm.com/articles/l-virtio/
 [^6]: https://developer.ibm.com/tutorials/l-hypervisor/
@@ -200,10 +185,6 @@ https://github.com/google/novm : 快速开发，然后忽然停止, go 语言写
 [^9]: https://binarydebt.wordpress.com/201810/14/intel-virtualisation-how-vt-x-kvm-and-qemu-work-together//
 [^10]: https://www.kernel.org/doc/html/latest/virt/kvm/index.html
 
-
-# kvm
-
-- [ ] put anything understand ./virt here
 
 ## 分析一下
 https://www.owalle.com/2019/02/20/kvm-src-analysis
@@ -1383,6 +1364,7 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
 >  It provides a set of virtualization components that any project can use to quickly develop virtualization solutions while focusing on the key differentiators of their product rather than re-implementing common components like KVM wrappers, virtio devices and other VMM libraries.
 
 
-- https://github.com/canonical/multipass
-  - write with cpp
-  - include many cpp
+- https://github.com/canonical/multipass : cpp 的项目，可以编排 ubuntu 虚拟机
+
+## manual notes
+- Table C-1. Basic Exit Reasons

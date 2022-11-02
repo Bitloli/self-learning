@@ -39,16 +39,6 @@ Linux 内核相关的有趣资源，欢迎补充。
 - http://terenceli.github.io/archive.html
 - https://unixism.net/2020/04/io-uring-by-example-article-series/
 
-
-## virtualization
-- [LC-3 虚拟机](https://justinmeiners.github.io/) : 只有几百行
-- [dockerpi](https://github.com/lukechilds/dockerpi) : 其实是一百行左右的 Dockerfile，在其中运行 qemu 模拟 raspberrypi 的硬件环境法
-- [OSX-KVM](https://github.com/kholia/OSX-KVM) : 利用 kvm 实现运行 OSX 的虚拟机
-- [Docker-OSX](https://github.com/sickcodes/Docker-OSX) : 类似 dockerpi, 提供安装 [OSX-KVM](https://github.com/kholia/OSX-KVM) 的自动安装
-- [macos virtualbox](https://github.com/myspaghetti/macos-virtualbox) : 提供一个脚本，在 virtualbox 中间运行 macos
-- [v86](https://github.com/copy/v86/) : 使用 js 写的 x86 硬件虚拟化，可以在网页上运行机器
-- [windows95 in electron](https://github.com/felixrieseberg/windows95) : 利用 v86 实现运行 windows95 在 electron 中间
-
 ## 进程
 - [Kernel Thread Sanitizer](https://github.com/google/ktsan/wiki)
 - [cfs](https://mp.weixin.qq.com/s?src=11&timestamp=1591080226&ver=2375&signature=K2jSqjhp-0l6XyTMq2HpeRjHcThcAXKYScK2X3SIdSh5K01c1tF723WBf3y834RS7KoK18OlSRROZe3uA8JRTwsp3p8VkIei7tRK5ibDllsoWytRhLxkolG*79iX9Jc9&new=1)

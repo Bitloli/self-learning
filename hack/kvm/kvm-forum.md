@@ -15,3 +15,9 @@
 
 - [ ] vfio-user support
 - [ ] VDUSE export added to qemu-storage-daemon
+
+# 2019
+
+## ??
+- https://static.sched.com/hosted_files/kvmforum2019/f6/Advanced%20VMI%20on%20KVM%3A%20A%20progress%20Report.pdf
+- https://github.com/KVM-VMI/kvm-vmi
