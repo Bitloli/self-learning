@@ -15,6 +15,7 @@ Hardware and Software Support for Virtualization : 作者[Edouard Bugnion](https
 但是 QEMU 更加复杂，市面上这是唯一一本比较详细的分析 QEMU 的书籍(中文和英文范围内)。但是这本书也有缺点，那就是不过凝练，很多时候都是代码流程的分析。
 
 ## minimal kvm example
+- [LWN: Using the KVM API](https://lwn.net/Articles/658511/)
 - https://github.com/dpw/kvm-hello-world
 - [Learning KVM - implement your own kernel](https://david942j.blogspot.com/2018/10/note-learning-kvm-implement-your-own.html)
   - [源码](https://github.com/david942j/kvm-kernel-example)

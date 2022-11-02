@@ -49,7 +49,6 @@ https://docs.kernel.org/admin-guide/mm/numa_memory_policy.html
 1. Memory policies are a programming interface that a NUMA-aware application can take advantage of.
 2. cpusets which is an administrative mechanism for restricting the nodes from which memory may be allocated by a set of processes.  cpuset 和 numa mempolicy 同时出现的时候，cpuset 优先
 3. 一共四个粒度 和 两个 flags MPOL_F_STATIC_NODES 和 MPOL_F_RELATIVE_NODES (**flag 的作用有点迷**)
-
 4. 还分析了一下 mol_put 和 mol_get 的问题
 
 ```c
@@ -62,3 +61,5 @@ struct page * alloc_pages_vma(gfp_t gfp, int order, struct vm_area_struct *vma, 
 - vma_merge
 
 - vm_area_struct : 持有 vm_policy
+
+## 分析一个问题，各个 NUMA 不是对称的，hugepage 的分配的时候，如何处理大页

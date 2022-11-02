@@ -1,12 +1,32 @@
 ## 文档
 - https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html
 
+[^7] 的记录:
+动机:
+Linux supports 8 distinct virtualization systems:
+- Xen, KVM, VMWare, ...
+- Each of these has its own block, console, network, ... drivers
+
+VirtIO – The three goals
+- Driver unification
+- Uniformity to provide a common ABI for general publication and use of buffers
+- Device probing and configuration
+
+Virtqueue
+- It is a part of the memory of the
+guest OS
+- A channel between front-end and back-end
+- It is an interface Implemented as
+Vring
+  - Vring is a memory mapped region between QEMU and guest OS
+  - Vring is the memory layout of the virtqueue abstraction
+
+[^7]: https://www.cs.cmu.edu/~412/lectures/Virtio_2015-10-14.pdf
+
 ## 核心的结构体
 - virtio_config_ops
 
 ## TODO
-- [ ] /home/maritns3/core/firecracker/src/devices/src/virtio/vsock/csm/connection.rs has a small typo
-- [ ] virtio and msi:
 - [ ] 有的设备不支持 PCI 总线，需要使用 MMIO 的方式，但是 kvmtool 怎么知道这个设备需要使用 MMIO
 - [ ] 约定是第一个 bar 指向的 IO 空间在内核那一侧是怎么分配的 ?
 - [ ] virtio_bus 是挂载到哪里的?
@@ -19,42 +39,6 @@
 
 - [ ] QEMU 是如何初始化 virtio 设备的
 - 热插拔
-
-## 关键代码
-
-```c
-/* Virtio ring descriptors: 16 bytes.  These can chain together via "next". */
-struct vring_desc {
-  /* Address (guest-physical). */
-  __virtio64 addr;
-  /* Length. */
-  __virtio32 len;
-  /* The flags as indicated above. */
-  __virtio16 flags;
-  /* We chain unused descriptors via this, too */
-  __virtio16 next;
-};
-
-struct vring_avail {
-  __virtio16 flags;
-  __virtio16 idx;
-  __virtio16 ring[];
-};
-
-/* u32 is used here for ids for padding reasons. */
-struct vring_used_elem {
-  /* Index of start of used descriptor chain. */
-  __virtio32 id;
-  /* Total length of the descriptor chain which was used (written to) */
-  __virtio32 len;
-};
-
-struct vring_used {
-  __virtio16 flags;
-  __virtio16 idx;
-  struct vring_used_elem ring[];
-};
-```
 
 ## 深入理解 virtio ，以 virtio-blk 为例
 

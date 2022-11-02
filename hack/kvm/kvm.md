@@ -32,18 +32,26 @@ kvm_pvclock_update                               13    0.0        4
 kvm_halt_poll_ns                                 42    0.0        3
 Total                                       2187824          167463
 ```
+## [ ] kvm ring
+https://kvmforum2020.sched.com/event/eE4R/kvm-dirty-ring-a-new-approach-to-logging-peter-xu-red-hat
+
+顺便理解一下:
+```c
+static const struct vm_operations_struct kvm_vcpu_vm_ops = {
+	.fault = kvm_vcpu_fault,
+};
+```
+
+## 整理关键的数据结构
+- Each virtual CPU has an associated struct `kvm_run` data structure,
+used to communicate information about the CPU between the kernel and user space.
+
+## 整理一下路径
+- cpu hotplug
 
 ## TODO
-1. 看看 kvm 的 ioctl 的实现
-2. 求求了，什么时候学一下 x86 汇编吧，然后出一个利用 kvm 给别人写一个教程
-4. [^6] 虚拟化入门，各种 hypervisor 分类
-5. 我心心念念的 TLB 切换在哪里啊 ?
-8. virtio 如何处理 GPU 的 ?
-
 1. VMPTRST 和 VMPTRLD
-
 3. rsp_rdx
-
 4. vmcs_config vmcs 中间的具体内容是什么用于管控什么东西
 5. cpuid
 
@@ -60,30 +68,7 @@ IA32_VMX_BASIC :
 
 VPID 在内核中的操作方法 ?
 
-
-## 问题
-- [ ] 如果 kvm 中间跑一个支持 multicore 的 OS，kvm 从一个 cpu 中间启动，最后可以迁移到其他的 CPU 中间
-    - [ ] 如果 kvm 的 CPU 数量能否动态扩展 ？
-
 ## 记录
-[^1] lwn 给出了一个超级入门的介绍，值得学习 :
-
-Each virtual CPU has an associated struct `kvm_run` data structure,
-used to communicate information about the CPU between the kernel and user space.
-
-he VCPU also includes the processor's register state, broken into two sets of registers: standard registers and "special" registers. These correspond to two architecture-specific data structures: `struct kvm_regs` and `struct kvm_sregs`, respectively. On x86, the standard registers include general-purpose registers, as well as the instruction pointer and flags; the "special" registers primarily include segment registers and control registers.
-
-**This sample virtual machine demonstrates the core of the KVM API, but ignores several other major areas that many non-trivial virtual machines will care about.**
-
-1. Prospective implementers of memory-mapped I/O devices will want to look at the `exit_reason` `KVM_EXIT_MMIO`, as well as the `KVM_CAP_COALESCED_MMIO` extension to reduce vmexits, and the `ioeventfd` mechanism to process I/O asynchronously without a vmexit.
-
-2. For hardware interrupts, see the `irqfd` mechanism, using the `KVM_CAP_IRQFD` extension capability. This provides a file descriptor that can inject a hardware interrupt into the KVM virtual machine without stopping it first. A virtual machine may thus write to this from a separate event loop or device-handling thread, and threads running `KVM_RUN` for a virtual CPU will process that interrupt at the next available opportunity.
-
-3. x86 virtual machines will likely want to support CPUID and model-specific registers (SRs), both of which have architecture-specific ioctl()s that minimize vmexits.M
-> TODO 这几个进阶，值得关注
-
-While they can support other devices and `virtio` hardware, if you want to emulate a completely different type of system that shares little more than the instruction set architecture, you might want to implement a new VM instead.
-
 [^2]: 配置的代码非常详尽
 TODO : 内核切换到 long mode 的方法比这里复杂多了, 看看[devos](https://wiki.osev.org/Setting_Up_Long_Moded)
 
@@ -107,25 +92,6 @@ Registration of syscall handler can be achieved via setting special registers na
 2. 利用 virtqueue 解决了高效传输的数据的问题，那么中断虚拟化怎么办 ?
 
 
-[^7] 的记录:
-动机:
-Linux supports 8 distinct virtualization systems:
-- Xen, KVM, VMWare, ...
-- Each of these has its own block, console, network, ... drivers
-
-VirtIO – The three goals
-- Driver unification
-- Uniformity to provide a common ABI for general publication and use of buffers
-- Device probing and configuration
-
-Virtqueue
-- It is a part of the memory of the
-guest OS
-- A channel between front-end and back-end
-- It is an interface Implemented as
-Vring
-  - Vring is a memory mapped region between QEMU and guest OS
-  - Vring is the memory layout of the virtqueue abstraction
 
 [^4] 的记录:
 The end goal of the process is to try to create a straightforward, efficient, and extensible standard.
@@ -175,12 +141,9 @@ You can find the source to the various front-end drivers within the ./drivers su
 
 https://github.com/cloudius-systems/osv/wiki/Running-OSv-image-under-KVM-QEMU : 有意思，可以测试一下
 
-[^1]: https://lwn.net/Articles/658511/
 [^2]: https://github.com/kvmtool/kvmtool
 [^4]: [Standardizing virtio](https://lwn.net/Articles/580186/)
 [^5]: https://developer.ibm.com/articles/l-virtio/
-[^6]: https://developer.ibm.com/tutorials/l-hypervisor/
-[^7]: https://www.cs.cmu.edu/~412/lectures/Virtio_2015-10-14.pdf
 [^8]: https://david942j.blogspot.com/2018/10/noe-learning-kvm-implement-your-own.htmlt
 [^9]: https://binarydebt.wordpress.com/201810/14/intel-virtualisation-how-vt-x-kvm-and-qemu-work-together//
 [^10]: https://www.kernel.org/doc/html/latest/virt/kvm/index.html
@@ -451,65 +414,7 @@ https://luohao-brian.gitbooks.io/interrupt-virtualization/content/qemu-kvm-zhong
 
 kvm_kipc_state 的信息如何告知 CPU ? 通过 kvm_pic_read_irq
 
-## lapic
-
 #### https://luohao-brian.gitbooks.io/interrupt-virtualization/content/kvmzhi-nei-cun-xu-ni531628-kvm-mmu-virtualization.html
-
-```c
-struct kvm_memory_slot {
-    gfn_t base_gfn;
-    unsigned long npages;
-    unsigned long *dirty_bitmap;
-    struct kvm_arch_memory_slot arch;
-    unsigned long userspace_addr;
-    u32 flags;
-    short id;
-};
-
-/*
- * Note:
- * memslots are not sorted by id anymore, please use id_to_memslot()
- * to get the memslot by its id.
- */
-struct kvm_memslots {
-    u64 generation;
-    /* The mapping table from slot id to the index in memslots[]. */
-    short id_to_index[KVM_MEM_SLOTS_NUM];
-    atomic_t lru_slot;
-    int used_slots;
-    struct kvm_memory_slot memslots[];
-};
-```
-
-`hva=base_hva+(gfn-base_gfn)*PAGE_SIZE`
-
-```c
-unsigned long gfn_to_hva(struct kvm *kvm, gfn_t gfn)
-{
-    return gfn_to_hva_many(gfn_to_memslot(kvm, gfn), gfn, NULL);
-}
-
-// 关键 : 定位 slot
-struct kvm_memory_slot *gfn_to_memslot(struct kvm *kvm, gfn_t gfn)
-{
-    return __gfn_to_memslot(kvm_memslots(kvm), gfn);
-}
-
-// 定位 slot 的核心函数，估计是顺着查询一遍的样子
-/*
- * search_memslots() and __gfn_to_memslot() are here because they are
- * used in non-modular code in arch/powerpc/kvm/book3s_hv_rm_mmu.c.
- * gfn_to_memslot() itself isn't here as an inline because that would
- * bloat other code too much.
- *
- * IMPORTANT: Slots are sorted from highest GFN to lowest GFN!
- */
-static inline struct kvm_memory_slot *
-search_memslots(struct kvm_memslots *slots, gfn_t gfn)
-```
-
-> 作用：GVA直接到HPA的地址翻译,真正被VMM载入到物理MMU中的页表是影子页表；
-> MMU 会在 mmu 没有命中的时候 crash
 
 获得缺页异常发生时的CR2,及当时访问的虚拟地址；
 进入
@@ -1275,47 +1180,12 @@ static int create_vcpu_fd(struct kvm_vcpu *vcpu)
 }
 ```
 
-#### kvm device ioctl
-> TODO
 
-#### kvm io bus write
-
-kvm_io_bus_write => `__kvm_io_bus_write`
-
-```c
-struct kvm_io_bus {
-    int dev_count;
-    int ioeventfd_count;
-    struct kvm_io_range range[];
-};
-```
-KVM: Adds support for in-kernel mmio handlers
-
-
-## unsorted resource
-- Extended page-table mechanism (EPT) used to support the virtualization of physical memory.
-- **Translates the guest-physical addresses used in VMX non-root operation.**
-- Guest-physical addresses are translated by traversing a set of EPT paging structures to produce physical addresses that are used to access memory.
-
-
-> 1. 对于 page table 的翻译 : 让硬件完成其中的插入工作，这样就不使用 shadow table
-> 2. 使用 TLB 进行翻译
-
-
-> TLB 被划分为两个部分，`VA->PA` 和 `PA-VA`
-
-
-hspt 的想法 : 将内核中间添加一个 mmap 的空间，每一个 process 在一个虚拟地址空间中间，
-这个虚拟地址空间直接映射到 host 的一个连续空间中间，那么访问就相当于直接访问了.
-
+## shadow page table 的坏处
 - Simplified VMM design. 需要处理 shadow page table 和两级翻译的同步问题
 - Guest page table modifications need not be trapped, hence VM exits reduced. 同步
 - Reduced memory footprint compared to shadow page table algorithms. shadow table 会占用空间
 
-TLB miss is very costly since guest-physical address to machine address needs an extra EPT walk for each stage of guest-virtual address translation.
-
-
-## kvm_make_all_cpus_request
 
 ## hypercall
 https://stackoverflow.com/questions/33590843/implementing-a-custom-hypercall-in-kvm
@@ -1351,20 +1221,10 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
     unsigned long nr, a0, a1, a2, a3, ret;
     int op_64_bit;
 
-  // TODO hyperv 另一种虚拟化方案 ?
-  // 一种硬件支持 ?
     if (kvm_hv_hypercall_enabled(vcpu->kvm))
         return kvm_hv_hypercall(vcpu);
 
 ```
-
-## resources
-
-- [Watch this organization](https://github.com/rust-vmm/kvm-bindings)
->  It provides a set of virtualization components that any project can use to quickly develop virtualization solutions while focusing on the key differentiators of their product rather than re-implementing common components like KVM wrappers, virtio devices and other VMM libraries.
-
-
-- https://github.com/canonical/multipass : cpp 的项目，可以编排 ubuntu 虚拟机
 
 ## manual notes
 - Table C-1. Basic Exit Reasons
