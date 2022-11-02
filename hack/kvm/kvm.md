@@ -1,5 +1,7 @@
 # KVM
 
+## shadow page table 严重的干扰了视线，有必要使用 kcov 来覆盖一下
+
 ## 使用 `kvm_stat` 可以观测最核心的函数
 
 ```txt
@@ -32,6 +34,10 @@ kvm_pvclock_update                               13    0.0        4
 kvm_halt_poll_ns                                 42    0.0        3
 Total                                       2187824          167463
 ```
+## 有趣的 patch
+- a54d806688fe1e482350ce759a8a0fc9ebf814b0
+
+从这个 patch 开始，将内核从 memory slot 从 array 修改为 rbtree 组织形式
 
 ## 过一下官方文档
 https://www.kernel.org/doc/html/latest/virt/kvm/index.html
@@ -46,12 +52,26 @@ static const struct vm_operations_struct kvm_vcpu_vm_ops = {
 };
 ```
 
-## 整理关键的数据结构
+## TODO
+- kvm_vcpu_unmap : 调用的好多位置在 nested, 是做啥的
+- cpu hotplug
+
+- kvm_arch_vcpu_ioctl_run+4975
+  - kvm_mmu_load+1151
+    - mmu_alloc_direct_roots
+    - kvm_mmu_sync_roots+1
+
+我认为 kvm_mmu_sync_roots 虽然被调用了，但是应该立刻开始返回。
+```c
+	if (vcpu->arch.mmu->root_role.direct)
+		return;
+```
+
+### 整理关键的数据结构
 - Each virtual CPU has an associated struct `kvm_run` data structure,
 used to communicate information about the CPU between the kernel and user space.
 
 ## 整理一下路径
-- cpu hotplug
 
 ## TODO
 1. VMPTRST 和 VMPTRLD
@@ -128,10 +148,8 @@ struct kvm_mmu {
   kvm_mmu_gva_to_gpa_system:5540
 ```
 - [ ] https://www.cnblogs.com/ck1020/p/6920765.html 其他的文章
-
 - [ ] https://www.kernel.org/doc/ols/2007/ols2007v1-pages-225-230.pdf
     - 看看 KVM 的总体上层架构怎么回事
-- [ ] x86.c :  mmio / pio 的处理
 - [ ] emulate.c 中间模拟的指令数量显然是远远没有达到实际上指令数量的，而且都是各种基本指令的模拟
   - [ ] 为什么要进行这些模拟, vmx 的各种 handle 函数为什么反而不能处理这些简单的指令
   - [ ] 很多操作依赖于 vcs read / write ，但是这里仅仅是利用 `ctxt->ops` 然后读 vcpu 中的内容
@@ -143,12 +161,8 @@ struct kvm_mmu {
 - [ ] ept 和 shadow page table 感觉处理方法类似了: 都是 for_each_shadow_entry，kvm_mmu_get_page, link_shadow_page 和 mmu_set_spte
     - [ ] `FNAME(fetch)`
     - [ ] `__direct_map`
-
 - [ ] 对于 shadow page table, 不同的 process 都有一套，不同 process 的 cr3 的加载是什么时候 ?
 - [ ] 在 FNAME(page_fault) 的两个步骤判断，当解决了 guest page table 的问题之后，依旧发生 page fault, 此时添加上的 shadow page table 显然可以 track 上
-- [ ] dirty log
-
-
 
 ## 函数调用路径
 
@@ -164,63 +178,10 @@ struct kvm_mmu {
             - `__kvm_get_msr`
               - `vmx_get_msr`
 
-## x86.c overview
-- VMCS 的 IO
-- timer pvclock tsc
-- ioctl
-
-- pio mmio 和 一般的 IO 的模拟
-- emulate
-
-
-1. debugfs
-```c
-static struct kmem_cache *x86_fpu_cache;
-static struct kmem_cache *x86_emulator_cache;
-```
-2. kvm_on_user_return :
-    1. user return ?
-    2. share msr
-
-3. exception_type
-
-4. payload
-
-提供了很多函数访问设置 vcpu，比如 kvm_get_msr 之类的
-1. 谁调用 <- vmx.c 吧 !
-2. 实现的方法 : 将其放在 vmcs 中，
-从 vmcs 中间读取 : 当想要访问的时候，
-
-- [ ] vmcs 是内存区域，还会放在 CPU 中间，用 指令读写的内容
-
-kvm_steal_time_set_preempted
-
-
-## details
-
-#### vmx_vcpu_run
-vmx_exit_handlers_fastpath : 通过 omit what 来 fast
-
-
-#### kvm_read_guest_virt_helper
-内核读取 guest 的内存，因为 guest 的使用地址空间是
-用户态的，所以
-1. gva_to_gpa 的地址切换
-        gpa_t gpa = vcpu->arch.walk_mmu->gva_to_gpa(vcpu, addr, access,
-2. kvm_vcpu_read_guest_page : copy_to_user 而已
-
-## event injection
-在 ./nested.md 中的同名 section 中间
-
-#### kvm_vcpu_flush_tlb_all
-
-```c
-static void kvm_vcpu_flush_tlb_all(struct kvm_vcpu *vcpu)
-{
-    ++vcpu->stat.tlb_flush;
-    kvm_x86_ops.tlb_flush_all(vcpu);
-}
-```
+- vmx_handle_exit
+  - kvm_mmu_page_fault
+    - direct_page_fault
+      - kvm_tdp_mmu_map
 
 ## emulat.c
 init_emulate_ctxt
@@ -244,31 +205,6 @@ int kvm_emulate_instruction(struct kvm_vcpu *vcpu, int emulation_type)
 ```c
 // 将 kvm_arch_vcpu_create 被 kvm_vm_ioctl_create_vcpu 唯一 call
 int kvm_arch_vcpu_create(struct kvm_vcpu *vcpu)
-```
-
-#### opcode_table 的使用位置
-
-```c
-static const struct opcode opcode_table[256] = {
-```
-
-指令编码:
-```c
-struct opcode {
-    u64 flags : 56;
-    u64 intercept : 8;
-    union {
-        int (*execute)(struct x86_emulate_ctxt *ctxt);
-        const struct opcode *group;
-        const struct group_dual *gdual;
-        const struct gprefix *gprefix;
-        const struct escape *esc;
-        const struct instr_dual *idual;
-        const struct mode_dual *mdual;
-        void (*fastop)(struct fastop *fake);
-    } u;
-    int (*check_perm)(struct x86_emulate_ctxt *ctxt);
-};
 ```
 
 ## intel processor tracing
@@ -300,12 +236,6 @@ int kvm_arch_hardware_setup(void *opaque)
   // ...
 ```
 
-## emulate_ops 和 vmx_x86_ops 的操作对比
-- vmx_x86_ops 提供了各种操作的硬件支持.
-- vmx 的 kvm_vmx_exit_handlers 需要 emulate 的，但是 emulator 的工作需要从 emulator 中间得到数据
-
-
-
 ## hyperv.c
 模拟 HyperV 的内容, 但是为什么需要模拟 HyperV ?
 
@@ -314,21 +244,6 @@ int kvm_arch_hardware_setup(void *opaque)
 
 实在是有点看不懂:
 https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/hyper-v-architecture
-
-## irq.c
-似乎很短，但是 lapic 很长!
-
-
-## 中断虚拟化
-中断虚拟化的关键在于对中断控制器的模拟，我们知道x86上中断控制器主要有旧的中断控制器PIC(intel 8259a)和适应于SMP框架的IOAPIC/LAPIC两种。
-
-https://luohao-brian.gitbooks.io/interrupt-virtualization/content/qemu-kvm-zhong-duan-xu-ni-hua-kuang-jia-fen-679028-4e2d29.html
-
-查询 GSI 号上对应的所有的中断号:
-
-从 ioctl 到下层，kvm_vm_ioctl 注入的中断，最后更改了 kvm_kipc_state:irr
-
-kvm_kipc_state 的信息如何告知 CPU ? 通过 kvm_pic_read_irq
 
 ## trace mmu
 
@@ -429,283 +344,12 @@ static int mmu_alloc_roots(struct kvm_vcpu *vcpu)
 }
 ```
 
-## memory in kernel or qumu process
-luohao's blog:
-
-- [ ] rmap 字段的解释，那么 memory 是 vmalloc 分配的 ?????
-  - [ ] vmalloc 的分配是 page fault 的吗 ?
-
-```c
-struct kvm_memory_slot {
-    gfn_t base_gfn;                    // 该块物理内存块所在guest 物理页帧号
-    unsigned long npages;              //  该块物理内存块占用的page数
-    unsigned long flags;
-    unsigned long *rmap;               // 分配该块物理内存对应的host内核虚拟地址（vmalloc分配）
-    unsigned long *dirty_bitmap;
-    struct {
-        unsigned long rmap_pde;
-        int write_count;
-    } *lpage_info[KVM_NR_PAGE_SIZES - 1];
-    unsigned long userspace_addr;       // 用户空间地址（QEMU)
-    int user_alloc;
-};
-```
-
-
-## parent_ptes
-```c
-static void kvm_mmu_mark_parents_unsync(struct kvm_mmu_page *sp)
-{
-    u64 *sptep;
-    struct rmap_iterator iter;
-
-    for_each_rmap_spte(&sp->parent_ptes, &iter, sptep) {
-        mark_unsync(sptep);
-    }
-}
-
-static void mark_unsync(u64 *spte)
-{
-    struct kvm_mmu_page *sp;
-    unsigned int index;
-
-    sp = sptep_to_sp(spte);
-    index = spte - sp->spt;
-    if (__test_and_set_bit(index, sp->unsync_child_bitmap))
-        return;
-    if (sp->unsync_children++)
-        return;
-    kvm_mmu_mark_parents_unsync(sp);
-}
-```
-递归向上，当发现存在有人 没有 unsync 的时候，在 unsync_child_bitmap 中间设置标志位，
-并且向上传导，直到发现没人检测过
-
-link_shadow_page : mark_unsync 的唯一调用位置
-kvm_unsync_page : kvm_mmu_mark_parents_unsync 唯一调用位置
-
-mmu_need_write_protect : 对于sp
-
-#### mmu_need_write_protect
-for_each_gfn_indirect_valid_sp : 一个 gfn 可以
-同时对应多个 shadow page，原因是一个 guest page 可以对应多个 shadow page
-
-
-> hash : 实现 guest page tabel 和 shadow page 的映射
-
-> rmap_add 处理的是 :  gfn 和其对应的 pte 的对应关系
-
-
-## role.quadrant
-作用: 一个 guest 地址对应的 page table
-
-get_written_sptes : 依靠 gpa 的 page_offset 计算出来，然后和 `sp->role.quadrant` 对比
-
-#### obsolete sp
-
-```c
-static bool is_obsolete_sp(struct kvm *kvm, struct kvm_mmu_page *sp)
-{
-    return sp->role.invalid ||
-           unlikely(sp->mmu_valid_gen != kvm->arch.mmu_valid_gen);
-}
-```
-
-#### gfn_to_rmap
-RMAP_RECYCLE_THRESHOLD 居然是 1000
-
-## gfn_track
-
-```diff
- History:        #0
- Commit:         3d0c27ad6ee465f174b09ee99fcaf189c57d567a
- Author:         Xiao Guangrong <guangrong.xiao@linux.intel.com>
- Committer:      Paolo Bonzini <pbonzini@redhat.com>
- Author Date:    Wed 24 Feb 2016 09:51:11 AM UTC
- Committer Date: Thu 03 Mar 2016 01:36:21 PM UTC
-
- KVM: MMU: let page fault handler be aware tracked page
-
- The page fault caused by write access on the write tracked page can not
- be fixed, it always need to be emulated. page_fault_handle_page_track()
- is the fast path we introduce here to skip holding mmu-lock and shadow
- page table walking
-
- However, if the page table is not present, it is worth making the page
- table entry present and readonly to make the read access happy
-
- mmu_need_write_protect() need to be cooked to avoid page becoming writable
- when making page table present or sync/prefetch shadow page table entries
-
- Signed-off-by: Xiao Guangrong <guangrong.xiao@linux.intel.com>
- Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
-```
--  [ ] tracked 的 page 不能被 fixed, 必须被模拟，为啥 ?
-
-gfn_track 其实没有什么特别的，告诉该 页面被 track 了，然后
-kvm_mmu_page_fault 中间将会调用 x86_emulate_instruction 来处理，
-似乎然后通过 mmu_notifier 使用 kvm_mmu_pte_write 来更新 guest page table
-
-#### page_fault_handle_page_track
-direct_page_fault 和 FNAME(page_fault) 调用，
-似乎如果被 track，那么这两个函数会返回 RET_PF_EMULATE
-
-
-## track 机制
-track 和 dirty bitmap 实际上是两个事情吧!
-
-对于加以维护的:
-kvm_slot_page_track_add_page :
-kvm_slot_page_track_remove_page :
-==> update_gfn_track
-
-- [ ] 两个函数，调用 update,  都是对于 gfn_track 的加减 1 而已
-
-分别被 account_shadowed 和 unaccount_shadowed 调用
-
-`__kvm_mmu_prepare_zap_page` : 被各种 zap page 调用，并且配合 commit_zap 使用
-=> unaccount_shadowed
-
-kvm_mmu_get_page :
-=> account_shadowed
-
-
-
-
-1. kvm_mmu_page_write
-
-```c
-void kvm_mmu_init_vm(struct kvm *kvm)
-{
-    struct kvm_page_track_notifier_node *node = &kvm->arch.mmu_sp_tracker;
-
-    node->track_write = kvm_mmu_pte_write;
-    node->track_flush_slot = kvm_mmu_invalidate_zap_pages_in_memslot;
-    kvm_page_track_register_notifier(kvm, node);
-}
-```
-kvm_mmu_get_page: 当不是 direct 模式，那么需要对于 kvm_mmu_alloc_page 的 page 进行 account_shadowed
-=> account_shadowed :
-=> kvm_slot_page_track_add_page
-
-**所以，保护的是 shadow page table ?**
-
-```c
-static void account_shadowed(struct kvm *kvm, struct kvm_mmu_page *sp)
-{
-    struct kvm_memslots *slots;
-    struct kvm_memory_slot *slot;
-    gfn_t gfn;
-
-    kvm->arch.indirect_shadow_pages++;
-    gfn = sp->gfn;
-    slots = kvm_memslots_for_spte_role(kvm, sp->role);
-    slot = __gfn_to_memslot(slots, gfn);
-
-    /* the non-leaf shadow pages are keeping readonly. */
-    if (sp->role.level > PG_LEVEL_4K)
-        return kvm_slot_page_track_add_page(kvm, slot, gfn,
-                            KVM_PAGE_TRACK_WRITE);
-
-    kvm_mmu_gfn_disallow_lpage(slot, gfn);
-}
-```
-- [ ] 为什么不保护 leaf shadow page ?
-
-> TOBECON
-
-## track mode
-
-> - dirty tracking:
->    report writes to guest memory to enable live migration
->    and framebuffer-based displays
-
-原来 tracing 是 dirty 的
-
-
-
-```diff
- KVM: page track: add the framework of guest page tracking
-
- The array, gfn_track[mode][gfn], is introduced in memory slot for every
- guest page, this is the tracking count for the gust page on different
- modes. If the page is tracked then the count is increased, the page is
- not tracked after the count reaches zero
-
- We use 'unsigned short' as the tracking count which should be enough as
- shadow page table only can use 2^14 (2^3 for level, 2^1 for cr4_pae, 2^2
- for quadrant, 2^3 for access, 2^1 for nxe, 2^1 for cr0_wp, 2^1 for
- smep_andnot_wp, 2^1 for smap_andnot_wp, and 2^1 for smm) at most, there
- is enough room for other trackers
-
- Two callbacks, kvm_page_track_create_memslot() and
- kvm_page_track_free_memslot() are implemented in this patch, they are
- internally used to initialize and reclaim the memory of the array
-
- Currently, only write track mode is supported
-```
-
-#### gfn_to_memslot_dirty_bitmap
-`slot->dirty_bitmap` 都在 kvm_main 上面访问
-
-pte_prefetch_gfn_to_pfn
-
-
-- [ ] dirty 指的是 谁 相对于 谁 是 dirty 的
-
-```c
-/**
- * kvm_vm_ioctl_get_dirty_log - get and clear the log of dirty pages in a slot
- * @kvm: kvm instance
- * @log: slot id and address to which we copy the log
- *
- * Steps 1-4 below provide general overview of dirty page logging. See
- * kvm_get_dirty_log_protect() function description for additional details.
- *
- * We call kvm_get_dirty_log_protect() to handle steps 1-3, upon return we
- * always flush the TLB (step 4) even if previous step failed  and the dirty
- * bitmap may be corrupt. Regardless of previous outcome the KVM logging API
- * does not preclude user space subsequent dirty log read. Flushing TLB ensures
- * writes will be marked dirty for next log read.
- *
- *   1. Take a snapshot of the bit and clear it if needed.
- *   2. Write protect the corresponding page.
- *   3. Copy the snapshot to the userspace.
- *   4. Flush TLB's if needed.
- */
-static int kvm_vm_ioctl_get_dirty_log(struct kvm *kvm,
-                      struct kvm_dirty_log *log)
-{
-    int r;
-
-    mutex_lock(&kvm->slots_lock);
-
-    r = kvm_get_dirty_log_protect(kvm, log);
-
-    mutex_unlock(&kvm->slots_lock);
-    return r;
-}
-```
-
-https://terenceli.github.io/%E6%8A%80%E6%9C%AF/2018/08/11/dirty-pages-tracking-in-migration
-
-> So here for every gfn, we remove the write access. After return from this ioctl, the guest’s RAM has been marked no write access, every write to this will exit to KVM make the page dirty. This means ‘start the dirty log’.
-
-
-- [ ] kvm_mmu_slot_apply_flags : 实际作用是 dirty log
-
 ## kvm_sync_page
 kvm_sync_pages : 对于 gfn (其实是 gva 关联的 vcpu) 全部更新, 通过调用 kvm_sync_page
 
 kvm_mmu_sync_roots : 从根节点更新更新 => (mmu_sync_children : 将整个 children 进行 sync)
 
 最终调用 sync_page 函数指针维持生活
-
-
-
-
-
-
 
 ## mmio
 - [ ] 对于 host 而言，存在 pcie 分配 mmio 的地址空间，在虚拟机中间，这一个是如何分配的 MMIO 空间的
@@ -719,7 +363,6 @@ static bool is_mmio_spte(u64 spte)
 
 - generation 只是为了 MMIO 而处理的
 
-
 > - if the RSV bit of the error code is set, the page fault is caused by guest
 >  accessing MMIO and cached MMIO information is available.
 >
@@ -729,34 +372,7 @@ static bool is_mmio_spte(u64 spte)
 >  - cache the information to `vcpu->arch.mmio_gva`, `vcpu->arch.mmio_access` and
 >    `vcpu->arch.mmio_gfn`, and call the emulator
 
-
-## mmio generation
-👇记录 mmu.rst 的内容:
-虽然的确解释了 mmio 使用 generation 的原因，但是下面的问题值得理解:
-- [ ] As mentioned in "Reaction to events" above, kvm will cache MMIO information in leaf sptes.
-  - [ ] 如果不 cache, 这些数据放在那里
-
-- [ ] When a new memslot is added or an existing memslot is changed, this information may become stale and needs to be invalidated.
-  - [ ] 为什么 memslot 增加，导致数据失效
-
-Unfortunately, a single memory access might access kvm_memslots(kvm) multiple
-times, the last one happening when the generation number is retrieved and
-stored into the MMIO spte.  Thus, the MMIO spte might be created based on
-out-of-date information, but with an up-to-date generation number.
-
-- [ ] To avoid this, the generation number is incremented again after synchronize_srcu
-returns;
-
-- [ ] 找到访问 pte 来比较 generation, 发现 out of date，然后 slow path 的代码
-
-## TODO : shadow flood
-
 #### kvm_vm_ioctl_set_memory_region
-
-#### kvm_vcpu_unmap
-
-#### kvm_read_guest
-- [ ] 为什么要处理 guest page 机制
 
 #### kvm_vcpu_fault
 > 配合 vcpu ioctl

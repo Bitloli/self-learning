@@ -275,9 +275,9 @@ static const struct dma_map_ops iommu_dma_ops = {
 
 - 为什么 IOMMU 需要搞出来 iommu group，需要更加详细的解释。
 
-## [ ] vIOMMU 和 virtio iommu 是一个东西吗?
+## [ ] vIOMMU 和 virtio iommu 是一个东西吗
 
-## [ ] IOMMU interrupt remapping 是如何实现的?
+## [ ] IOMMU interrupt remapping 是如何实现的
 参考 intel vt-d 标准吧！
 
 # vIOMMU

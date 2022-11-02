@@ -5,7 +5,7 @@ https://www.infoq.com/presentations/gvisor-os-go/
 ref :  https://stackoverflow.com/questions/55411277/how-can-i-setup-vscode-for-go-project-built-with-bazel
 
 1. genereate gopath style source code
-```
+```plain
 bazel build :gopath
 ```
 2. for clarity and simplisity, copy code somewhere else
@@ -13,22 +13,22 @@ bazel build :gopath
 cp -Lr bazel-bin/gopath ~/test/gv
 ```
 3. init go mod in `~/test/gv/gopath/gvisor.dev`
-```
+```plain
 go mod init gvisor.dev
 ```
 
 4. setup env:
   - for vscode:
-```
+```plain
 ➜  gvisor git:(master) ✗ cat .vscode/settings.json
 {
     "go.toolsEnvVars": {
          "GOPATH": "~/test/gv/gopath"
     }
-}% 
+}%
 ```
   - for vim:
-```
+```plain
 ➜  gvisor git:(master) ✗ export GOPATH=~/test/gv/gopath
 ```
 5. open directory `~/test/gv/gopath/gvisor.dev` as root directory with vim or vscode

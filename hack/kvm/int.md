@@ -1,5 +1,17 @@
 # intel 中断虚拟化，基于 狮子书
 
+## 中断虚拟化
+中断虚拟化的关键在于对中断控制器的模拟，我们知道x86上中断控制器主要有旧的中断控制器PIC(intel 8259a)和适应于SMP框架的IOAPIC/LAPIC两种。
+
+https://luohao-brian.gitbooks.io/interrupt-virtualization/content/qemu-kvm-zhong-duan-xu-ni-hua-kuang-jia-fen-679028-4e2d29.html
+
+查询 GSI 号上对应的所有的中断号:
+
+从 ioctl 到下层，kvm_vm_ioctl 注入的中断，最后更改了 kvm_kipc_state:irr
+
+kvm_kipc_state 的信息如何告知 CPU ? 通过 kvm_pic_read_irq
+
+
 # 8254 / 8259
 KVM_CREATE_IRQCHIP :
 

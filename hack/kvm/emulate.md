@@ -49,11 +49,11 @@
 - [ ] alloc_emulate_ctxt, 被 kvm_arch_vcpu_create 唯一调用一次
   - [ ] emulate_ops
     - [ ] 里面有一堆 read / write
-        - [ ] read_std : 用于普通的内存访问 , 在 emulator_io_port_access_allowed 中，用于 check seg 
-        - [ ] write_gpr : 寄存器, 在 vmx_vcpu_run 的时候，检查  kvm_register_is_dirty ，如果在 software 的更新过，那么使用 
+        - [ ] read_std : 用于普通的内存访问 , 在 emulator_io_port_access_allowed 中，用于 check seg
+        - [ ] write_gpr : 寄存器, 在 vmx_vcpu_run 的时候，检查  kvm_register_is_dirty ，如果在 software 的更新过，那么使用
     - [ ] cr, idt, gdt 之类的，为什么不通过 vmx exit 处理
 
-- vmx_x86_ops::run 
+- vmx_x86_ops::run
   - [ ] vmx_vcpu_run
     - [ ] vmx_vcpu_enter_exit
       - [ ] `__vmx_vcpu_run` : 设置汇编实现，会将 arch.regs 更新到 vcpu 中
@@ -68,8 +68,8 @@
     - [ ] handle_vmx_instruction
         - [ ] kvm_queue_exception : 使用 UD_VECTOR, 表示 #UD 的 exception，因为 vmx 在指令是不应该支持的
             - [ ] kvm_multiple_exception
-- [ ] emulate_ops : 
-- [ ] vmx_x86_ops 
+- [ ] emulate_ops :
+- [ ] vmx_x86_ops
 
 ```c
 static void emulator_get_idt(struct x86_emulate_ctxt *ctxt, struct desc_ptr *dt)
@@ -77,3 +77,32 @@ static void emulator_get_idt(struct x86_emulate_ctxt *ctxt, struct desc_ptr *dt)
 	kvm_x86_ops.get_idt(emul_to_vcpu(ctxt), dt);
 }
 ```
+
+#### opcode_table 的使用位置
+
+```c
+static const struct opcode opcode_table[256] = {
+```
+
+指令编码:
+```c
+struct opcode {
+    u64 flags : 56;
+    u64 intercept : 8;
+    union {
+        int (*execute)(struct x86_emulate_ctxt *ctxt);
+        const struct opcode *group;
+        const struct group_dual *gdual;
+        const struct gprefix *gprefix;
+        const struct escape *esc;
+        const struct instr_dual *idual;
+        const struct mode_dual *mdual;
+        void (*fastop)(struct fastop *fake);
+    } u;
+    int (*check_perm)(struct x86_emulate_ctxt *ctxt);
+};
+```
+
+## emulate_ops 和 vmx_x86_ops 的操作对比
+- vmx_x86_ops 提供了各种操作的硬件支持.
+- vmx 的 kvm_vmx_exit_handlers 需要 emulate 的，但是 emulator 的工作需要从 emulator 中间得到数据
