@@ -1,12 +1,27 @@
-## mmu
-
 ## key questions
-
 - [ ] set_spte 是不是仅仅用于设置 leaf
   - [ ] 如果是，其他 level ?
   - [ ] 如果不是，`spte |= (u64)pfn << PAGE_SHIFT;` 直接指向 pfn 如何理解
 
 ## mmu.rst
+记录 mmu.rst 的内容:
+虽然的确解释了 mmio 使用 generation 的原因，但是下面的问题值得理解:
+- [ ] As mentioned in "Reaction to events" above, kvm will cache MMIO information in leaf sptes.
+  - [ ] 如果不 cache, 这些数据放在那里
+
+- [ ] When a new memslot is added or an existing memslot is changed, this information may become stale and needs to be invalidated.
+  - [ ] 为什么 memslot 增加，导致数据失效
+
+Unfortunately, a single memory access might access kvm_memslots(kvm) multiple
+times, the last one happening when the generation number is retrieved and
+stored into the MMIO spte.  Thus, the MMIO spte might be created based on
+out-of-date information, but with an up-to-date generation number.
+
+- [ ] To avoid this, the generation number is incremented again after synchronize_srcu
+returns;
+
+- [ ] 找到访问 pte 来比较 generation, 发现 out of date，然后 slow path 的代码
+
 
 > Guest memory (gpa) is part of the user address space of the process that is
 using kvm.  Userspace defines the translation between guest addresses and user
@@ -821,7 +836,6 @@ static u64 __read_mostly shadow_acc_track_mask;
 
 ## lockless
 - [ ] SPTE_HOST_WRITEABLE 和 SPTE_MMU_WRITEABLE
-
 
 ```c
 static bool spte_can_locklessly_be_made_writable(u64 spte)

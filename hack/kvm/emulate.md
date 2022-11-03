@@ -1,4 +1,22 @@
-- [ ] x86_emulate_instruction
+# 搞一个经典的结构
+
+```c
+@[
+    x86_emulate_insn+1
+    x86_emulate_instruction+997
+    handle_ud+81
+    vmx_handle_exit+373
+    kvm_arch_vcpu_ioctl_run+3604
+    kvm_vcpu_ioctl+625
+    __x64_sys_ioctl+138
+    do_syscall_64+59
+    entry_SYSCALL_64_after_hwframe+99
+]: 11
+```
+
+- [ ] 为什么正常的机器运行也会调用到 handle_exception_nmi 中啊
+  - guest 中所有的 NMI 都需要通知一下 host 吗？ watchdog nmi 之类的
+
 
 ```c
 /*

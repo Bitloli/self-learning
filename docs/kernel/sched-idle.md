@@ -11,6 +11,7 @@
 - cpuidle.off = 1
 
 ## https://stackoverflow.com/questions/57471862/uses-of-the-monitor-mwait-instructions
+- 不知道为什么，mwait 会导致 guest 退出
 
 - cpuidle.off=1 : 用于关闭 idle 的 subsystem 的
 - hlt which just goes into the lightest sleep
