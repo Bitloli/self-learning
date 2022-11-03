@@ -22,11 +22,9 @@
 * [domain threaded mask](#domain-threaded-mask)
 * [cgroup ssid 的管理策略](#cgroup-ssid-的管理策略)
 * [cgroup_add_dfl_cftypes 和 cgroup_add_legacy_cftypes](#cgroup_add_dfl_cftypes-和-cgroup_add_legacy_cftypes)
-* [cpuset](#cpuset)
 * [cgroup core files](#cgroup-core-files)
 * [v1 v2](#v1-v2)
 * [PSI](#psi)
-* [cpu](#cpu)
 * [thread](#thread)
 * [page counter](#page-counter)
 * [hugetlb cgroup](#hugetlb-cgroup)
@@ -752,16 +750,6 @@ int cgroup_add_legacy_cftypes(struct cgroup_subsys *ss, struct cftype *cfts)
 }
 ```
 
-
-## cpuset
-```c
-struct cpuset {
-  struct cgroup_subsys_state css;
-```
-
-
-- [ ]https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/cpusets.html
-
 ## cgroup core files
 fils lies in /sys/fs/cgroup ?
 
@@ -831,11 +819,6 @@ In cgroup v2, the device access control is implemented by attaching an eBPF prog
 
 ## PSI
 https://www.kernel.org/doc/html/latest/accounting/psi.html#
-
-## cpu
-[Linux Cgroup系列（05）：限制cgroup的CPU使用（subsystem之cpu）](https://segmentfault.com/a/1190000008323952)
-- [ ] Only worked on cgroup v1, can we redo the experiement on v2 ?
-
 ## thread
 https://lwn.net/Articles/656115/
 
@@ -1013,10 +996,5 @@ static struct cgroup *cset_cgroup_from_root(struct css_set *cset,
  */
 static void css_free_rwork_fn(struct work_struct *work)
 ```
-
-- [ ] cgroup 是可以控制一个进程的 swap 的水平的
-  - 可以测试一下，即使是整个内存非常充沛，但是因为 cgroup 的原因，还是会出现 swap 的情况
-  - https://unix.stackexchange.com/questions/697448/what-is-the-replacement-of-memory-swappiness-file-in-cgroups-v2
-
 ## reference
 [^1]: v1 https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/index.html

@@ -1,6 +1,6 @@
-# 搞一个经典的结构
+# 搞一个经典的路径
 
-```c
+```txt
 @[
     x86_emulate_insn+1
     x86_emulate_instruction+997

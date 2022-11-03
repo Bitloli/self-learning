@@ -127,3 +127,48 @@ sudo cgexec -g cpu:C dd if=/dev/zero of=/dev/null &
 1. https://segmentfault.com/a/1190000007468509
 
 - systemd-cgls : 从 systemd 的架构展示
+
+## 如何切换 cgroup v2 来测试
+检测当前是那个版本: https://kubernetes.io/docs/concepts/architecture/cgroups/
+
+```sh
+stat -fc %T /sys/fs/cgroup/
+```
+- tmpfs : v1
+- cgroup2fs : v2
+
+```sh
+sudo grubby --update-kernel=ALL --args=systemd.unified_cgroup_hierarchy=1
+```
+
+老版本的 libcgroup 不能支持 cgroup v2 :
+```txt
+➜ sudo cgcreate -g cpu:A
+
+[sudo] password for martins3:
+cgcreate: libcgroup initialization failed: Cgroup is not mounted
+```
+
+centos 8 上手动安装
+
+```sh
+sudo yum install autoconf
+sudo yum install aclocal
+sudo yum install automake
+sudo yum install libtool
+sudo yum install pam-devel
+```
+
+然后参考此处: https://askubuntu.com/questions/27677/cannot-find-install-sh-install-sh-or-shtool-in-ac-aux
+```c
+libtoolize --force
+aclocal
+autoheader
+automake --force-missing --add-missing
+autoconf
+```
+
+最后参考官方文档:
+```c
+./configure; make; make install
+```

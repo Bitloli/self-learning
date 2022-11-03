@@ -178,6 +178,7 @@ struct hstate {
 ## hstate_is_gigantic
 - 为什么到处都是这个东西的判断?
 - alloc_surplus_huge_page : 如果是 gigantic ，那么直接失败，因为 surplus 的需要从 buddy 中申请
+- [ ] 从 nr_hugepages_store 上分析现在 gigantic 的大页是如果通过 alloc_contig_pages 实现分配的
 
 ## [ ] transpaent huge page 的代码量为什么少，到底是为了处理什么问题，让 hugetlb 如此复杂
 
@@ -204,7 +205,6 @@ dequeue_huge_page_vma 中还是有 memory policy 的代码的啊
 - hugetlb_reserve_pages 中，会调用 hugetlb_acct_memory ->  allowed_mems_nr 的，在预留的时候会检查 cpuset / cgroup 的限制的
 
 ## TODO
-- [ ] https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
 - [ ] /home/martins3/core/linux/Documentation/translations/zh_CN/mm/hugetlbfs_reserv.rst
 - [ ] https://lwn.net/Articles/839737/
   - https://lwn.net/ml/linux-kernel/20201210035526.38938-1-songmuchun@bytedance.com/

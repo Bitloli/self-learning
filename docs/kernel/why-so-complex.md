@@ -4,6 +4,13 @@
 >
 > [Hacker News Reader](https://news.ycombinator.com/item?id=27328285)
 
+> 简述一下 https://lwn.net/Articles/872321/
+
+复杂性可以划分为:
+- essential complexity
+- accidental complexity
+
+
 ## 横向扩展
 
 ### 更多的架构支持
@@ -18,6 +25,15 @@
 1. io_uring
 2. iommu
 3. kvm
+
+## accidental complexity
+
+- incomplete transitions
+  - cgroup 中同时存在 v1 和 v2 机制
+  - x86 kvm 中同时存在
+  - x86 模式的兼容
+- 重复逻辑以及缺乏抽象
+  - 暂时没有发现
 
 ## 参考
 - https://www.zhihu.com/question/35484429/answer/62964898

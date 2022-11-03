@@ -886,6 +886,9 @@ memory_high_write ----------------/
 ```
 
 ## swappiness
+- https://unix.stackexchange.com/questions/697448/what-is-the-replacement-of-memory-swappiness-file-in-cgroups-v2
+
+cgroupv2 中，只有全局的 swappiness
 
 - /proc/sys/vm/swappiness 是全局的，如何影响到具体的 cgroup 的
 
