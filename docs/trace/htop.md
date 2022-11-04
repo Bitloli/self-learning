@@ -33,9 +33,12 @@ https://serverfault.com/questions/180711/what-exactly-do-the-colors-in-htop-stat
 
 - [ ] htop 中，如何控制 CPU 条的大小，在核心很多的位置上，这个 CPU 条被严重压缩了。
 
+- [ ] https://wangchujiang.com/reference/docs/htop.html : 可以检查一下这里
+
 ## top
 - [ ] 打开 top, 按数值 1 的时候，可以观测那个 CPU 上的 softirq 发生的频率
 - [ ] top 是如何统计 usr 和 sys 的
+
 
 
 [^9]: https://peteris.rocks/blog/htop/

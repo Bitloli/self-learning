@@ -1,6 +1,4 @@
-## THP
-
-
+# THP
 - 原来的那个文章找过来看看
 
 - [ ] PageDoubleMap
@@ -233,3 +231,7 @@ khugepaged.c 中间的 hugepage 守护进程的工作是什么 ?
     - 取回 pmd_huge_pte，向其中填充 pte, 然后将 pmd entry 填充该位置
   - `pgtable_t page::(anonymous union)::(anonymous struct)::pmd_huge_pte`
       - [ ]  从 `__split_huge_pmd_locked` 的代码: `pgtable_trans_huge_withdraw` 看，这一个 page table 从来没有被删除过
+
+## khugepaged
+
+- set_recommended_min_free_kbytes

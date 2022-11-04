@@ -1114,25 +1114,6 @@ int __set_page_dirty_no_writeback(struct page *page)
 }
 ```
 
-#### watermark
-- [x] page writeback 如何利用 watermark 机制来触发写回的
-    1. watermark 的初始化 : 根据探测的物理内存，然后确定 watermark
-    2. 提供给用户调节 watermark 的机制
-    3. page allocator 中间检测和触发
-
-- [ ] file:///home/shen/Core/linux/Documentation/output/admin-guide/mm/concepts.html?highlight=watermark
-内核介绍的核心概念，务必逐个分析
-
-[LoyenWang](https://www.cnblogs.com/LoyenWang/p/11708255.html)
-
-- `WMARK_MIN` : 内存不足的最低点，如果计算出的可用页面低于该值，则无法进行页面计数；
-- `WMARK_LOW` : 默认情况下，该值为WMARK_MIN的125%，此时kswapd将被唤醒，可以通过修改watermark_scale_factor来改变比例值；
-- `WMARK_HIGH` : 默认情况下，该值为WMARK_MAX的150%，此时kswapd将睡眠，可以通过修改watermark_scale_factor来改变比例值；
-![](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191020172801277-1235981981.png)
-
-**TO BE CONTINUE, read LoyenWang**
-
-
 #### truncate
 - [ ] 阅读一下源代码
 

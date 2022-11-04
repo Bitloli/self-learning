@@ -537,3 +537,10 @@ enum zone_stat_item {
 ```
 
 ## https://www.tecmint.com/clear-ram-memory-cache-buffer-and-swap-space-on-linux/
+
+## code
+```c
+atomic_long_t vm_zone_stat[NR_VM_ZONE_STAT_ITEMS] __cacheline_aligned_in_smp;
+atomic_long_t vm_node_stat[NR_VM_NODE_STAT_ITEMS] __cacheline_aligned_in_smp;
+atomic_long_t vm_numa_event[NR_VM_NUMA_EVENT_ITEMS] __cacheline_aligned_in_smp;
+```

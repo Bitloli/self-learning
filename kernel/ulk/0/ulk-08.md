@@ -83,8 +83,6 @@ inside the zone. As we’ll see in Chapter 17, this field plays also a role for 
 frame reclaiming algorithm, together with the `pages_low` and `pages_high` fields. The
 pages_low field is always set to 5/4 of the value of `pages_min`, and `pages_high` is
 always set to 3/2 of the value of pages_min.
-> 这些 field 都没有了 ! 这些内容被整理成为 watermark，所以　watermark 是个如此简单的东西，无非是初始化处理一下，在 page reclaim 的地方利用一下。
-> 至于 reclaim 的细节，和 watermark 没有关系了。
 
 #### 1.5 The Zoned Page Frame Allocator
 To get better system performance, a small number of page frames are kept in cache to quickly satisfy the allocation requests for single page frames.

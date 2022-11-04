@@ -279,66 +279,6 @@ If more than one node can be present on the system, the kernel keeps a bitmap th
 > 为了处理SMP 上高频和并发访问的问题
 > 1. 比较窒息的是: 每一个ZONE_PADDING的包含的内容属性是各有侧重的
 
-
-* 处理watermark
-```c
-  /* zone watermarks, access with *_wmark_pages(zone) macros */
-  unsigned long _watermark[NR_WMARK];
-  unsigned long watermark_boost;
-
-enum zone_watermarks {
-  WMARK_MIN,
-  WMARK_LOW,
-  WMARK_HIGH,
-  NR_WMARK
-};
-```
-
-* 预存一些内存
-```c
-  /*
-   * We don't know if the memory that we're going to allocate will be
-   * freeable or/and it will be released eventually, so to avoid totally
-   * wasting several GB of ram we must reserve some of the lower zone
-   * memory (otherwise we risk to run OOM on the lower zones despite
-   * there being tons of freeable ram on the higher zones).  This array is
-   * recalculated at runtime if the sysctl_lowmem_reserve_ratio sysctl
-   * changes.
-   */
-  long lowmem_reserve[MAX_NR_ZONES];
-```
-> 1. 为毛 zone 被划分　low 和 high 的部分, 此处的higher zones 和 high memory 有什么关系 ? (第四条说: 应该没有什么关系吧
-> 2. 为什么是 lowmeme_reserve　而不是 highmem_reserve
-> 3. 设置 reserve　难道不就是内存的浪费吗?
-> 4. 这是zone 的描述，high memory , DMA , NORMAL 本身就是zone，也就是说low 指的是zone 内部也划分low 和 high
-
-* pageset 用于管理那些被cache　视为hot page 和 cold page 的
-
-```c
-struct per_cpu_pageset __percpu *pageset;
-
-struct per_cpu_pages {
-  int count;    /* number of pages in the list */
-  int high;   /* high watermark, emptying needed */
-  int batch;    /* chunk size for buddy add/remove */
-
-  /* Lists of pages, one per migrate type stored on the pcp-lists */
-  struct list_head lists[MIGRATE_PCPTYPES];
-};
-
-struct per_cpu_pageset {
-  struct per_cpu_pages pcp;
-#ifdef CONFIG_NUMA
-  s8 expire;
-  u16 vm_numa_stat_diff[NR_VM_NUMA_STAT_ITEMS];
-#endif
-#ifdef CONFIG_SMP
-  s8 stat_threshold;
-  s8 vm_stat_diff[NR_VM_ZONE_STAT_ITEMS];
-#endif
-};
-```
-
 * `free_area` is an array of data structures of the same name used to implement the buddy system.
 Each array element stands for contiguous memory areas of a fixed size. Management of free
 memory pages contained in each area is performed starting from `free_area`.
@@ -396,10 +336,6 @@ since there may be small holes in the zone as already mentioned.
   unsigned long   spanned_pages;
   unsigned long   present_pages;
 ```
-> 到底我都懂，但是为毛　zone 中间含有hole 啊?
-
-> 书上很多介绍的变量不存在，有些没有介绍，但是总是如此
-
 
 **Calculation of Zone Watermarks**
 . This value scales nonlinearly with the size of the available
@@ -407,9 +343,6 @@ RAM. It is stored in the global variable `min_free_kbytes`.
 
 The file `/proc/sys/vm/min_free_kbytes` allows reading and adapting the
 value from userland.
-
-Filling the watermarks in the data structure is handled by `init_per_zone_pages_min`, which is invoked during kernel boot and need not be started explicitly.
-
 
 ```c
 /*
@@ -453,8 +386,6 @@ Computing lowmem_reserve is done in `setup_per_zone_lowmem_reserve`. The kernel 
 nodes of the system and calculates the minimum reserve for each zone of the node by dividing the total
 number of page frames in the zone by sysctl_lowmem_reserve_ratio[zone]. The default settings for
 the divisor are 256 for low memory and 32 for high memory
-
-> 本小节提出新的一个变量，同时介绍了watermark 的初始化
 
 **Hot-N-Cold Pages**
 The `pageset` element of struct zone is used to implement a hot-n-cold allocator
@@ -2022,26 +1953,6 @@ static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 
 1. 检查watermark
 
-`mm/internal.h`
-```c
-/*
- * Return true if free base pages are above 'mark'. For high-order checks it
- * will return true of the order-0 watermark is reached and there is at least
- * one free page of a suitable size. Checking now avoids taking the zone lock
- * to check in the allocation paths if no pages are free.
- */
-bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
-       int classzone_idx, unsigned int alloc_flags,
-       long free_pages)
-{
-
-
-bool zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
-          int classzone_idx, unsigned int alloc_flags)
-{
-  return __zone_watermark_ok(z, order, mark, classzone_idx, alloc_flags,
-          zone_page_state(z, NR_FREE_PAGES));
-}
 ```
 2. `get_page_from_freelist` is another important helper function used by the buddy system. It refers to the
 flags set and the allocation order to decide whether allocation can be made; if so, it initiates actual page
