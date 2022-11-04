@@ -29,6 +29,21 @@
               nels 3.14, emulated on kernels 2.6.27+, otherwise the same as free)
 
 ```
+
+让内核迅速的收缩大页:
+```txt
+➜  ~ free -m
+               total        used        free      shared  buff/cache   available
+Mem:            7962        2596         606           6        4759        4908
+Swap:           2104          39        2065
+
+➜  ~ free -m
+               total        used        free      shared  buff/cache   available
+Mem:            7962        7592         316           1          53         154
+Swap:           2104         126        1978
+```
+
+
 ## /proc/stat
 
 ## /proc/\*/stat
@@ -92,9 +107,20 @@
 | DirectMap2M     | 4947968 kB     |  |
 | DirectMap1G     | 30408704 kB    |  |
 
-- [ ] 从这里看，存在一个 zone 居然是 device
+```txt
+$ free -m
+              total        used        free      shared  buff/cache   available
+Mem:        5527225     5524113        1559          29        1552         135
+Swap:             0           0           0
+```
+
+这里， available 比 free 和 buffer/cache 少
+1. 因为 available 表示创建新的程序可以使用的内存，而内核会将部分内存预留下来
+
+- si_mem_available
 
 ## /proc/vmstat
+
 - vmstat_start
   - global_zone_page_state
   - global_numa_event_state
@@ -160,7 +186,7 @@ extern atomic_long_t vm_numa_event[NR_VM_NUMA_EVENT_ITEMS];
 | nr_dirtied                     | 1096249  |                                                                  |
 | nr_written                     | 1073014  |                                                                  |
 | nr_throttled_written           | 0        |                                                                  |
-| nr_kernel_misc_reclaimable     | 0        |                                                                  |
+| nr_kernel_misc_reclaimable     | 0        | @todo NR_KERNEL_MISC_RECLAIMABLE 又是之见过 reference ，但是没有修改的地方                                                                  |
 | nr_foll_pin_acquired           | 0        |                                                                  |
 | nr_foll_pin_released           | 0        |                                                                  |
 | nr_kernel_stack                | 17072    |                                                                  |
@@ -287,6 +313,8 @@ extern atomic_long_t vm_numa_event[NR_VM_NUMA_EVENT_ITEMS];
 ## /proc/slabinfo
 
 ## /proc/zoneinfo
+
+- [ ] 从这里看，存在一个 zone 居然是 device
 
 ## /proc/pagetypeinfo
 

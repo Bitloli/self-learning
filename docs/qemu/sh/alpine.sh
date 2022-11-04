@@ -75,8 +75,10 @@ arg_mem_balloon="-device virtio-balloon"
 
 case $hacking_memory in
 "numa")
-  memdev="-object memory-backend-ram,size=4G,id=m0 -object memory-backend-ram,size=4G,id=m1"
-  arg_mem_cpu="$memdev -cpu host -m 8G -smp cpus=4 -numa node,memdev=m0,cpus=2-3,nodeid=0 -numa node,memdev=m1,cpus=0-1,nodeid=1"
+  arg_mem_cpu="-cpu host -m 8G -smp cpus=5"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=1G,id=m0 -numa node,memdev=m0,cpus=2-3,nodeid=0"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=7G,id=m1 -numa node,memdev=m1,cpus=0-1,nodeid=1"
+  arg_mem_cpu="$arg_mem_cpu -numa node,cpus=4,nodeid=2" # 只有 CPU ，但是没有内存
   ;;
 
 "virtio-mem")

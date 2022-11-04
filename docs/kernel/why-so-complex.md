@@ -20,18 +20,21 @@
 - scsi
 - ata
 - HBA (Host Bus Adapter)
+- virtio
 
 ## 纵向扩展
 1. io_uring
 2. iommu
 3. kvm
+4. cgroup
+5. 虚拟化
 
 ## accidental complexity
 
 - incomplete transitions
   - cgroup 中同时存在 v1 和 v2 机制
   - x86 kvm 中同时存在
-  - x86 模式的兼容
+  - x86 各种模式的兼容
 - 重复逻辑以及缺乏抽象
   - 暂时没有发现
 

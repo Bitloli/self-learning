@@ -1,17 +1,11 @@
-# TODO
+# min low hight 计算
+
+分析 calculate_totalreserve_pages 的计算原理
 
 ## 关键参考
 - https://www.cnblogs.com/LoyenWang/p/11708255.html
 
 - `__zone_watermark_ok`
-
-```c
-/*
- * calculate_totalreserve_pages - called when sysctl_lowmem_reserve_ratio
- *  or min_free_kbytes changes.
- */
-static void calculate_totalreserve_pages(void)
-```
 
 理解两个字段的含义：
 - si_mem_available

@@ -1,17 +1,29 @@
 # cpuset
 
+```txt
+-rw-r--r--.  1 root root 0 Nov  3 15:47 cpuset.cpus
+-r--r--r--.  1 root root 0 Nov  3 15:47 cpuset.cpus.effective
+-rw-r--r--.  1 root root 0 Nov  3 15:47 cpuset.cpus.partition
+-rw-r--r--.  1 root root 0 Nov  3 15:47 cpuset.mems
+-r--r--r--.  1 root root 0 Nov  3 15:47 cpuset.mems.effective
+```
+
+## 问题
+- cpuset 如何影响 hugepage 的
+- cpuset_init_current_mems_allowed
+
 ## cpuset
 ```c
 struct cpuset {
   struct cgroup_subsys_state css;
 ```
 
-- [ ]https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/cpusets.html
+- [ ] https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/cpusets.html
 
+## 检查一下 cpuset 形成限制的各个位置
 
-> @question 如果缓存一个大文件，那么岂不是体验极差，一次又一次的调用，一个 GB 调用一百万次数。
+例如 page cache 的位置
 
-The page cache is implemented on top of radix trees:
 ```c
 static inline struct page *page_cache_alloc(struct address_space *x)
 {
@@ -68,3 +80,27 @@ static inline gfp_t mapping_gfp_mask(struct address_space * mapping)
 }
 ```
 > 如果不是 NUMA, 那么就很简单了，和普通的 alloc_pages 唯一的区别在于，mapping_gfp_mask
+
+## cpuset.mems.effective 和 cpuset.mems 是什么关系
+
+## 如果一个 NUMA 上没有内存，设置 cpuset 为什么会出错
+
+实际上测试，并不会，和 v1 和 v2 也是没有关系的
+```sh
+echo 1,2 > cpuset.mems
+```
+
+这个问题只是发生在 cgroup v1 中，
+- 在初始化的时候，设置 root 的 cpuset.mems 为可用的
+- 而 v1 中必须遵守层次结构，所以会失败
+
+- cpuset_write_resmask -> validate_change -> is_cpuset_subset
+
+```c
+	/* On legacy hiearchy, we must be a subset of our parent cpuset. */
+	ret = -EACCES;
+	if (!is_in_v2_mode() && !is_cpuset_subset(trial, par))
+		goto out;
+```
+
+- 初始化的过程中，如何探测内存为 0 的情况，暂时没有看了

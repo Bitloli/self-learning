@@ -180,8 +180,6 @@ struct hstate {
 - alloc_surplus_huge_page : 如果是 gigantic ，那么直接失败，因为 surplus 的需要从 buddy 中申请
 - [ ] 从 nr_hugepages_store 上分析现在 gigantic 的大页是如果通过 alloc_contig_pages 实现分配的
 
-## [ ] transpaent huge page 的代码量为什么少，到底是为了处理什么问题，让 hugetlb 如此复杂
-
 ## [ ] demote 如何工作的
 
 ## [ ] 大页应该更加小心的处理 memory poison 才对吧，毕竟更加容易出现错误
@@ -223,8 +221,27 @@ config CONTIG_ALLOC
 ## [ ] dissolve_free_huge_page 被 memory_failure 和 memory hotplug 有关的
 
 ## [ ] 是在什么时间点预留的
+应该很清楚了，但是整理一下
 
-## [ ] 预留的时候如何考虑 numa 的
+## 分配的时候如何考虑 numa 的
+
+通过 interleave 的方法分配的:
+```txt
+                          Node 0          Node 1          Node 2           Total
+                 --------------- --------------- --------------- ---------------
+MemTotal                 6990.34          972.48            0.00         7962.82
+MemFree                  3596.47           39.74            0.00         3636.21
+MemUsed                  3393.88          932.74            0.00         4326.61
+```
+
+```c
+/*
+ * Allocates a fresh page to the hugetlb allocator pool in the node interleaved
+ * manner.
+ */
+static int alloc_pool_huge_page(struct hstate *h, nodemask_t *nodes_allowed,
+				nodemask_t *node_alloc_noretry)
+```
 
 ## [ ] 预留的时候需要制定每一种大小的 page 的数量吗
 
@@ -1125,3 +1142,8 @@ static inline bool is_file_hugepages(struct file *file)
 ## TODO
 - https://biscuitos.github.io/blog/Hugetlbfs/
 - https://www.cnblogs.com/arnoldlu/p/14028825.html
+
+通过这个可以检查是否支持 1GB 大页:
+- cat /proc/cpuinfo | grep pdpe1gb | head -n 1
+
+但是不知道为什么，现在的 alpine.sh 拉起来的虚拟机中并不能支持 1gb 大页
