@@ -11,7 +11,6 @@
   - 所以，是不是 memcg 也是需要有一个 lruvec 的
 - [ ] get_mctgt_type
 
-
 ## memcg 和 zone, node 的关系
 - shrink_node_memcgs
   - mem_cgroup_lruvec : 获取一个 Node 关联的 lruvec

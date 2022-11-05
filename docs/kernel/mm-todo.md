@@ -13,7 +13,6 @@
 - [What Every Programmer Should Know About Memory](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf)
   - 总体结论，还是正确的
   - https://stackoverflow.com/questions/8126311/how-much-of-what-every-programmer-should-know-about-memory-is-still-valid
-- 当使用 DMA32 同时所有内存只有 4G 的时候，那岂不是就没有 ZONE_MOVABLE 和 ZONE_NORMAL ?
 - numa remote access 是如何确定的
 - vmpressure.c 是做什么的
 - mmu notifier

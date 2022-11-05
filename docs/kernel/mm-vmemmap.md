@@ -1,5 +1,6 @@
 # sparse vmemmap
 
+
 ## 原理
 使用 page struct 数组来记录物理页面 (page frame) 的元数据，内核管理物理页面的过程中需要:
 - 以通过 page frame 的物理地址找到 page struct : `pfn_to_page`
@@ -11,12 +12,14 @@
 #define __page_to_pfn(page)	(unsigned long)((page) - vmemmap)
 ```
 
+但是物理内存部署连续的，而是有大片的空洞的[^1]
+
 ## memory model
 这个 memory model 和体系结构中的 memory model 没有任何关系，指的是内核如何构建 page struct 和 page frame 的关系，内核提供三种 memory model 来构建 page frame  和 page struct 的关系:
 
-- Flat Memory
-- Discontiguous Memory
-- Sparse Memory
+1. FLAT：ucore 中间使用的模型。Back in the beginning of Linux, memory was flat: it was a simple linear sequence with physical addresses starting at zero and ending at several megabytes.实现从一个 page frame 的 PFN 转化为其对应的 page struct 很容易且高效。
+2. DISCONTIG：为了应对物理内存中间出现空洞，以及 NUMA 而产生的。其提出一个重要的概念，memory node。每一个 memory node 中间含有独立 buddy system，各种统计信息等。在每一个 memory node 中间，其中是管理连续的物理地址空间，并且含有一个 page struct 数组和一个物理页面一一对应。虽然解决问题，但是也带来了 PFN 难以查询 page struct 的问题。
+3. SPARSE：在 64 位系统上，At the cost of additional page table entries, page_to_pfn(), and pfn_to_page() became as simple as with the flat model. (其他我就真的没有看懂
   - 在这个模式下，启用 vmemmap，也是目前主流的配置
 
 关于三者更加细节的讨论参考这里: [Memory: the flat, the discontiguous, and the sparse](https://lwn.net/Articles/789304/)
@@ -217,14 +220,13 @@ void * __meminit vmemmap_alloc_block_buf(unsigned long size, int node,
 }
 ```
 
+下面是对于原文的总结性的翻译：
 
 ## 小知识
 - vmemmap_alloc_block 中为什么会出现 slab_is_available 的判断，是因为内存的热插拔
 在内核启动的时候 vmemmap_alloc_block_buf 最后调用 memblock 上
 
-## 问题
-- 找到 sparse 和 sparse_extreme 的内容
-- 内存分配有点随意，为什么是从 vmemmap_alloc_block_buf 中开始的，
+[^1]: https://stackoverflow.com/questions/23626165/what-is-meant-by-holes-in-the-memory-linux
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

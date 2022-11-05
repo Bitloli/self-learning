@@ -79,7 +79,6 @@ __alloc_pages_nodemask : 核心
 #### 几乎确定
 4. migratetype 的种类 : isolated pageblock, normal pageblock
 5. migratetype 和 pageblock 关联的 : get_pfnblock_migratetype
-5. steal_suitable_fallback : 尽量偷窃所有的page 配合find_suitable_fallback的注释
 2. migrate 存在 fallback，而且连 zone 也是存在 fallback 的
 
 

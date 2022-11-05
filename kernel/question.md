@@ -155,8 +155,6 @@ file-based ?
 
 #### (swap) swap_info 为什么需要建立成为一个数组，为了实现类似于per cpu 的效果，实现对于disk 的并发访问
 
-#### (dev) UUID 是什么东西 ？
-
 #### (dev) 6.5.2 说了什么 plka
 
 Recall from Chapter 6.5.2 that the function
@@ -168,16 +166,8 @@ to other parts of the kernel that the device is already attached to it.
 2. 切换
 3. 内核守护进程添加了什么不同的东西使其成为了守护进程
 
-#### (swap) 当我没有安装任何swap 内容的时候，代码的调用流程是什么样子的
-
 #### (sysctl) ctl_table 是做什么使用的 ?
 int drop_caches_sysctl_handler
-
-#### (mem) 为什么内存需要划分为zone  ？
-这一个问题应该被切分为:
-1. 为什么
-
-#### (mem) mem/memcontrol.c中间负责操作什么东西 ？
 
 #### (swap) swap 中间的reclaimer 是什么东西 ?
 ```
@@ -863,12 +853,6 @@ lrwxrwxrwx root root 0 B Thu Feb 20 11:07:03 2020   nvme0n1 ⇒ ../devices/pc
 	atomic_t _refcount;
 ```
 
-
-#### (msic) core_initcall(init_per_zone_wmark_min)
-1. core_initcall 的作用是什么 ?
-
-
-#### (mm) compound_head 和 TransParentHugePage 之类是什么关系
 #### (mem layout) zero_user 函数的实现
 
 #### (misc) perf 到底是什么 ?

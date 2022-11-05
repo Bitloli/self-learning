@@ -29,6 +29,7 @@
 4. cgroup
 5. 虚拟化
 
+memory 中 Transparent Huge Page 和
 ## accidental complexity
 
 - incomplete transitions
