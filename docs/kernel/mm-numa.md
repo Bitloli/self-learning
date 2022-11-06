@@ -16,7 +16,11 @@ Available policies are
 2. mbind
 3. migrate_page
 
+
+
 ## 问题
+3. 每一个 node 主要管理什么信息，每一个 zone 中间放置什么内容?
+4. 哪里涉及到了 nodemask 的，主要作用是什么 ?
 
 - [ ] 如何理解这个？
 ```c

@@ -155,6 +155,8 @@ After=cauxukun.service
 ```
 
 
+## oneshot vs simple
+https://trstringer.com/simple-vs-oneshot-systemd-service/
 
 
 [^1]: https://unix.stackexchange.com/questions/471824/what-is-the-correct-substitute-for-rc-local-in-systemd-instead-of-re-creating-rc

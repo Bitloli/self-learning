@@ -3,6 +3,8 @@
 关键参考:
 - https://www.cnblogs.com/LoyenWang/p/11746357.html
 
+## 如果尝试分配大页，会因为 compaction 而 hang 住吗
+
 ## TODO
 - 错误的判断会导致 memory compaction 提前触发吗?
 - CONFIG_MEMORY_ISOLATION
