@@ -271,3 +271,9 @@ echo 0 > /sys/devices/system/memory/memory<n>/online
 #7  0xffffffff81efca31 in kernel_init (unused=<optimized out>) at init/main.c:1512
 #8  0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
 ```
+
+## movable zone
+
+主要是 movable zone 导致的:
+
+- https://www.cnblogs.com/aspirs/p/12781693.html

@@ -1,19 +1,36 @@
 # compaction
 
-关键参考:
-- https://www.cnblogs.com/LoyenWang/p/11746357.html
+## 关键参考
+- https://www.cnblogs.com/LoyenWang/p/11746357.html : 应该是很清楚了
+- http://linux.laoqinren.net/kernel/memory-compaction/
+
+## 导出的接口
+1. 观测
+```txt
+cat /proc/vmstat  | grep compact
+
+/sys/kernel/debug/extfrag/extfrag_index
+/sys/kernel/debug/extfrag/unusable_index
+
+cat /proc/pagetypeinfo
+```
+
+2. 主动触发
+
+```txt
+/proc/sys/vm/compact_memory
+/sys/devices/system/node/node0/compact
+```
 
 ## 如果尝试分配大页，会因为 compaction 而 hang 住吗
+不会
+
 
 ## TODO
-- 错误的判断会导致 memory compaction 提前触发吗?
-- CONFIG_MEMORY_ISOLATION
 - Documentation/vm/unevictable-lru.rst
-- Documentation/vm/page_migration.rst
 
 - [ ] set_pfnblock_flags_mask
 
-- [ ] movable_zone 居然是 administer 指定的 ?
 - [ ] 一个 page 被放到 movable 和 unmovable 中间的区别是什么，什么时候一个 page 是 movable 的?
 - [ ] 完全不能理解，khugepaged 和 kcompactd 难道不是的功能难道不是都是将内存压缩到一起吗？
 
@@ -163,7 +180,9 @@ or can be discarded if needed (various types of caches). Everything else is expe
 > 2. 但是内核态的采用的是线性映射，如果将页面进行移动，那么指向其的指针全部需要进行修改，但是很难找到指向其的指针。
 > 3. 内核 backing store 的方法 : 将该 page 写回。
 
-## 一时不知道把这个放到哪里
+## migratetype
+
+sudo cat /proc/pagetypeinfo
 
 ```c
 enum migratetype {
@@ -210,7 +229,3 @@ static int fallbacks[MIGRATE_TYPES][3] = {
 ```
 
 可以观测的内容:
-
-```txt
-sudo cat /proc/pagetypeinfo
-```
