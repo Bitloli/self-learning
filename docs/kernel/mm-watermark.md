@@ -15,13 +15,11 @@
   - setup_per_zone_lowmem_reserve
   - khugepaged_min_free_kbytes_update
 
-- [ ] nr_free_buffer_pages : 如何理解这个
-
 - 从 get_page_from_freelist 中，一旦 zone_watermark_fast 检测到内存不足，那么将会开始调用 node_reclaim 来回收内存，并不是等到所有的 zone 低于 watermark 才会开始 direct reclaim 的
 如果一个 zone 中无法 reclaim 到 page 之类的，才会进入到下一个 page
 
 ## lowmem_reserve
-为了防止 "highmem" zone 内存分配过多的 fallback 到 "lowmem" zone 的
+为了防止 "highmem" zone 内存分配过多的 fallback 到 "lowmem" zone 上。
 
 ## watermark 的计算的两个复杂点
 

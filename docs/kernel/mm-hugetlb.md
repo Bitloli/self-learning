@@ -66,8 +66,12 @@ struct hugetlbfs_inode_info {
 
 
 - [ ] 预留机制和 cpuset 似乎是互相冲突的，详情参考 `hugetlb_acct_memory`
-
 - [ ] 为什么 hugetlb 的预留机制这么复杂，在 memory overcommit 中也是存在预留的哇。
+
+## hugetlb 的使用
+
+- 如何检查系统中，到底谁在使用 hugepage 的
+  - https://unix.stackexchange.com/questions/167451/how-to-monitor-use-of-huge-pages-per-process
 
 ## hugetlb 是如何影响文件系统的
 - 不能作为 page cache 的？
@@ -289,24 +293,6 @@ const struct vm_operations_struct hugetlb_vm_ops = {
 ## gup
 - follow_huge_pud 和类似的一堆函数 follow 函数
 
-## [ ] 似乎 hugepage 在 numa 中不是均匀分布的
-
-如何解释下面的现象哇 ?
-```txt
-[martins3@localhost ~]$ numactl -H
-available: 2 nodes (0-1)
-node 0 cpus: 0 1 2 3
-node 0 size: 3931 MB
-node 0 free: 2769 MB
-node 1 cpus: 4 5 6 7
-node 1 size: 4030 MB
-node 1 free: 677 MB
-node distances:
-node   0   1
-  0:  10  20
-  1:  20  10
-```
-
 ## nr_hugepages_mempolicy 的含义
 
 ```txt
@@ -363,15 +349,14 @@ struct hugetlbfs_inode_info {
 
 - hugetlbfs_inode_info::seals :  在 hugetlbfs_get_inode
 
-## set_max_huge_pages
-- /sys/devices/system/node/node[0-9]*/hugepages/ 中的 nr_hugepages 是什么含义
-  - 最后会调用到 set_max_huge_pages ，但是 /proc/sys/vm/nr_hugepages 应该也是可以调用到此处，其中的差别在于
+## hugepage 的动态伸缩
 
-- [ ] /sys/devices/system/node/node0/ 是如何创建出来的?
+- /sys/devices/system/node/node[0-9]*/hugepages/
+- /proc/sys/vm/nr_hugepages
+- /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages_mempolicy
 
-如果是修改: /sys/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages
+最终进入到 set_max_huge_pages 中。
 
-还是会调用 set_max_huge_pages 的:
 ```txt
 #0  set_max_huge_pages (h=h@entry=0xffffffff834abe20 <hstates>, count=2, nid=0, nodes_allowed=0xffffc90001617e10) at mm/hugetlb.c:3271
 #1  0xffffffff812f087c in __nr_hugepages_store_common (len=2, count=<optimized out>, nid=<optimized out>, h=0xffffffff834abe20 <hstates>, obey_mempolicy=false) atmm/hugetlb.c:3582
@@ -387,10 +372,12 @@ struct hugetlbfs_inode_info {
 #11 0x0000000000000000 in ?? ()
 ```
 
-第三个接口，是类似的: /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages_mempolicy
+- set_max_huge_pages
+  - alloc_fresh_huge_page
+    - alloc_buddy_huge_page
+      - `__alloc_pages`
 
-- /proc/sys/vm/nr_hugepages_mempolicy 中，最后 nid 传递给 `__nr_hugepages_store_common` 的参数是 NUMA_NO_NODE，
-
+- [ ] /proc/sys/vm/nr_hugepages_mempolicy 中，最后 nid 传递给 `__nr_hugepages_store_common` 的参数是 NUMA_NO_NODE，
 
 ## 分配和回收是如何进行的
 

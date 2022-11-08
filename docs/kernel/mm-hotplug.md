@@ -1,6 +1,6 @@
 # memory hotplug
 
-ZONE_MOVABLE 是处理这个，具体需要参考其内容。
+ZONE_MOVABLE 是处理这个，具体需要参考其定义上的注释。
 
 ## [ ] 问题
 - [ ] 为什么说是要处理 DIMMs 啊?

@@ -104,3 +104,13 @@ echo 1,2 > cpuset.mems
 ```
 
 - 初始化的过程中，如何探测内存为 0 的情况，暂时没有看了
+
+## cpuset 下分配大页
+
+```sh
+cgcreate -g cpuset:g
+cgset -r cpuset.mems=1 g
+cgexec -g cpuset:g bash
+```
+
+此时 echo 100000 > /proc/sys/vm/nr_hugepages，发现最多只能占据 huge page 的大页:

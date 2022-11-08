@@ -224,3 +224,5 @@ out_unlock:
 	return ret;
 }
 ```
+
+- [ ] /sys/devices/system/node/node0/ 是如何创建出来的?
