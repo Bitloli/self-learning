@@ -7,13 +7,13 @@
   1. fread 读到的目的地也是 brk 分配出来的 heap 空间
   2. fread 和 fwrite 的操作就像是 : 直接在磁盘上一样，根本没有任何 explicit page frame ，这些形成 page cache 不是用户的页面
 
-2. 所有file 读取的结果都会经过 page cache 
+2. 所有file 读取的结果都会经过 page cache
 
 3. 当page 在 lrulist 中间的时候，page 的会持有 LRU 的 flag
 
 1. page_mapped 访问获取 `page->_refcount` 和 page_referenced 的区别 ?
     1. page_mapped 表示具体被映射的次数，但是
-    2. 
+    2.
 
 4. 被 shrink_page_list 唯一调用的三个函数
 ```c
@@ -73,7 +73,7 @@ static void page_check_dirty_writeback(struct page *page,
 ## ref && doc
 [函数描述](http://www.wowotech.net/memory_management/233.html)
 
-2. [基本概念](http://www.wowotech.net/memory_management/page_reclaim_basic.html) 
+2. [基本概念](http://www.wowotech.net/memory_management/page_reclaim_basic.html)
 
 ## TODO
 
@@ -113,7 +113,7 @@ static enum page_references page_check_references(struct page *page,
 ## page reference
 1. 为什么使用 PG_referenced 和 PG_active 两个标志位 ?
     1. 感觉像是 : 2bit 的分支预测器
-2. mark_page_accessed : 
+2. mark_page_accessed :
     1. 就像是命中之后数值加1 的操作 : 其中 active 和 reference 分别为较高和较低两位
     2. 其对称的，反向的操作是什么 ? 是不是就是 inactive list 中间的被删除光了，然后就从 active list 中间去掉部分 ?
     3. 从 inactive 到 active 的转移 : 全部转移 ? 部分转移 ?
@@ -164,13 +164,13 @@ void mark_page_accessed(struct page *page)
 		 * LRU on the next drain.
 		 */
 		if (PageLRU(page))  // 分类处理在 LRU 上和在 pagevec 上两种情况
-			activate_page(page); 
+			activate_page(page);
 		else
 			__lru_cache_activate_page(page);
 		ClearPageReferenced(page);
 
 		if (page_is_file_cache(page)) // todo ???? 这是啥 ?
-			workingset_activation(page); 
+			workingset_activation(page);
 	} else if (!PageReferenced(page)) {
     // 将 active unreferenced 转化为 active referenced
     // todo 为什么 SetPageReferenced 没有将 page 从队列开始的位置放到结束的位置
@@ -247,15 +247,6 @@ int page_referenced(struct page *page,
 	return pra.referenced;
 }
 ```
-
-## 谁在调用 page_referenced 和 mark_page_accessed
-page_referenced
-1. page_check_references : shrink_page_list 唯一调用
-2. shrink_active_list
-
-mark_page_accessed : 非常的混乱，从drm 驱动到 generic_file_buffered_read 都有
-
-
 
 ## shrink_page_list : vmscan 的终极深渊
 1. 将函数分段处理一下
@@ -435,7 +426,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		case PAGEREF_RECLAIM:
 		case PAGEREF_RECLAIM_CLEAN:
 			; /* try to reclaim the page below */
-      
+
       // 使用下面的分析是什么 ?
 		}
 
@@ -446,7 +437,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		 * Try to allocate it some swap space here.
 		 * Lazyfree page could be freed directly
 		 */
-		if (PageAnon(page) && PageSwapBacked(page)) { // XXX 
+		if (PageAnon(page) && PageSwapBacked(page)) { // XXX
        // 如果都是 swap backed，
 			if (!PageSwapCache(page)) {
 				if (!(sc->gfp_mask & __GFP_IO))
@@ -695,7 +686,7 @@ static inline int is_active_lru(enum lru_list lru)
 }
 ```
 
-## slab 
+## slab
 
 ```c
 // TODO 那么fs中的dcache.c的内容，而且buffer.c 中间的内容还是看不懂!
@@ -854,7 +845,7 @@ void putback_lru_page(struct page *page)
 ```
 
 
-## struct scan_control 
+## struct scan_control
 
 ## kswapd
 
@@ -964,7 +955,7 @@ static enum page_references page_check_references(struct page *page,
 	}
 
 	/* Reclaim if clean, defer dirty pages to writeback */
-	if (referenced_page && !PageSwapBacked(page)) // 
+	if (referenced_page && !PageSwapBacked(page)) //
 		return PAGEREF_RECLAIM_CLEAN;
 
 	return PAGEREF_RECLAIM;

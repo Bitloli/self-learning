@@ -562,3 +562,220 @@ static void __page_set_anon_rmap(struct page *page,
 	page->index = linear_page_index(vma, address);
 }
 ```
+
+## page->mapping 的 flags 的含义
+
+```c
+/*
+ * On an anonymous page mapped into a user virtual memory area,
+ * page->mapping points to its anon_vma, not to a struct address_space;
+ * with the PAGE_MAPPING_ANON bit set to distinguish it.  See rmap.h.
+ *
+ * On an anonymous page in a VM_MERGEABLE area, if CONFIG_KSM is enabled,
+ * the PAGE_MAPPING_MOVABLE bit may be set along with the PAGE_MAPPING_ANON
+ * bit; and then page->mapping points, not to an anon_vma, but to a private
+ * structure which KSM associates with that merged page.  See ksm.h.
+ *
+ * PAGE_MAPPING_KSM without PAGE_MAPPING_ANON is used for non-lru movable
+ * page and then page->mapping points a struct address_space.
+ *
+ * Please note that, confusingly, "page_mapping" refers to the inode
+ * address_space which maps the page from disk; whereas "page_mapped"
+ * refers to user virtual address space into which the page is mapped.
+ */
+#define PAGE_MAPPING_ANON	0x1
+#define PAGE_MAPPING_MOVABLE	0x2
+#define PAGE_MAPPING_KSM	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
+#define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
+```
+
+1. VM_MERGEABLE 的含义是什么 ?  谁使用过 ?
+2. CONFIG_KSM ?
+3. PAGE_MAPPING_MOVABLE 的含义
+ * Please note that, confusingly, "page_mapping" refers to the inode
+ * address_space which maps the page from disk; whereas "page_mapped"
+ * refers to user virtual address space into which the page is mapped.
+
+5. page-> mapping 的复用的内容是 ?
+
+
+1. 作为 anon 的效果
+```c
+/**
+ * __page_set_anon_rmap - set up new anonymous rmap
+ * @page:	Page or Hugepage to add to rmap
+ * @vma:	VM area to add page to.
+ * @address:	User virtual address of the mapping
+ * @exclusive:	the page is exclusively owned by the current process
+ */
+static void __page_set_anon_rmap(struct page *page,
+	struct vm_area_struct *vma, unsigned long address, int exclusive)　// 对称的 get_anon_rmap 函数，其访问的时候也是需要进行一下操作
+{
+	struct anon_vma *anon_vma = vma->anon_vma;
+
+	BUG_ON(!anon_vma);
+
+	if (PageAnon(page))
+		return;
+
+	/*
+	 * If the page isn't exclusively mapped into this vma,
+	 * we must use the _oldest_ possible anon_vma for the
+	 * page mapping!
+	 */
+	if (!exclusive)
+		anon_vma = anon_vma->root;
+
+	anon_vma = (void *) anon_vma + PAGE_MAPPING_ANON;
+	page->mapping = (struct address_space *) anon_vma;
+	page->index = linear_page_index(vma, address);
+}
+```
+
+2. 作为指向 address_space 的时候，应该是直接访问吧 ! 也就是说，address_space 和这些蛇皮 FLAG 没有任何的关系。
+
+```c
+struct address_space *page_mapping(struct page *page)
+{
+	struct address_space *mapping;
+
+	page = compound_head(page);
+
+	/* This happens if someone calls flush_dcache_page on slab page */
+	if (unlikely(PageSlab(page)))
+		return NULL;
+
+	if (unlikely(PageSwapCache(page))) {
+		swp_entry_t entry;
+
+		entry.val = page_private(page);
+		return swap_address_space(entry);
+	}
+
+	mapping = page->mapping;
+	if ((unsigned long)mapping & PAGE_MAPPING_ANON)// 两种表示方法水火不容
+		return NULL;
+
+	return (void *)((unsigned long)mapping & ~PAGE_MAPPING_FLAGS); // 下面两个标志位必须清理掉
+}
+EXPORT_SYMBOL(page_mapping);
+```
+
+## mmap 和 rmap 的交互
+1. find_mergeable_anon_vma
+2. anon_vma_clone 的三个调用者:
+    1. copy_vma
+    2. `__split_vma` : 几乎靠 `__vma_adjust` 维持生活了
+    3. `__vma_adjust`
+
+3. vma_merge : 利用 can_vma_merge_after 和 can_vma_merge_before 等简单的辅助函数判断，然后调用 `__vma_adjust` 进行处理。
+
+```c
+  // 首先试图 vma_merge，如果 merge 不成功，那么就拷贝:
+	if (find_vma_links(mm, addr, addr + len, &prev, &rb_link, &rb_parent))
+		return NULL;	/* should never get here */
+	new_vma = vma_merge(mm, prev, addr, addr + len, vma->vm_flags,
+			    vma->anon_vma, vma->vm_file, pgoff, vma_policy(vma),
+			    vma->vm_userfaultfd_ctx);
+
+
+		new_vma = vm_area_dup(vma); // 浅拷贝，以及初始化 anon_vma_chain
+		if (!new_vma)
+			goto out;
+		new_vma->vm_start = addr;
+		new_vma->vm_end = addr + len;
+		new_vma->vm_pgoff = pgoff;
+		if (vma_dup_policy(vma, new_vma))
+			goto out_free_vma;
+		if (anon_vma_clone(new_vma, vma)) // 调用 context 和 anon_vma_fork 类似，拷贝而已。
+			goto out_free_mempol;
+		if (new_vma->vm_file)
+			get_file(new_vma->vm_file); // 增加一个 ref count
+		if (new_vma->vm_ops && new_vma->vm_ops->open)
+			new_vma->vm_ops->open(new_vma);
+		vma_link(mm, new_vma, prev, rb_link, rb_parent);
+		*need_rmap_locks = false;
+```
+
+## KeyNote
+
+2. page_mapcount = `_mapcount` + 1 表示该 page 出现在 page table 的次数
+3. `page->mapping === NULL` 的时候，表示该 page 在 swap cache 中间。
+    1. @todo 非常怀疑，当进入 swap cache 的时候，反手就会注册 rmap ，怎么可能 mapping == NULL
+5. 如果一个 page 在 swap cache 中间，如果想要释放，其过程是什么 ?
+    1. 如果 swap 的 pgfault 将其读入到 swap cache 中间，那么其 mapping 如果 NULL 的话，如何处理 rmap 的关系 ?
+        1. anon vma 进行 page fault 之后，对于该 anon vma 又进行了 fork ，怎么办 ? `__page_set_anon_rmap` 当不是 exclusive 的时候，直接标记到 Root 上
+    2. 怎么重建 rmap ，之前的所有信息都被消除了? 非常简单:page fault 的时候是可以知道发生所在的 vma 的，rmap 对于任何 page frame 都是需要的! 依靠这个实现 unmap 进而清理所有的 page table entry !
+        2. 为什么 `page->private` 需要保存 `swp_entry_t`　的内容, 难道不是 page table entry 保存吗 ? (当其需要再次被写回的时候，依靠这个确定位置，和删除在 radix tree 的关系!)
+
+## alloc_set_pte : 为 page 建立 pte entry 以及 reverse page
+1. 主要被 finish_fault 调用
+2. @todo 细节满满
+
+```c
+/**
+ * alloc_set_pte - setup new PTE entry for given page and add reverse page
+ * mapping. If needed, the fucntion allocates page table or use pre-allocated.
+ *
+ * @vmf: fault environment
+ * @memcg: memcg to charge page (only for private mappings)
+ * @page: page to map
+ *
+ * Caller must take care of unlocking vmf->ptl, if vmf->pte is non-NULL on
+ * return.
+ *
+ * Target users are page handler itself and implementations of
+ * vm_ops->map_pages.
+ *
+ * Return: %0 on success, %VM_FAULT_ code in case of error.
+ */
+vm_fault_t alloc_set_pte(struct vm_fault *vmf, struct mem_cgroup *memcg,
+		struct page *page)
+{
+	struct vm_area_struct *vma = vmf->vma;
+	bool write = vmf->flags & FAULT_FLAG_WRITE;
+	pte_t entry;
+	vm_fault_t ret;
+
+	if (pmd_none(*vmf->pmd) && PageTransCompound(page) &&
+			IS_ENABLED(CONFIG_TRANSPARENT_HUGE_PAGECACHE)) {
+		/* THP on COW? */
+		VM_BUG_ON_PAGE(memcg, page);
+
+		ret = do_set_pmd(vmf, page);
+		if (ret != VM_FAULT_FALLBACK)
+			return ret;
+	}
+
+	if (!vmf->pte) {
+		ret = pte_alloc_one_map(vmf);
+		if (ret)
+			return ret;
+	}
+
+	/* Re-check under ptl */
+	if (unlikely(!pte_none(*vmf->pte)))
+		return VM_FAULT_NOPAGE;
+
+	flush_icache_page(vma, page);
+	entry = mk_pte(page, vma->vm_page_prot);
+	if (write)
+		entry = maybe_mkwrite(pte_mkdirty(entry), vma);
+	/* copy-on-write page */
+	if (write && !(vma->vm_flags & VM_SHARED)) {
+		inc_mm_counter_fast(vma->vm_mm, MM_ANONPAGES);
+		page_add_new_anon_rmap(page, vma, vmf->address, false);
+		mem_cgroup_commit_charge(page, memcg, false, false);
+		lru_cache_add_active_or_unevictable(page, vma);
+	} else {
+		inc_mm_counter_fast(vma->vm_mm, mm_counter_file(page));
+		page_add_file_rmap(page, false);
+	}
+	set_pte_at(vma->vm_mm, vmf->address, vmf->pte, entry);
+
+	/* no need to invalidate: a not-present page won't be cached */
+	update_mmu_cache(vma, vmf->address, vmf->pte);
+
+	return 0;
+}
+```

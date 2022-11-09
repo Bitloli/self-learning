@@ -29,47 +29,6 @@ SYSCALL_DEFINE2(munmap, unsigned long, addr, size_t, len)
 }
 ```
 
-## 和 rmap 的交互
-1. find_mergeable_anon_vma
-2. anon_vma_clone 的三个调用者:
-    1. copy_vma
-    2. `__split_vma` : 几乎靠 `__vma_adjust` 维持生活了
-    3. `__vma_adjust`
-
-3. vma_merge : 利用 can_vma_merge_after 和 can_vma_merge_before 等简单的辅助函数判断，然后调用 `__vma_adjust` 进行处理。
-
-```c
-  // 首先试图 vma_merge，如果 merge 不成功，那么就拷贝:
-	if (find_vma_links(mm, addr, addr + len, &prev, &rb_link, &rb_parent))
-		return NULL;	/* should never get here */
-	new_vma = vma_merge(mm, prev, addr, addr + len, vma->vm_flags,
-			    vma->anon_vma, vma->vm_file, pgoff, vma_policy(vma),
-			    vma->vm_userfaultfd_ctx);
-
-
-		new_vma = vm_area_dup(vma); // 浅拷贝，以及初始化 anon_vma_chain
-		if (!new_vma)
-			goto out;
-		new_vma->vm_start = addr;
-		new_vma->vm_end = addr + len;
-		new_vma->vm_pgoff = pgoff;
-		if (vma_dup_policy(vma, new_vma))
-			goto out_free_vma;
-		if (anon_vma_clone(new_vma, vma)) // 调用 context 和 anon_vma_fork 类似，拷贝而已。
-			goto out_free_mempol;
-		if (new_vma->vm_file)
-			get_file(new_vma->vm_file); // 增加一个 ref count
-		if (new_vma->vm_ops && new_vma->vm_ops->open)
-			new_vma->vm_ops->open(new_vma);
-		vma_link(mm, new_vma, prev, rb_link, rb_parent);
-		*need_rmap_locks = false;
-```
-
-
-
-
-
-
 ## special
 > @maybe_todo
 ```c

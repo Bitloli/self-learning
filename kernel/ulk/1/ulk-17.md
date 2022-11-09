@@ -1,17 +1,5 @@
 # Understand Linux Kernel : Page Frame Reclaiming
 
-## KeyNote
-
-1. swap cache 是非常诡异的.....
-2. page_mapcount = `_mapcount` + 1 表示该page 出现在 page table 的次数
-3. `page->mapping === NULL` 的时候，表示该 page 在 swap cache 中间。
-    1. @todo 非常怀疑，当进入 swap cache 的时候，反手就会注册 rmap ，怎么可能 mapping == NULL
-5. 如果一个 page 在 swap cache 中间，如果想要释放，其过程是什么 ?
-    1. 如果 swap 的 pgfault 将其读入到 swap cache 中间，那么其 mapping 如果 NULL 的话，如何处理rmap 的关系 ?
-        1. anon vma 进行 page fault 之后，对于该 anon vma 又进行了 fork ，怎么办 ? `__page_set_anon_rmap` 当不是 exclusive 的时候，直接标记到 Root 上
-    2. 怎么重建 rmap ，之前的所有信息都被消除了? 非常简单:page fault 的时候是可以知道发生所在的 vma 的，rmap 对于任何 page frame 都是需要的! 依靠这个实现 unmap 进而清理所有的 page table entry !
-        2. 为什么 `page->private` 需要保存 `swp_entry_t`　的内容, 难道不是 page table entry 保存吗 ? (当其需要再次被写回的时候，依靠这个确定位置，和删除在 radix tree 的关系!)
-
 ## Questions
 
 In previous chapters, *we explained how the kernel handles dynamic memory by keeping track of free and busy page frames.*
@@ -87,7 +75,7 @@ Therefore, let us present a few general rules adopted by the PFRA. These rules a
   When the PFRA wants to free a page frame shared by several processes, it clears
   all page table entries that refer to the shared page frame, and then reclaims the
   page frame.
-  
+
 - *Reclaim “unused” pages only*
 
   The PFRA uses a simplified Least Recently Used (LRU) replacement algorithm to
@@ -115,13 +103,13 @@ Therefore, the page frame reclaiming algorithm is a blend of several heuristics:
 ## 2 Reverse Mapping
 A trivial solution for reverse mapping would be to include in each page descriptor
 additional fields to link together all the Page Table entries that point to the page
-frame associated with the page descriptor. 
+frame associated with the page descriptor.
 > 假装的操作 : 所有的 pte 都被编程链表被管理起来
 > 实际上 : page 所在的 vma 被放到 `address_space->i_mapping` 上，从链表变成了 tree 而已吗 ?
 > 1. 并不是，interval tree 是 inode 上的，page 虽然也持有 address_space，但是只是减少访存次数而已，也就是，所有的用于映射同一个 file 的page frame 都是在同一个指向 address_space
 > 2. 所以，一个 page 也不知道其映射了谁，但是可以知道该范围的 vma
 > 3. 就算 page 调入到 vma 的范围的时候，还需要 page walk 确定是不是真的含有存在该 page
-> 
+>
 > anon 的操作 :
 > 1. 和文件类似，第一个 vma 创建的时候，其相当于创建了一个文件(这一个文件就是av(anon_vma))，所以其持有一个 interval tree 的
 > 2. 当一个 page 在 vma1 的位置创建，那么，vma1 fork 出来的任何 vma 都需要放到 vma1 对应的
@@ -182,7 +170,7 @@ pages of such a region will be shared among the future descendants of the proces
 
 #### 3.1 The Least Recently Used (LRU) Lists
 If a page belongs to an LRU list, its PG_lru flag in the page descriptor is set.
-Moreover, if the page belongs to the active list, the `PG_active` flag is set, while if it belongs to the inactive list, the `PG_active` flag is cleared. 
+Moreover, if the page belongs to the active list, the `PG_active` flag is set, while if it belongs to the inactive list, the `PG_active` flag is cleared.
 
 Several auxiliary functions are available to handle the LRU lists:
 
@@ -191,11 +179,11 @@ Several auxiliary functions are available to handle the LRU lists:
 The `PG_referenced` flag in the page descriptor is used to double the number of
 accesses required to move a page from the inactive list to the active list; it is also used
 to double the number of “missing accesses” required to move a page from the active
-list to the inactive list (see below). 
+list to the inactive list (see below).
 
 * ***The mark_page_accessed( ) function***
 
-> 列举了各种 mark_page_accessed 各种被调用的情况，其实就是当一个 page 被大费周章的调入进来，所以其 
+> 列举了各种 mark_page_accessed 各种被调用的情况，其实就是当一个 page 被大费周章的调入进来，所以其
 > @todo 我相信，不是说调用 page_referenced() 会让 page 降级，而是因为调用 page_referenced() 发现这个 page 在连续两次调用的过程中间都没有被访问过。不然，为什么要做 rmap 统计次数，直接降级不就完成了。
 
 * ***The page_referenced( ) function***
@@ -241,7 +229,7 @@ shrink_lruvec 调用 shrink_list，会根据当前到底是 active 还是 inacti
 
 shrink_inactive_list 以及其调用的 shrink_page_list 的麻烦非常多:
 1. pageout() 几乎不知道其说明的内容是什么
-2. page_check_dirty_writeback 
+2. page_check_dirty_writeback
 3. page write backed 之类的
 
 #### 3.3 Reclaiming Pages of Shrinkable Disk Caches
