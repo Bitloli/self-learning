@@ -9,37 +9,37 @@
 
 4. 匿名页的反向映射
   - 相关数据结构体介绍
-  - vma和av首次建立rmap大厦
-  - fork时为子进程构建rmap大厦
-  - 缺页异常时page关联av
-  - 反向映射查找匿名页pte
-  - 匿名页rmap情景分析
+  - vma 和 av 首次建立 rmap 大厦
+  - fork 时为子进程构建 rmap 大厦
+  - 缺页异常时 page 关联 av
+  - 反向映射查找匿名页 pte
+  - 匿名页 rmap 情景分析
 5. 文件页的反向映射
   - 相关数据结构体介绍
-  - 文件打开关联address_space
-  - vma添加到文件页的rmap的红黑树
+  - 文件打开关联 address_space
+  - vma 添加到文件页的 rmap 的红黑树
   - 缺页异常读取文件页
-  - 反向映射查找文件pte
-  - 文件页rmap情景分析
-6. ksm和ksm页反向映射
+  - 反向映射查找文件 pte
+  - 文件页 rmap 情景分析
+6. ksm 和 ksm 页反向映射
   - 相关数据结构体介绍
-  - ksm机制剖析（上）
-  - ksm机制剖析（下）
-  - 反向映射查找ksm页pte
-  - ksm实践
+  - ksm 机制剖析（上）
+  - ksm 机制剖析（下）
+  - 反向映射查找 ksm 页 pte
+  - ksm 实践
 
 1. 当发生 cow 的时候，将新创建出来的 `page->mapping` 指向 子进程的 anon_vma
 2. avc 挂载到 `vma->anon_vma_chain` 这个链表上，同时在 av 的 `anon_vma->rb_root` 上
   1. 当发生 rmap 遍历，利用 `page->mapping` 找到 anon_vma, 然找到  `anon_vma->rb_root` 来在红黑树中间查找到 avc
 3. avc 是 vma 用来挂载到 av 上的钩子
 2. va 绑定在 vma 上
-4. 进程每创建一个子进程，父进程的 AV 的红黑树中会增加每一个起“桥梁”作用的AVC，以此连接到子进程的VMA
+4. 进程每创建一个子进程，父进程的 AV 的红黑树中会增加每一个起“桥梁”作用的 AVC，以此连接到子进程的 VMA
 5. 第 n 个层次的 child 需要创建创建 n 个 avc, 分别将 avc 放到自己和自己的 n - 1 个祖先中间
 6. 将 avc 挂载到 av 上，表示该 avc
 
 ## rmap.c
 
-1. 在page初始化的时候，只要谁来使用 page ，将 vma 挂到链表上 !
+1. 在 page 初始化的时候，只要谁来使用 page ，将 vma 挂到链表上 !
   1. 那么岂不是，当存在 1000 个 fork 同一个 1000 page 的物理页面，存在 100000 个链表节点
   2. 并不会吧
 
@@ -51,7 +51,7 @@
     3. **vma 为什么需要找到与其关联的所有 anon_vma**
         1. 释放一个 vma 需要找到该 vma 关联的所有 av
     4. cow 机制 : 当 children 在 anon vma 上 page fault，那么 parent 也会得到哪一个 page 吗 ?
-    4. cow 机制 : 当 parent 在 anon vma 上 page fault ，那么 children 会得到该page 吗 ?
+    4. cow 机制 : 当 parent 在 anon vma 上 page fault ，那么 children 会得到该 page 吗 ?
        1. 不会的，违背了 cow 的语义
     5. vma 总会关联一个独享的 vma_anon ，在哪一个 vma 上 pgfault，page.mapping 就会指向该 anon_vma
     3. 如果该 page 是在"我"这里创建的，那么就需要"我"就需要创建出来一个 anon_vma 来
@@ -61,7 +61,7 @@
 
 8. 我们能不能不要 anon_vma_chain ? 利用 avc， 我们想要实现的效果是什么 ?
     1. vma 可以找到 管理其 page 的所有的 anon_vma
-    2. anon_vma 想知道其管理的所有page 被映射的所有的 vma
+    2. anon_vma 想知道其管理的所有 page 被映射的所有的 vma
     3. 当然，取消掉 avc, 在 av 和 vma 中间插入链表
 
 ```c
@@ -73,7 +73,7 @@
 
 8. 找一下 mmap.c 中间 merge 和 split 的操作过程是什么样子的 ?
 
-9. 不仅仅可以递归的fork ，而且可以同一个 process 可以 fork 出来大量的内容出来。
+9. 不仅仅可以递归的 fork ，而且可以同一个 process 可以 fork 出来大量的内容出来。
     1. 为什么 av 可以不关联 vma (是不是因为其并没有创建)
     2. reuse 不是通常看到的内容，否则根本无法解释 no alive 的含义。
         1. 在常规情况下(A fork B , B fork C, C 无法 reuse A B 的内容)，只会出现其中的
@@ -95,7 +95,7 @@
 
 ## principal
 1. radix tree 根本不是用来实现反向映射的，反向映射使用的内容是 : interval_tree
-    1. interval_tree 的作用是 : 对于file based 的，因为文件上挂载了所有的与之相关的 vmc
+    1. interval_tree 的作用是 : 对于 file based 的，因为文件上挂载了所有的与之相关的 vmc
 2. page cache 其实和 rmap 是没有关联的东西。
     1. ramp 的作用是当知道 page frame 的时候找到 pte，当然找到等价于知道 vma mm_struct 以及 process
 
@@ -107,7 +107,7 @@
     2. av 和 vma 都会管理一堆 avc ?
     3. 一个 av 会管理多个 vma，都是挂载其红黑树上
 
-3. av 是构成tree 利用 `av->degree` 来实现 reuse 机制
+3. av 是构成 tree 利用 `av->degree` 来实现 reuse 机制
     1. degree 不是表示 children 的数量
 
 4. avc 是用来勾连 av 和 mva 的
@@ -119,16 +119,16 @@
  each child process will have its own anon_vma, where new
  pages for that process are instantiated.
 
-7. page_vma_mapped_walk : 当一个page A出现了cow 之后，得到了page B, 实际上对于 page A 进行 rmap 查找其 reference 的时候，很有可能找到错误的。
+7. page_vma_mapped_walk : 当一个 page A 出现了 cow 之后，得到了 page B, 实际上对于 page A 进行 rmap 查找其 reference 的时候，很有可能找到错误的。
     1. 更加窒息的位置在于，page A 所在的 vma fork 出来 N 个 vma，其中 M 个对于 page A 所在的位置进行修改，那么当进行 page A 进行 rmap 的时候，将会出现 M 此失败。
     2. 不过考虑到这种情况应该很少遇到，所以性能应该不会构成问题吧。
 
 
 
 ## references of rmap
-1. rmap 具体使用位置 从rmap.h 分析
+1. rmap 具体使用位置 从 rmap.h 分析
 2. rmap 和 mmap 交互 ? 在进行 vma copy 的过程中间，会调用对于 rmap.c 进行维护
-3. 还有更加简单的方法 : 如果一个机制使用了 rmap，必然依赖于 rmap_walk 找到访问page 的所有的vma 来统计分析
+3. 还有更加简单的方法 : 如果一个机制使用了 rmap，必然依赖于 rmap_walk 找到访问 page 的所有的 vma 来统计分析
 
 ![](../../img/source/rmap_walk.png)
 
@@ -279,15 +279,15 @@ static void __remove_shared_vm_struct(struct vm_area_struct *vma,
     2. 存在一些关于 lock 的小技巧
 
 两个分析的地方:
-1. swap 的 pgfault : 为什么使用rmap 啊 ?
+1. swap 的 pgfault : 为什么使用 rmap 啊 ?
 
-> 换入一个page 其他的pte 重做! 换出的时候，所有的pte写 swap_entry 还如的时候，不如使用使用 swap_entry 到 va　的映射。
-> 换出之后，就没有物理内存，rmap的key 怎么办法 ?
+> 换入一个 page 其他的 pte 重做! 换出的时候，所有的 pte 写 swap_entry 还如的时候，不如使用使用 swap_entry 到 va　的映射。
+> 换出之后，就没有物理内存，rmap 的 key 怎么办法 ?
 
 
 filemap_map_pages => alloc_set_pte => page_add_file_rmap
 > page fault 完成的过程建立，反向映射。
-> rmap 的出现，让有的pagefault 是没有必要进行io的。
+> rmap 的出现，让有的 pagefault 是没有必要进行 io 的。
 > 好像 page_add_file_rmap 只是增加一个引用计数 `page->_mapcount`
 
 swap_state.c 中间:
@@ -297,9 +297,9 @@ static unsigned int nr_swapper_spaces[MAX_SWAPFILES] __read_mostly;
 static bool enable_vma_readahead __read_mostly = true;
 ```
 
-> 此处的 address_space 我感觉和rmap 没有关系，只是用来描述page cache 和block 沟通的，和rmap 没有关系!
+> 此处的 address_space 我感觉和 rmap 没有关系，只是用来描述 page cache 和 block 沟通的，和 rmap 没有关系!
 
-> 一个 swap 被描述为一个文件，用于缓存anon 的page frame
+> 一个 swap 被描述为一个文件，用于缓存 anon 的 page frame
 > block 和 page cache 一一映射
 
 
@@ -382,7 +382,7 @@ struct Page{
 
 Let’s first look at the version for anonymous pages. We first need the `page_lock_anon_vma` helper
 function to find the associated list of regions by reference to a specific page instance.
-> 我去，为什么，文档都没有读，然后整天BB个不停!
+> 我去，为什么，文档都没有读，然后整天 BB 个不停!
 
 ## page_get_anon_vma 和 page_lock_anon_vma_read　
 1. 两者居然不是简单封装关系
@@ -505,7 +505,7 @@ discard:
 	}
 ```
 
-## vma_address : 返回 page 在被映射的虚拟地址空间的pte
+## vma_address : 返回 page 在被映射的虚拟地址空间的 pte
 1. 两个唯一 ref 来源 : rmap_walk_anon 和 rmap_walk_file
 2. 原理上 : `page->index` -  `vm_area_struct->vm_pgoff` + `vm_area_struct->vm_start`
     1. 虽然 anon vma 没有文件相对应，但是 vm_pgoff 可以自己定义一下

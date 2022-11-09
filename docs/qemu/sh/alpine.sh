@@ -71,7 +71,7 @@ arg_hugetlb="default_hugepagesz=3M hugepagesz=1G hugepages=1 hugepagesz=2M hugep
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
-arg_mem_balloon="-device virtio-balloon"
+arg_mem_balloon="-device virtio-balloon,deflate-on-oom=true"
 
 case $hacking_memory in
 "numa")

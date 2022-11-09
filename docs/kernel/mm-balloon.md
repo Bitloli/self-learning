@@ -12,15 +12,8 @@
 - 让 guest 换出之后似乎 Host 是不知道的，如何处理?
   - 是通过 vritio 的，应该不存在这个问题。
 
-- 是不是只是因为 host 无法准确知道 geust 中信息，所以让 guest 来释放。
-
 - 如果 guest 将所有的内存写一遍，导致其将内存完全分配了，然后 guest 实际上没有什么工作，将自己的内存完全释放了，但是 host 不知道，从而导致内存没用了。
   - 所以，是不是，应该让 host 应该观察 guest 的使用量，保证所有的内存只是在使用的可以用。
-
-- [ ] 到底什么样的内存会放入到 lru, 是有办法让 guest memory 的内存不放入到 lru 中吗?
-  - [ ] 对于这种内存有办法直接使用
-
-- [ ] 默认的机器是存放了 lru 的吗?
 
 lspci 可以得到:
 ```txt
@@ -369,3 +362,71 @@ config BALLOON_COMPACTION
 - 让 balloon 尽可能的大，然后让 host 将这些页保护起来，然后如果 guest 在迁移的过程中使用了这些页，那么就重新发送。
 
 ## free pages reporting
+
+## virtio
+
+```diff
+History:        #0
+Commit:         997e120843e82609c8d99a9d5714e6cf91e14cbe
+Author:         Denis V. Lunev <den@openvz.org>
+Committer:      Michael S. Tsirkin <mst@redhat.com>
+Author Date:    Thu 20 Aug 2015 05:49:49 AM CST
+Committer Date: Tue 08 Sep 2015 06:32:11 PM CST
+
+virtio_balloon: do not change memory amount visible via /proc/meminfo
+
+Balloon device is frequently used as a mean of cooperative memory control
+in between guest and host to manage memory overcommitment. This is the
+typical case for any hosting workload when KVM guest is provided for
+end-user.
+
+Though there is a problem in this setup. The end-user and hosting provider
+have signed SLA agreement in which some amount of memory is guaranted for
+the guest. The good thing is that this memory will be given to the guest
+when the guest will really need it (f.e. with OOM in guest and with
+VIRTIO_BALLOON_F_DEFLATE_ON_OOM configuration flag set). The bad thing
+is that end-user does not know this.
+
+Balloon by default reduce the amount of memory exposed to the end-user
+each time when the page is stolen from guest or returned back by using
+adjust_managed_page_count and thus /proc/meminfo shows reduced amount
+of memory.
+
+Fortunately the solution is simple, we should just avoid to call
+adjust_managed_page_count with VIRTIO_BALLOON_F_DEFLATE_ON_OOM set.
+
+Signed-off-by: Denis V. Lunev <den@openvz.org>
+CC: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+diff --git a/drivers/virtio/virtio_balloon.c b/drivers/virtio/virtio_balloon.c
+index 8543c9a97307..7efc32945810 100644
+--- a/drivers/virtio/virtio_balloon.c
++++ b/drivers/virtio/virtio_balloon.c
+@@ -157,7 +157,9 @@ static void fill_balloon(struct virtio_balloon *vb, size_t num)
+ 		}
+ 		set_page_pfns(vb->pfns + vb->num_pfns, page);
+ 		vb->num_pages += VIRTIO_BALLOON_PAGES_PER_PAGE;
+-		adjust_managed_page_count(page, -1);
++		if (!virtio_has_feature(vb->vdev,
++					VIRTIO_BALLOON_F_DEFLATE_ON_OOM))
++			adjust_managed_page_count(page, -1);
+ 	}
+
+ 	/* Did we get any? */
+@@ -173,7 +175,9 @@ static void release_pages_balloon(struct virtio_balloon *vb)
+ 	/* Find pfns pointing at start of each page, get pages and free them. */
+ 	for (i = 0; i < vb->num_pfns; i += VIRTIO_BALLOON_PAGES_PER_PAGE) {
+ 		struct page *page = balloon_pfn_to_page(vb->pfns[i]);
+-		adjust_managed_page_count(page, 1);
++		if (!virtio_has_feature(vb->vdev,
++					VIRTIO_BALLOON_F_DEFLATE_ON_OOM))
++			adjust_managed_page_count(page, 1);
+ 		put_page(page); /* balloon reference */
+ 	}
+ }
+```
+
+## Out of puff! Can't get 1 pages
+
+## 似乎有时候，设置 balloon 不会立刻得到响应
