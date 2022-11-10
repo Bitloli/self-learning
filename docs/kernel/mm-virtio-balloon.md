@@ -1,19 +1,13 @@
 # balloon
 
-- guest 不用的内存先回收一下
+## 使用方法
+- info balloon
+- balloon N
 
-- 动机，这是让 guest 自己换出的操作，这引入了多余的通路了吧。
-- 让 guest 中使用 swap 真的好傻啊，直接 swap 不好吗?
 
 - 基本的流程 : guest -> virtio device
   - 问题在于，guest 以为自己的内存是足够的，是不会换出的
   - 如果让 guest 还是以为自己持有很多内存，在 GVA -> GPA 的映射是存在的，实际上，Host 已经将内存换出，此时 GPA
-
-- 让 guest 换出之后似乎 Host 是不知道的，如何处理?
-  - 是通过 vritio 的，应该不存在这个问题。
-
-- 如果 guest 将所有的内存写一遍，导致其将内存完全分配了，然后 guest 实际上没有什么工作，将自己的内存完全释放了，但是 host 不知道，从而导致内存没用了。
-  - 所以，是不是，应该让 host 应该观察 guest 的使用量，保证所有的内存只是在使用的可以用。
 
 lspci 可以得到:
 ```txt
@@ -63,10 +57,6 @@ Num     Type           Disp Enb Address            What
 - free_page_hint_status
 
 ## 如何使用
-- info balloon
-- balloon N
-
-
 想不到吧，balloon N 居然会导致这个 backtrace
 ```txt
 #0  virtio_balloon_queue_free_page_work (vb=<optimized out>) at drivers/virtio/virtio_balloon.c:425
@@ -87,23 +77,6 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 ```
 
 其实是符合逻辑的，在 virtio_balloon_queue_free_page_work 是主动触发的
-```txt
-#0  virtio_balloon_queue_free_page_work (vb=<optimized out>) at drivers/virtio/virtio_balloon.c:425
-#1  virtballoon_changed (vdev=<optimized out>) at drivers/virtio/virtio_balloon.c:445
-#2  0xffffffff8171f590 in __virtio_config_changed (dev=0xffff888200a8f000) at drivers/virtio/virtio.c:133
-#3  virtio_config_changed (dev=dev@entry=0xffff888200a8f000) at drivers/virtio/virtio.c:141
-#4  0xffffffff817244d3 in vp_config_changed (opaque=0xffff888200a8f000, irq=10) at drivers/virtio/virtio_pci_common.c:54
-#5  vp_interrupt (irq=10, opaque=0xffff888200a8f000) at drivers/virtio/virtio_pci_common.c:97
-#6  0xffffffff8116516e in __handle_irq_event_percpu (desc=desc@entry=0xffff888100120c00) at kernel/irq/handle.c:158
-#7  0xffffffff8116531f in handle_irq_event_percpu (desc=0xffff888100120c00) at kernel/irq/handle.c:193
-#8  handle_irq_event (desc=desc@entry=0xffff888100120c00) at kernel/irq/handle.c:210
-#9  0xffffffff811694bb in handle_fasteoi_irq (desc=0xffff888100120c00) at kernel/irq/chip.c:714
-#10 0xffffffff810b9ab1 in generic_handle_irq_desc (desc=0xffff888100120c00) at include/linux/irqdesc.h:158
-#11 handle_irq (regs=<optimized out>, desc=0xffff888100120c00) at arch/x86/kernel/irq.c:231
-#12 __common_interrupt (regs=<optimized out>, vector=33) at arch/x86/kernel/irq.c:250
-#13 0xffffffff81edd563 in common_interrupt (regs=0xffffffff82a03de8, error_code=<optimized out>) at arch/x86/kernel/irq.c:240
-Backtrace stopped: Cannot access memory at address 0xffffc90000004018
-```
 - [ ] 但是，是那些 pages 是需要和 QEMU 交流一下才对。
 
 ```txt
@@ -134,8 +107,6 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 ```
 
 - [ ] get_free_page_and_send
-
-应该是通过 shrink 是可以让 balloon 分配的 pages 全部释放给 geust 的。
 
 - qemu 如何接受的具体的 pages
   - balloon_inflate_page -> ram_block_discard_range
@@ -263,64 +234,6 @@ virtio_balloon_get_config 最开始的时候也是会调用一次:
 #13 0x00007ffff7755bfc in clone3 () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
 ```
 
-## kernel 的一些 backtrace
-```txt
-0  virtio_dev_probe (_d=0xffff88810105f010) at drivers/virtio/virtio.c:310
-#1  0xffffffff81949641 in call_driver_probe (drv=0xffffffff82c03fc0 <virtio_balloon_driver>, dev=0xffff88810105f010) at drivers/base/dd.c:530
-#2  really_probe (dev=dev@entry=0xffff88810105f010, drv=drv@entry=0xffffffff82c03fc0 <virtio_balloon_driver>) at drivers/base/dd.c:609
-#3  0xffffffff8194986d in __driver_probe_device (drv=drv@entry=0xffffffff82c03fc0 <virtio_balloon_driver>, dev=dev@entry=0xffff88810105f010) at drivers/base/dd.c:748
-#4  0xffffffff819498e9 in driver_probe_device (drv=drv@entry=0xffffffff82c03fc0 <virtio_balloon_driver>, dev=dev@entry=0xffff88810105f010) at drivers/base/dd.c:778
-#5  0xffffffff8194a016 in __driver_attach (data=0xffffffff82c03fc0 <virtio_balloon_driver>, dev=0xffff88810105f010) at drivers/base/dd.c:1150
-#6  __driver_attach (dev=0xffff88810105f010, data=0xffffffff82c03fc0 <virtio_balloon_driver>) at drivers/base/dd.c:1099
-#7  0xffffffff81947630 in bus_for_each_dev (bus=<optimized out>, start=start@entry=0x0 <fixed_percpu_data>, data=data@entry=0xffffffff82c03fc0 <virtio_balloon_driver>, fn=fn@entry=0xffffffff81949f70 <__driver_attach>) at drivers/base/bus.c:301
-#8  0xffffffff819491a5 in driver_attach (drv=drv@entry=0xffffffff82c03fc0 <virtio_balloon_driver>) at drivers/base/dd.c:1167
-#9  0xffffffff81948bfc in bus_add_driver (drv=drv@entry=0xffffffff82c03fc0 <virtio_balloon_driver>) at drivers/base/bus.c:618
-#10 0xffffffff8194ab8a in driver_register (drv=0xffffffff82c03fc0 <virtio_balloon_driver>) at drivers/base/driver.c:240
-#11 0xffffffff81000e7c in do_one_initcall (fn=0xffffffff83322dee <virtio_balloon_driver_init>) at init/main.c:1296
-#12 0xffffffff832e44b8 in do_initcall_level (command_line=0xffff8882000fc3c0 "root", level=6) at init/main.c:1369
-#13 do_initcalls () at init/main.c:1385
-#14 do_basic_setup () at init/main.c:1404
-#15 kernel_init_freeable () at init/main.c:1623
-#16 0xffffffff81ee0ba1 in kernel_init (unused=<optimized out>) at init/main.c:1512
-#17 0xffffffff81001a8f in ret_from_fork () at arch/x86/entry/entry_64.S:306
-```
-
-- 这好吗? 一个 ballon 将 guest 收缩炸了
-  - [ ] 不设置 hugepage ，还会存在问题吗?
-    - 也许从内核中分配，一直都是有问题的。
-```txt
-[   80.347018] Tasks state (memory values in pages):
-[   80.351598] [  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name
-[   80.359875] [    427]     0   427    24245        1   315392      687         -1000 systemd-udevd
-[   80.368756] [    507]     0   507    32708        0   159744      691         -1000 auditd
-[   80.376835] [    609]     0   609    19159        0   307200      233         -1000 sshd
-[   80.385405] Out of memory and no killable processes...
-[   80.391092] Kernel panic - not syncing: System is deadlocked on memory
-[   80.396859] CPU: 1 PID: 1 Comm: systemd Not tainted 6.0.0-rc2-00283-g10d4879f9ef0-dirty #42
-[   80.406853] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.0-0-gd239552ce722-prebuilt.qemu.org 04/01/2014
-[   80.418924] Call Trace:
-[   80.420866]  <TASK>
-[   80.422977]  dump_stack_lvl+0x34/0x48
-[   80.426854]  panic+0x102/0x27b
-[   80.430845]  out_of_memory.cold+0x5e/0x7e
-[   80.434880]  __alloc_pages_slowpath.constprop.0+0x971/0xd60
-[   80.440859]  __alloc_pages+0x218/0x240
-[   80.444892]  folio_alloc+0x12/0x40
-[   80.448899]  __filemap_get_folio+0x1c8/0x330
-[   80.454907]  filemap_fault+0x14f/0xa20
-[   80.458831]  __do_fault+0x2f/0xc0
-[   80.460887]  do_fault+0x1db/0x560
-[   80.462903]  __handle_mm_fault+0x5c0/0xda0
-[   80.466922]  ? xa_load+0x70/0xb0
-[   80.470868]  handle_mm_fault+0xc0/0x2b0
-[   80.473634]  do_user_addr_fault+0x1c3/0x660
-[   80.480152]  ? kvm_read_and_reset_apf_flags+0x45/0x60
-[   80.485073]  exc_page_fault+0x62/0x150
-[   80.487131]  asm_exc_page_fault+0x22/0x30
-[   80.490903] RIP: 0033:0x7f4cb52872ff
-```
-- 不是有 do_shrink_slab 吗？
-
 ## BALLOON_COMPACTION
 
 ```txt
@@ -339,8 +252,6 @@ config BALLOON_COMPACTION
 ```
 
 ## HYPERV_BALLOON
-
-## VIRTIO_BALLOON
 
 ### kernel
 
@@ -428,5 +339,9 @@ index 8543c9a97307..7efc32945810 100644
 ```
 
 ## Out of puff! Can't get 1 pages
+直接访问
+
+
+似乎有时候会触发连续的这个报错
 
 ## 似乎有时候，设置 balloon 不会立刻得到响应

@@ -159,5 +159,7 @@ After=cauxukun.service
 https://trstringer.com/simple-vs-oneshot-systemd-service/
 
 
+## systemd 的 before after 应该是不能实现只有 exit = 0 才可以继续的操作
+
 [^1]: https://unix.stackexchange.com/questions/471824/what-is-the-correct-substitute-for-rc-local-in-systemd-instead-of-re-creating-rc
 [^2]: https://support.huaweicloud.com/intl/en-us/trouble-ecs/ecs_trouble_0349.html

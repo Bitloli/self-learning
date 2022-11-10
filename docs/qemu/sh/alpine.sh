@@ -173,6 +173,8 @@ show_help() {
   echo "-k 调试内核，启动 gdb 部分"
   echo "-t 使用 tcg 作为执行引擎而不是 kvm"
   echo "-d 调试 QEMU"
+  echo "   -m 调试 QEMU 的时候，打开 monitor"
+  echo "   -c 调试 QEMU 的时候，打开 console"
   exit 0
 }
 mon_socket_path=/tmp/qemu-monitor-socket

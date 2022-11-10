@@ -1,5 +1,7 @@
 # rmap
 
+## rmap_walk
+
 - 一个 vma 共享，除了 fork 存在其他的方法吗?
 - 如何修改一个 vma 的属性 int prot, int flags
 - memfd 是不是创建出来了可以共享的 anonymous 映射，而再次之前，这是做不到的 ?
@@ -130,43 +132,13 @@
 2. rmap 和 mmap 交互 ? 在进行 vma copy 的过程中间，会调用对于 rmap.c 进行维护
 3. 还有更加简单的方法 : 如果一个机制使用了 rmap，必然依赖于 rmap_walk 找到访问 page 的所有的 vma 来统计分析
 
-![](../../img/source/rmap_walk.png)
-
 rmap_walk_control::rmap_one 仅仅在 rmap_walk_ksm rmap_walk_anon rmap_walk_file 三个位置使用。
 
 --> 分析上面哪一个图 :
 
 1. page_mkclean
-```c
-int page_mkclean(struct page *page) // todo clean 什么东西 ?
-```
-
 2. page_referenced
-
 3. try_to_unmap
-```c
-/**
- * try_to_unmap - try to remove all page table mappings to a page
- * @page: the page to get unmapped
- * @flags: action and flags
- *
- * Tries to remove all the page table entries which are mapping this
- * page, used in the pageout path.  Caller must hold the page lock.
- *
- * If unmap is successful, return true. Otherwise, false.
- */
-bool try_to_unmap(struct page *page, enum ttu_flags flags)
-
-// 和 munmap 的关系:
-// 1. 经过unmap_region 到达此处
-// 2. todo 那么实际上，如果所有映射该 page 的 vma 都 gg 了，那么到底谁来释放呀 !
-void free_pgtables(struct mmu_gather *tlb, struct vm_area_struct *vma,
-		unsigned long floor, unsigned long ceiling)
-		unlink_anon_vmas(vma); // todo 分析两者的区别
-		unlink_file_vma(vma);
-```
-
-
 4. try_to_munlock : 检查映射到的 page 是被 mlock，试图 munlock
 
 ```c
@@ -195,7 +167,6 @@ void try_to_munlock(struct page *page)
 	rmap_walk(page, &rwc);
 }
 ```
-
 
 
 ## file-based 的流程
@@ -289,19 +260,6 @@ filemap_map_pages => alloc_set_pte => page_add_file_rmap
 > page fault 完成的过程建立，反向映射。
 > rmap 的出现，让有的 pagefault 是没有必要进行 io 的。
 > 好像 page_add_file_rmap 只是增加一个引用计数 `page->_mapcount`
-
-swap_state.c 中间:
-```c
-struct address_space *swapper_spaces[MAX_SWAPFILES] __read_mostly;
-static unsigned int nr_swapper_spaces[MAX_SWAPFILES] __read_mostly;
-static bool enable_vma_readahead __read_mostly = true;
-```
-
-> 此处的 address_space 我感觉和 rmap 没有关系，只是用来描述 page cache 和 block 沟通的，和 rmap 没有关系!
-
-> 一个 swap 被描述为一个文件，用于缓存 anon 的 page frame
-> block 和 page cache 一一映射
-
 
 回到第四章:
 
@@ -779,3 +737,9 @@ vm_fault_t alloc_set_pte(struct vm_fault *vmf, struct mem_cgroup *memcg,
 	return 0;
 }
 ```
+
+## 测试一下两者的性能差别
+- filemap 和 anon
+
+## 分析是不是让 idle pagetracking
+- page_idle_clear_pte_refs
