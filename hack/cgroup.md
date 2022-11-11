@@ -30,6 +30,7 @@
 * [hugetlb cgroup](#hugetlb-cgroup)
 * [cgroup.procs](#cgroupprocs)
 * [TODO](#todo)
+* [cgorup inode](#cgorup-inode)
 * [reference](#reference)
 
 <!-- vim-markdown-toc -->
@@ -996,5 +997,74 @@ static struct cgroup *cset_cgroup_from_root(struct css_set *cset,
  */
 static void css_free_rwork_fn(struct work_struct *work)
 ```
+
+## cgorup inode
+
+基于某一台机器测试的:
+
+/proc/kpagecgroup
+
+```sh
+#!/usr/bin/env bash
+inodes=(
+	1
+	1033
+	1605
+	20298
+	2229
+	2281
+	23
+	2479
+	2615
+	2657
+	2768
+	28041
+	283
+	3000
+	8314
+	8526
+)
+for i in "${inodes[@]}"; do
+	echo "${i}"
+	find /sys/fs/cgroup -inum "$i"
+done
+
+```
+
+```txt
+1
+/sys/fs/cgroup
+1033
+/sys/fs/cgroup/system.slice/systemd-udevd.service
+1605
+/sys/fs/cgroup/system.slice/dhcpcd.service
+20298
+/sys/fs/cgroup/system.slice/nscd.service
+2229
+/sys/fs/cgroup/system.slice/sshd.service
+2281
+/sys/fs/cgroup/system.slice/syncthing.service
+23
+/sys/fs/cgroup/init.scope
+2479
+/sys/fs/cgroup/system.slice/docker.service
+2615
+/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service
+2657
+/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/init.scope
+2768
+/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/httpd.service
+28041
+/sys/fs/cgroup/user.slice/user-1000.slice/session-64.scope
+283
+/sys/fs/cgroup/dev-hugepages.mount
+3000
+/sys/fs/cgroup/system.slice/nix-daemon.service
+8314
+/sys/fs/cgroup/system.slice/system-systemd\x2dcoredump.slice
+8526
+/sys/fs/cgroup/system.slice/systemd-journald.service
+```
+
 ## reference
 [^1]: v1 https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/index.html

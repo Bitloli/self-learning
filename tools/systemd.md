@@ -158,8 +158,12 @@ After=cauxukun.service
 ## oneshot vs simple
 https://trstringer.com/simple-vs-oneshot-systemd-service/
 
-
 ## systemd 的 before after 应该是不能实现只有 exit = 0 才可以继续的操作
+但是，为什么曾经见过磁盘服务没有启动，然后后面都没有启动的情况
+
+## systemd unit file 的位置
+- sys: /etc/systemd/system
+- user: /etc/systemd/user or $HOME/.config/systemd/user
 
 [^1]: https://unix.stackexchange.com/questions/471824/what-is-the-correct-substitute-for-rc-local-in-systemd-instead-of-re-creating-rc
 [^2]: https://support.huaweicloud.com/intl/en-us/trouble-ecs/ecs_trouble_0349.html

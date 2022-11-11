@@ -10,27 +10,27 @@
 #!/bin/sh
 
 DIRS=(lib
-  acl altio 
-	cap 
-	daemons dirs_links 
-	filebuff fileio filelock files filesys getopt 
-	inotify 
-	loginacct 
-	memalloc 
-	mmap 
-	pgsjc pipes pmsg 
-	proc proccred procexec procpri procres 
-	progconc 
-	psem pshm pty 
-	shlibs 
-	signals sockets 
-	svipc svmsg svsem svshm 
-	sysinfo 
-	syslim 
-	threads time timers tty 
-	users_groups 
-	vdso 
-	vmem 
+  acl altio
+	cap
+	daemons dirs_links
+	filebuff fileio filelock files filesys getopt
+	inotify
+	loginacct
+	memalloc
+	mmap
+	pgsjc pipes pmsg
+	proc proccred procexec procpri procres
+	progconc
+	psem pshm pty
+	shlibs
+	signals sockets
+	svipc svmsg svsem svshm
+	sysinfo
+	syslim
+	threads time timers tty
+	users_groups
+	vdso
+	vmem
   xattr
 )
 
@@ -44,6 +44,3 @@ done
 
 # Ref
 https://stackoverflow.com/questions/15287862/find-and-replace-using-regex-in-sed
-
-
-
