@@ -278,3 +278,174 @@ static inline struct page *find_get_page(struct address_space *mapping,
 	return pagecache_get_page(mapping, offset, 0, 0);
 }
 ```
+
+## page allocator
+为什么 page allocator 如此复杂 ?
+1. 当内存不够的时候，使用 compaction 和 page reclaim 压榨一些内存出来
+2. 为了性能 :  percpu
+
+`__alloc_pages_nodemask` 是整个 buddy allocator 的核心，各种调用的函数都是辅助，其 alloc_context 之后，然后调用两个关键
+1. get_page_from_freelist : 从 freelist 直接中间获取
+2. `__alloc_pages_slowpath` : 无法从 freelist 中间获取，那么调整 alloc_flags，重新使用 get_page_from_freelist 进行尝试，如果还是失败，使用
+    1. `__alloc_pages_direct_reclaim` => `__perform_reclaim` => try_to_free_pages : 通过 reclaim page 进行分配
+    2. `__alloc_pages_direct_compact` => try_to_compact_pages : 通过 compaction 维持生活
+> 似乎整个调用路径非常清晰，但是 hugepage 和 mempolicy 的效果体现在哪里的细节还是需要深究一下。
+
+解除疑惑 : 为什么 alloc_pages 没有 mempolicy 的参数 ?
+```c
+static inline struct page * alloc_pages(gfp_t gfp_mask, unsigned int order) { return alloc_pages_current(gfp_mask, order); }
+
+/**
+ *  alloc_pages_current - Allocate pages.
+ *
+ *  @gfp:
+ *    %GFP_USER   user allocation,
+ *        %GFP_KERNEL kernel allocation,
+ *        %GFP_HIGHMEM highmem allocation,
+ *        %GFP_FS     don't call back into a file system.
+ *        %GFP_ATOMIC don't sleep.
+ *  @order: Power of two of allocation size in pages. 0 is a single page.
+ *
+ *  Allocate a page from the kernel page pool.  When not in
+ *  interrupt context and apply the current process NUMA policy.
+ *  Returns NULL when no page can be allocated.
+ */
+struct page *alloc_pages_current(gfp_t gfp, unsigned order)
+{
+  struct mempolicy *pol = &default_policy;
+  struct page *page;
+
+  if (!in_interrupt() && !(gfp & __GFP_THISNODE))
+    pol = get_task_policy(current);
+
+  /*
+   * No reference counting needed for current->mempolicy
+   * nor system default_policy
+   */
+  if (pol->mode == MPOL_INTERLEAVE)
+    page = alloc_page_interleave(gfp, order, interleave_nodes(pol));
+    else
+    page = __alloc_pages_nodemask(gfp, order,
+        policy_node(gfp, pol, numa_node_id()),
+        policy_nodemask(gfp, pol));
+
+  return page;
+}
+EXPORT_SYMBOL(alloc_pages_current);
+```
+
+happy path : get_page_from_freelist
+1. 检查一下 dirty 数量是否超标: node_dirty_ok
+2. 检查内存剩余数量 : zone_watermark_fast，如果超标，使用 node_reclaim 回收.
+3. 从合乎要求的 zone 里面获取页面 : rmqueue
+
+happy path : requeue
+1. 如果大小为 order 为 1，从 percpu cache 中间获取: rmqueue_pcplist
+2. 否则调用 `__rmqueue`，`__rmqueue` 首先进行使用 `__rmqueue_smallest`进行尝试，如果不行，调用 `__rmqueue_fallback` 在 fallback list 中间查找。
+3. `__rmqueue_smallest` 就是介绍 buddy allocator 的理论实现的部分了
+
+
+[LoyenWang](https://www.cnblogs.com/LoyenWang/p/11626237.html)
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191006001219745-1992148860.png)
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191006001229047-942884289.png)
+
+- [ ] why allocate pages per zone, but reclaim pages per node ?
+
+
+- [ ] cat /proc/pagetypeinfo && cat /proc/pagetypeinfo , check it in spare time
+
+
+- [ ] gfp_mask and alloc_flags
+  - [ ] gfp_to_alloc_flags
+  - [ ] include/linux/gfp.h contains clear comments for gfp_mask
+
+quick and slow path of allocation:
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191006001326475-348220432.png)
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191006001337263-1883106181.png)
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191006001359420-1831491364.png)
+
+
+- [x] So what's ALLOC_HARDER
+  - gfp_to_alloc_flags() :
+  - rmqueue() : will try `MIGRATE_HIGHATOMIC` type memory immediately with ALLOC_HARDER
+
+
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191013162755767-482755655.png)
+
+#### page free
+当 order = 0 时，会使用 Per-CPU Page Frame 来释放，其中：
+- MIGRATE_UNMOVABLE, MIGRATE_RECLAIMABLE, MIGRATE_MOVABLE 三个按原来的类型释放；
+- MIGRATE_CMA, MIGRATE_HIGHATOMIC 类型释放到 MIGRATE_UNMOVABLE 类型中；
+- MIGRATE_ISOLATE 类型释放到 Buddy 系统中；
+- 此外，在 PCP 释放的过程中，发生溢出时，会调用 free_pcppages_bulk()来返回给 Buddy 系统。来一张图就清晰了：
+
+- [ ] what if order != 0 ?
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191013162924540-1531356891.png)
+
+## page ref
+- [x] `_refcount` 和 `_mapcount` 的关系是什么 ?
+
+[^27] : Situations where `_count` can exceed `_mapcount` include pages mapped for DMA and pages mapped into the kernel's address space with a function like get_user_pages().
+Locking a page into memory with mlock() will also increase `_count`. The relative value of these two counters is important; if `_count` equals `_mapcount`,
+the page can be reclaimed by locating and removing all of the page table entries. But if `_count` is greater than `_mapcount`, the page is "pinned" and cannot be reclaimed until the extra references are removed.
+
+- [ ] so every time, we have to increase `_count` and `_mapcount` syncronizely ? That's ugly, there are something uncovered yet!
+
+1. page_ref_sub 调查一下，为什么 swap 会使用这个机制
+
+```c
+/*
+ * Methods to modify the page usage count.
+ *
+ * What counts for a page usage:
+ * - cache mapping   (page->mapping)
+ * - private data    (page->private)
+ * - page mapped in a task's page tables, each mapping
+ *   is counted separately
+ *
+ * Also, many kernel routines increase the page count before a critical
+ * routine so they can be sure the page doesn't go away from under them.
+ */
+
+/*
+ * Drop a ref, return true if the refcount fell to zero (the page has no users)
+ */
+static inline int put_page_testzero(struct page *page)
+{
+  VM_BUG_ON_PAGE(page_ref_count(page) == 0, page);
+  return page_ref_dec_and_test(page);
+}
+
+/*
+ * Try to grab a ref unless the page has a refcount of zero, return false if
+ * that is the case.
+ * This can be called when MMU is off so it must not access
+ * any of the virtual mappings.
+ */
+static inline int get_page_unless_zero(struct page *page)
+{
+  return page_ref_add_unless(page, 1, 0);
+}
+```
+
+- [ ] understand this function and it's reference
+```c
+static bool is_refcount_suitable(struct page *page)
+{
+  int expected_refcount;
+
+  expected_refcount = total_mapcount(page);
+  if (PageSwapCache(page))
+    expected_refcount += compound_nr(page);
+
+  return page_count(page) == expected_refcount;
+}
+```
+
+- [ ] put_page : rather difficult than expected
+
+1. `_mapcount` 是在 union 中间，当该页面给用户使用的时候，才有意义

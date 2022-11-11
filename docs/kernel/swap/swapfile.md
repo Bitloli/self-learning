@@ -1425,3 +1425,87 @@ static int setup_swap_extents(struct swap_info_struct *sis, sector_t *span) // �
 	return generic_swapfile_activate(sis, swap_file, span);
 }
 ```
+
+#### swapfile
+// 管理其中的结构，关键机制在 cluster 和 extents 即可，基本的 IO 交给下层的 file，所以 swapfile 的功能和 ext2 的功能一致，负责下层的磁盘的布局
+
+- [ ] delete_from_swap_cache => put_swap_page => ??
+- [ ] try_to_free_swap
+
+// 机制
+1. cluster
+2. extents
+3. 全局的 swap_active_head
+4. avail_lists : 为什么需要给每一个 node 提供孤儿
+```c
+/*
+ * all active swap_info_structs
+ * protected with swap_lock, and ordered by priority.
+ */
+PLIST_HEAD(swap_active_head); // TODO 是不是首先按照 swap_info_struct，然后按照 cluster
+
+
+static void __del_from_avail_list(struct swap_info_struct *p)
+{
+  int nid;
+
+  for_each_node(nid)
+    plist_del(&p->avail_lists[nid], &swap_avail_heads[nid]);
+}
+
+static void del_from_avail_list(struct swap_info_struct *p)
+{
+  spin_lock(&swap_avail_lock);
+  __del_from_avail_list(p);
+  spin_unlock(&swap_avail_lock);
+}
+```
+
+
+
+结构:
+1. 一个 swapfile 对应 swap_info_struct
+2. 一个 swapfile 对应多个 cluster，并且使用 cluster_info 描述
+
+
+回答问题:
+
+0. 当一个文件被设置为 swapfile 的时候，如何阻止被访问。
+1. 这几个函数看似都是 free，各自的作用是什么 ?
+```c
+/*
+ * Caller has made sure that the swap device corresponding to entry
+ * is still around or has not been recycled.
+ */
+void swap_free(swp_entry_t entry)
+
+
+/*
+ * If swap is getting full, or if there are no more mappings of this page,
+ * then try_to_free_swap is called to free its swap space.
+ */
+int try_to_free_swap(struct page *page)
+
+// TODO 很奇怪，swap 机制为什么和 vma 联系到一起了，这不是曾经的反向映射
+/*
+ * We completely avoid races by reading each swap page in advance,
+ * and then search for the process using it.  All the necessary
+ * page table adjustments can then be made atomically.
+ *
+ * if the boolean frontswap is true, only unuse pages_to_unuse pages;
+ * pages_to_unuse==0 means all pages; ignored if frontswap is false
+ */
+int try_to_unuse(unsigned int type, bool frontswap,
+     unsigned long pages_to_unuse)
+
+static int claim_swapfile(struct swap_info_struct *p, struct inode *inode)
+```
+从 shmem_swapin_page 的内容看，
+首先调用 delete_from_swap_cache，然后调用 swap_free，前者应该是处理 swap cache 的 radix tree 维护，后者处理 swap slot 的问题。
+
+
+关键函数分析，这两个函数到时候看书(ULK) 进行补充一下
+1. swapon : 似乎不难，处理各种机制的建立过程
+2. swapoff : 如果彻底理解 swapon，那么不难，关键 : try_to_unuse 调用两个函数
+    1. shmem_unuse
+    2. unuse_mm : 逐个清理

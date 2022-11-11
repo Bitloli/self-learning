@@ -52,3 +52,6 @@ Date:   Wed Sep 9 15:35:45 2015 -0700
 - 因为默认状态下，将 page 设置为 idle，如果访问了，那么调用 folio_clear_idle 将这个 bit 清理掉。
 - 采用 page young 的原因: 因为 idle page tracking 机制让会清理掉 reference bit，影响 page reclaim 的正常工作
 所以，将原来的 page reference 放到 page young 中来保存。
+
+## 终于可以理解
+- [ ] page_is_young()

@@ -84,3 +84,6 @@ This field occupies the same storage as the private field, the spinlock used whe
 - [Minimizing the use of tail pages](https://lwn.net/Articles/787388/)
 
 - [] read the article
+
+## 更多资料
+- https://lwn.net/Articles/565097/

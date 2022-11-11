@@ -196,3 +196,87 @@ static const struct address_space_operations shmem_aops = {
 #9  do_syscall_64 (regs=0xffffc90001c3bf58, nr=<optimized out>) at arch/x86/entry/common.c:80
 #10 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
 ```
+
+## shmem
+- [ ] [^28] : read it carefully and throughly
+
+- [x] why linux need shmem ?
+
+[^28]
+When pages within a VMA are backed by a file on disk, the interface used is straight-forward. To read a page during a page fault, the required nopage() function is found `vm_area_struct->vm_ops`. To write a page to backing storage, the appropriate `writepage()` function is found in the `address_space_operations` via `inode->i_mapping→a_ops` or alternatively via `page->mapping->a_ops`. When normal file operations are taking place such as mmap(), read() and write(), the struct file_operations with the appropriate functions is found via `inode->i_fop` and so on. These relationships were illustrated in Figure 4.2.
+
+This is a very clean interface that is conceptually easy to understand but it does not help anonymous pages as there is no file backing. To keep this nice interface, Linux creates an artifical file-backing for anonymous pages using a RAM-based filesystem where each VMA is backed by a “file” in this filesystem.
+
+huxueshi : I think with this correct and clean perspective, we can shmem easily and use it correct misunderstandings of other parts.
+
+总结:
+1. 为了 tmpfs 建立的配套机制
+2. fallocate : hole
+3. 和 swap 的紧密联系
+4. transparent huge page
+
+
+问题 1: shmem 和 swap 的联系有哪些 ?
+1. shmem_swapin_page : 如果 lookup_swap_cache 找不到，那么 shmem_swapin，找到 shmem_add_to_page_cache + delete_from_swap_cache
+
+问题 2: shmem 上是如何构建 /tmp 的 ?
+问题 3: shmem 定义了大量齐全的文件系统的接口，为什么是这样的 ?
+
+问题 4: 为什么 minfs 和 myfs 都是没有注册 vm_operations_struct 的，但是依旧可以正常的工作 ? 是不是因为 vm_operations_struct 仅仅限于 mmap 以及其延伸的 page fault ?
+> 并不是，使用的是 generic_file_mmap，所以整个机制都是采用
+
+问题 6: sysv 和 posix 如何利用 shmem 实现的 ?
+问题 7: 是不是 ramfs 和 shmem 的唯一区别在于，ramfs 不会将其数据备份到 swap 中间 ?  比较一下 ramfs 和 getpage 和 shmem_getpage !
+
+
+问题分析 1: pgfault 的流程，由于 page fault 不需要访问磁盘，所以其过程只是需要分配 page 物理页面即可。
+1. shmem_falloc // TODO 有点难以理解
+2. shmem_getpage_gfp - find page in cache, or get from swap, or allocate.
+
+问题分析 2: 为什么 shmem 依旧需要 page cache ？ 因为从一般来说，page cache 用于加速访问磁盘，可以 shmem 是基于内存的呀 ?
+需要 page cache 提供的基础设施，比如两个进程的 vma 映射了同一个 /tmp/a.md 的内容，那么第一个 page fault 创建了文件，第二个就可以从 page cache 提供的 radix tree 中间找到需要的 page
+如果不需要加速访问，那么提供一个一个蛇皮的 file_operations 和 address_space_operations，不进行 page writeback 操作即可。
+shmem_writepage : get_swap_page 获取 swp_entry_t，将 page 和 swp_entry_t 添加到 add_to_swap_cache，并且调用 swap_writepage 将其写入到 swap 中间。(这么说，swap 可以实现 /tmp 的内容永久存在)
+```c
+static const struct address_space_operations shmem_aops = {
+    // TODO 为什么没有 readpage ?
+  .writepage  = shmem_writepage,
+  .set_page_dirty = __set_page_dirty_no_writeback,
+#ifdef CONFIG_TMPFS
+  // 为了实现 generic_file_write_iter，在进行拷贝前后使用，用于从 page cache 中间找到正确的 page
+  .write_begin  = shmem_write_begin, // shmem_getpage
+  .write_end  = shmem_write_end, // SetPageUptodate set_page_dirty
+#endif
+#ifdef CONFIG_MIGRATION
+  .migratepage  = migrate_page,
+#endif
+  .error_remove_page = generic_error_remove_page,
+};
+
+// shmem 的基础配置可以实现什么功能 ?
+// posix 以及 sysv  的 shmem，但是它们是靠什么函数进行 IO 的 ?
+// 难道 /tmp 和 ramfs 的功能不是重复的吗 ? line 4085 的 CONFIG_SHMEM 似乎说明了很多东西
+static const struct file_operations shmem_file_operations = {
+  .mmap   = shmem_mmap,
+  .get_unmapped_area = shmem_get_unmapped_area,
+#ifdef CONFIG_TMPFS
+  .llseek   = shmem_file_llseek,
+  .read_iter  = shmem_file_read_iter,// shmem_getpage + copy_page_to_iter
+  .write_iter = generic_file_write_iter, // 就是通用的写操作
+  .fsync    = noop_fsync,
+  .splice_read  = generic_file_splice_read,
+  .splice_write = iter_file_splice_write,
+  .fallocate  = shmem_fallocate, // TODO 又是这个
+#endif
+};
+```
+总结，shmem_getpage 是核心，read 使用从 page cache 或者 swap cache ，甚至 swap 中间找。
+
+问题分析 3: tmpfs 的文件操作，看上去和 ext2 没有什么区别啊!
+
+- [ ] 问题分析 4: shmem 如何使用 transparent hugepage
+    - [ ] https://lwn.net/Articles/679804/
+
+Huge page is represented by HPAGE_PMD_NR entries in radix-tree.
+
+[^28]: https://www.kernel.org/doc/gorman/html/understand/understand015.html

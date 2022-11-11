@@ -229,3 +229,211 @@ static int fallbacks[MIGRATE_TYPES][3] = {
 ```
 
 可以观测的内容:
+
+## compaction
+https://linuxplumbersconf.org/event/2/contributions/65/attachments/15/171/slides-expanded.pdf
+
+- [ ] https://www.cnblogs.com/Linux-tech/p/13326565.html
+
+
+1. 请问 isolation 和 compaction 有关联吗 ? 为什么会存在 isolation.c 这个文件啊
+2. 无论是 page reclaim 还是 compaction 都是内存分配不足，需要采取的措施。非常怀疑，page compaction 和 page reclaim 的代码是对称的 ?
+    1. 工作的范围 : zone
+    2. 触发机制 : daemon + direct 触发
+
+守护进程需要处理的问题在于 ：
+1. 什么时候启动
+2. 做到什么程度收手
+
+共同的问题:
+1. 选择那些 page 进行处理
+
+第一种情况 : 直接触发
+```c
+/**
+ * try_to_compact_pages - Direct compact to satisfy a high-order allocation
+ * @gfp_mask: The GFP mask of the current allocation
+ * @order: The order of the current allocation
+ * @alloc_flags: The allocation flags of the current allocation
+ * @ac: The context of current allocation
+ * @prio: Determines how hard direct compaction should try to succeed
+ *
+ * This is the main entry point for direct page compaction.
+ */
+enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
+    unsigned int alloc_flags, const struct alloc_context *ac,
+    enum compact_priority prio, struct page **capture)
+```
+1. try_to_compact_pages : 根据 alloc_context 提供的 zonelist 循环调用 compact_zone_order
+2. compact_zone_order : 组装 compact_control，然后调用 compact_zone
+
+
+第二种情况 : 守护进程
+
+```c
+/*
+ * The background compaction daemon, started as a kernel thread
+ * from the init process.
+ */
+static int kcompactd(void *p)
+```
+
+共同到达的情况: compact_zone_order 和 kcompactd_do_work 分别是 direct 和 kthread 两种情况，组装 compact_control 和 capture_control
+然后调用 compact_zone.
+
+
+compact_zone 的核心是调用 :
+```c
+  while ((ret = compact_finished(cc)) == COMPACT_CONTINUE) {
+    // 通过 isolate_migratepages 确定需要搬动的 pages
+    switch (isolate_migratepages(cc)) {
+
+    }
+
+    // 将收集到的 cc->migratepages 进行搬迁 cc->freepages 中间去
+    err = migrate_pages(&cc->migratepages, compaction_alloc,
+        compaction_free, (unsigned long)cc, cc->mode,
+        MR_COMPACTION);
+  }
+```
+
+isolate_migratepages 和 isolate_freepages 存在什么区别 ? 很类似，但是 isolate_freepages 似乎是在 isolate_migratepages 的基础上进行的。
+// TODO 无论如何，可以非常清晰的知道，isolate_migratepages 就是 compaction 的核心
+// 可以解释 : 到底如何扫描 memblock ，从 memblock 中间找到 free page
+
+
+- [x] what's criteria to isolate page ?
+
+alloc_contig_range => `__alloc_contig_migrate_range` => isolate_migratepages_range => isolate_migratepages_block
+
+in function `isolate_migratepages_block()`, the answer hides.
+
+
+[LoyenWang](https://www.cnblogs.com/LoyenWang/p/11746357.html)
+
+memory compaction 就是通过将正在使用的可移动页面迁移到另一个地方以获得连续的空闲页面的方法。针对内存碎片，内核中定义了 migrate_type 用于描述迁移类型：
+- **`MIGRATE_UNMOVABLE`：不可移动，对应于内核分配的页面；**
+- **`MIGRATE_MOVABLE`：可移动，对应于从用户空间分配的内存或文件；**
+- **`MIGRATE_RECLAIMABLE`：不可移动，可以进行回收处理；**
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191027000343268-2022062663.png)
+
+
+```c
+/*
+ * Determines how hard direct compaction should try to succeed.
+ * Lower value means higher priority, analogically to reclaim priority.
+ */
+enum compact_priority {
+  COMPACT_PRIO_SYNC_FULL,
+  MIN_COMPACT_PRIORITY = COMPACT_PRIO_SYNC_FULL,
+  COMPACT_PRIO_SYNC_LIGHT,
+  MIN_COMPACT_COSTLY_PRIORITY = COMPACT_PRIO_SYNC_LIGHT,
+  DEF_COMPACT_PRIORITY = COMPACT_PRIO_SYNC_LIGHT,
+  COMPACT_PRIO_ASYNC,
+  INIT_COMPACT_PRIORITY = COMPACT_PRIO_ASYNC
+};
+```
+本结构用于描述 memory compact 的几种不同方式：
+- COMPACT_PRIO_SYNC_FULL/MIN_COMPACT_PRIORITY：最高优先级，压缩和迁移以同步的方式完成；
+- COMPACT_PRIO_SYNC_LIGHT/MIN_COMPACT_COSTLY_PRIORITY/DEF_COMPACT_PRIORITY：中优先级，压缩以同步方式处理，迁移以异步方式处理；
+- COMPACT_PRIO_ASYNC/INIT_COMPACT_PRIORITY：最低优先级，压缩和迁移以异步方式处理。
+
+
+```c
+/* Return values for compact_zone() and try_to_compact_pages() */
+/* When adding new states, please adjust include/trace/events/compaction.h */
+enum compact_result {
+  /* For more detailed tracepoint output - internal to compaction */
+  COMPACT_NOT_SUITABLE_ZONE,
+  /*
+   * compaction didn't start as it was not possible or direct reclaim
+   * was more suitable
+   */
+  COMPACT_SKIPPED,
+  /* compaction didn't start as it was deferred due to past failures */
+  COMPACT_DEFERRED,
+
+  /* compaction not active last round */
+  COMPACT_INACTIVE = COMPACT_DEFERRED,
+
+  /* For more detailed tracepoint output - internal to compaction */
+  COMPACT_NO_SUITABLE_PAGE,
+  /* compaction should continue to another pageblock */
+  COMPACT_CONTINUE,
+
+  /*
+   * The full zone was compacted scanned but wasn't successfull to compact
+   * suitable pages.
+   */
+  COMPACT_COMPLETE,
+  /*
+   * direct compaction has scanned part of the zone but wasn't successfull
+   * to compact suitable pages.
+   */
+  COMPACT_PARTIAL_SKIPPED,
+
+  /* compaction terminated prematurely due to lock contentions */
+  COMPACT_CONTENDED,
+
+  /*
+   * direct compaction terminated after concluding that the allocation
+   * should now succeed
+   */
+  COMPACT_SUCCESS,
+};
+```
+
+- [ ] compact_zone and try_to_compact_pages
+  - [ ] compact_zone_order => compact_zone
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191027000443984-614132434.png)
+
+```c
+/*
+ * MIGRATE_ASYNC means never block
+ * MIGRATE_SYNC_LIGHT in the current implementation means to allow blocking
+ *  on most operations but not ->writepage as the potential stall time
+ *  is too significant
+ * MIGRATE_SYNC will block when migrating pages
+ * MIGRATE_SYNC_NO_COPY will block when migrating pages but will not copy pages
+ *  with the CPU. Instead, page copy happens outside the migratepage()
+ *  callback and is likely using a DMA engine. See migrate_vma() and HMM
+ *  (mm/hmm.c) for users of this mode.
+ */
+enum migrate_mode {
+  MIGRATE_ASYNC,
+  MIGRATE_SYNC_LIGHT,
+  MIGRATE_SYNC,
+  MIGRATE_SYNC_NO_COPY,
+};
+```
+
+
+- `compaction_suitable()`: one of caller is `compact_zone`, test whether a zone is suitable for compaction, if not, just return.
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191027000514160-767100004.png)
+1. 除去申请的页面，空闲页面数将低于水印值，或者虽然大于等于水印值，但是没有一个足够大的空闲页块；
+2. 空闲页面减去两倍的申请页面（两倍表明有足够多的的空闲页面作为迁移目标），高于水印值；
+3. 申请的 order 大于 PAGE_ALLOC_COSTLY_ORDER 时，计算碎片指数 fragindex，根据值来判断；
+
+- [ ] I skip this part, may read it carefully
+
+#### compact deferred
+
+```c
+struct zone {
+...
+  /*
+   * On compaction failure, 1<<compact_defer_shift compactions
+   * are skipped before trying again. The number attempted since
+   * last failure is tracked with compact_considered.
+   */
+  unsigned int    compact_considered; //记录推迟次数
+  unsigned int    compact_defer_shift; //（1 << compact_defer_shift）=推迟次数，最大为6
+  int                compact_order_failed; //记录碎片整理失败时的申请order值
+...
+};
+```
+
+![loading](https://img2018.cnblogs.com/blog/1771657/201910/1771657-20191027000559199-1665601872.png)

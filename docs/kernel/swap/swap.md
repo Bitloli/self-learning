@@ -691,3 +691,173 @@ static void __page_cache_release(struct page *page)
     __ClearPageWaiters(page); // todo 什么意思 ?
 }
 ```
+
+## swap
+
+// 从 swapOn 的部分开始分析就可以了，所以为什么 shmem 中间存在一堆内容
+// 经典函数收集，尤其是 page swap 中间的
+// 4. swap_slots 的工作原理是什么 ?
+
+
+swap 应该算是是历史遗留产物，之所以阅读之，是因为不看的话，其他的部分看不懂。
+1. shmem 以及基于 shmem 实现的 /tmp 中间的内容可以被 swap 到磁盘
+2. 匿名映射的内存，比如用户使用 syscall brk 分配的，可以被 swap 到磁盘
+3. 当进行 swap 机制开始回收的时候，一个物理页面需要被清楚掉，但是映射到该物理页面的 pte_t 的需要被重写为 swp_entry_t 的内容，由于可能共享，所以需要 rmap 实现找到这些 pte，
+4. page reclaim 机制可能需要清理 swap cache 的内容
+5. hugetlb 和 transparent hugetlb 的页面能否换出，如何换出 ?
+
+swap 机制主要组成部分是什么 :
+    0. swap cache 来实现其中
+    1. page 和 设备上的 io : page-io.c
+    2. swp_entry_t 空间的分配 : swapfile.c
+    3. policy :
+        1. 确定那些页面需要被放到 swap 中间
+        2. swap cache 的页面如何处理
+    4. 特殊的 swap
+
+在 mm/ 文件夹下涉及到 swap 的文件，和对于 swap 的作用:
+| Name        | description                 |
+|-------------|-----------------------------|
+| swapfile    |                             |
+| swap_state  | 维护 swap cache，swap 的 readahead                           |
+| swap        | pagevec 和 lrulist 的操作，其实和 swap 的关系不大 |
+| swap_slot   |                             |
+| page_io     | 进行通往底层的 io                             |
+| mlock       |                             |
+| workingset  |                             |
+| frontswap   |                             |
+| zswap       |                             |
+| swap_cgroup |                             |
+
+struct page 的支持
+1. `page->private` 用于存储 swp_entry_t.val，表示其中的
+2. TODO 还有其他的内容吗
+
+#### swap cache
+
+swap_state.c 主要内容:
+| Function name               | desc                                                                                 |
+|-----------------------------|--------------------------------------------------------------------------------------|
+| `read_swap_cache_async`     |                                                                                      |
+| `swap_cluster_readahead`    | @todo 为什么 readahead 不是利用 page cache 中间的公共框架，最终调用在 do_swap_page 中间 |
+| `swap_vma_readahead`        | 另一个 readahead 策略，swapin_readahead 中间被决定                                    |
+| `total_swapcache_pages`     | 返回所有的 swap 持有的 page frame                                                    |
+| `show_swap_cache_info`      | 打印 swap_cache_info 以及 swapfile 中间的                                            |
+| `add_to_swap_cache`       | 将 page 插入到 radix_tree 中间                                                        |
+| `add_to_swap`               | 利用 `swap_slots.c` 获取 get_swap_page 获取空闲 swp_entry                             |
+| `__delete_from_swap_cache`  | 对称操作                                                                             |
+| `delete_from_swap_cache`    |                                                                                      |
+| `free_swap_cache`           | 调用 swapfile.c try_to_free_swap @todo swapfile.c 的内容比想象的多得多啊 !            |
+| `free_page_and_swap_cache`  |                                                                                      |
+| `free_pages_and_swap_cache` |                                                                                      |
+| `lookup_swap_cache`         | find_get_page 如果不考虑处理 readahead 机制的话                                      |
+| `__read_swap_cache_async`   |                                                                                      |
+| `swapin_nr_pages`           | readahead 函数的读取策略 @todo                                                       |
+| `init_swap_address_space`   | swapon syscall 调用，初始化 swap                                                      |
+1. /sys/kernel/mm/swap/vma_ra_enabled 来控制是否 readahead
+2. 建立 radix_tree 的过程，多个文件，多个分区，各自大小而且不同 ? init_swap_address_space 中说明的，对于一个文件，每 64M 创建一个 radix_tree，至于其来自于那个文件还是分区，之后寻址的时候不重要了。init_swap_address_space 被 swapon 唯一调用
+```c
+struct address_space *swapper_spaces[MAX_SWAPFILES] __read_mostly;
+static unsigned int nr_swapper_spaces[MAX_SWAPFILES] __read_mostly;
+```
+3. 谁会调用 add_to_swap 这一个东西 ?
+    1. 认为 : 当 anon page 发生 page fault 在 swap cache 中间没有找到的时候，创建了一个 page，于是乎将该 page 通过 add_to_swap 加入到 swap cache
+    2. 实际上 : 只有 shrink_page_list 调用，这个想法 `__read_swap_cache_async` 实现的非常不错。
+    3. 猜测 : 当一个 page 需要被写会的时候，首先将其添加到 swap cache 中间
+```c
+/**
+ * add_to_swap - allocate swap space for a page
+ * @page: page we want to move to swap
+ *
+ * Allocate swap space for the page and add the page to the
+ * swap cache.  Caller needs to hold the page lock.
+ */
+int add_to_swap(struct page *page)
+    get_swap_page     // 分配 swp_entry_t // todo 实现比想象的要复杂的多，首先进入到 swap_slot.c 但是 swap_slot.c 中间似乎根本不处理什么具体分配，而是靠 swapfile.c 的 get_swap_pages // todo 获取到 entry.val != 0 说明 page 已经被加入到 swap 中间 ?
+    add_to_swap_cache // 将 page 和 swp_entry_t 链接起来，形成
+    set_page_dirty // todo 和 page-writeback.c 有关，line 240 的注释看不懂
+    put_swap_page // Called after dropping swapcache to decrease refcnt to swap entries ，和 get_swap_page 对称的函数，核心是调用 free_swap_slot
+
+// 从 get_swap_page 和 put_swap_page 中间，感觉 swp_entry_t 存在引用计数 ? 应该不可能呀 !
+```
+4. 利用 swap_cache_info 来给管理员提供信息
+```c
+static struct {
+  unsigned long add_total;
+  unsigned long del_total;
+  unsigned long find_success;
+  unsigned long find_total;
+} swap_cache_info;
+```
+
+
+问题:
+1. 两种的 readahead 机制 swap_cluster_readahead 和 swap_vma_readahead 的区别 ?
+```c
+/**
+ * swapin_readahead - swap in pages in hope we need them soon
+ * @entry: swap entry of this memory
+ * @gfp_mask: memory allocation flags
+ * @vmf: fault information
+ *
+ * Returns the struct page for entry and addr, after queueing swapin.
+ *
+ * It's a main entry function for swap readahead. By the configuration,
+ * it will read ahead blocks by cluster-based(ie, physical disk based)
+ * or vma-based(ie, virtual address based on faulty address) readahead.
+ */
+struct page *swapin_readahead(swp_entry_t entry, gfp_t gfp_mask,
+        struct vm_fault *vmf)
+{
+  return swap_use_vma_readahead() ?
+      swap_vma_readahead(entry, gfp_mask, vmf) :
+      swap_cluster_readahead(entry, gfp_mask, vmf);
+}
+```
+2. 什么时候使用 readahead，什么时候使用 page-io.c:swap_readpage ?<br/> memory.c::do_swap_page 中间说明
+3. add_to_swap 和 add_to_swap_cache 的关系是什么 ?<br/> add_to_swap 首先调用 swap_slot.c::get_swap_page 分配 swap slot，然后调用 add_to_swap_cache 将 page 和 swap slot 关联起来。
+4. swap cache 的 page 和 page cache 的 page 在 page reclaim 机制中间有没有被区分对待 ? TODO
+5. swap cache 不复用 page cache ? <br/>两者只是使用的机制有点类似，通过索引查询到 page frame，但是 swap cache 的 index 是 swp_entry_t，而 page cache 的 index 是文件的偏移量。对于每一个文件，都是存在一个 radix_tree 来提供索引功能，对于 swap，
+
+page-io.c 主要内容:
+| Function                    | description                                                                                                                       |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `swap_writepage`            | 封装 `__swap_writepage`
+| `__swap_writepage`          |
+| `swap_readpage`             | 如果 swap 建立在文件系统上的，那么调用该文件系统的 `aops->readpage`，如果 swap 直接建立在 blockdev 上的，使用 bdev_read_page 进行 |
+| `swap_set_page_dirty`       |
+| `get_swap_bio`              |
+| `end_swap_bio_write`        |
+| `end_swap_bio_read`         |
+| `swap_slot_free_notify`     |
+| `generic_swapfile_activate` |
+| `swap_page_sector`          |
+| `count_swpout_vm_event`     |
+问题:
+1. 请问 page-io.c 实现的内容，在 ext2 是对应的哪里实现的 ?<br/>page-io.c 中间实现的就是 readpage 和 writepage 的功能，其对应的 ext2 部分无非是 ext2 的 readpage 和 writepage。page-io.c 的主要作用正确的将 IO 工作委托给下层的 fs 或者 blkdev.
+2. 为什么 swap_readpage 和 swap_writepage 使用不是对称的 ?
+    1. swap_aops 到底如何最后调用其中的 writepage 的 ? TODO 既然利用了 address_space ，那么 swap cache 放到 swap cache 中间统一管理。
+    2. 为什么 ext2 不是直接使用 readpage ，这这里是直接使用的 ?<br/> 因为 swap 其实可以当做一个文件系统，所以没有必要经过一个通用的 address_space_operations::readpage，对于 swap 的 IO 是没有 file operation 的，而是直接进行在 page 的层次的，所以 swap_state 提供的操作是在 generic_file_buffered_read 后面部分的工作。
+> TODO 等等，什么 file operation 的 direct IO 是什么情况 ?
+
+
+swap_slot.c 主要内容:
+```c
+static DEFINE_PER_CPU(struct swap_slots_cache, swp_slots);
+struct swap_slots_cache {
+  bool    lock_initialized;
+  struct mutex  alloc_lock; /* protects slots, nr, cur */
+  swp_entry_t *slots;
+  int   nr;
+  int   cur;
+  spinlock_t  free_lock;  /* protects slots_ret, n_ret */
+  swp_entry_t *slots_ret;
+  int   n_ret;
+};
+
+// 两个对外提供的接口
+int free_swap_slot(swp_entry_t entry);
+swp_entry_t get_swap_page(struct page *page)
+```
+当 get_swap_page 将 cache 耗尽之后，会调用 swapfile::get_swap_pages 来维持生活
+也就是 swap_slots.c 其实是 slots cache 机制。
