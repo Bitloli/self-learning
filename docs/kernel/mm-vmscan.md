@@ -71,13 +71,16 @@ place pages directly on the zone’s active list:
 2. The page fault handlers `__do_fault`, `do_anonymous_page`, `do_wp_page`, and `do_no_page`; these
 are implemented in mm/memory.c.
 
-## 转换的方法 : mark_page_accessed 和 page_check_references
+## 转换的方法 : mark_page_accessed 和 folio_check_references
 两个 bit : PG_active 和 PG_referenced
 
-- mark_page_accessed
-  - [ ] 为什么 kvm 要调用这个?
+- mark_page_accessed 是 folio_mark_accessed 的封装
+  - [ ] 为什么 kvm 要调用这个，
 - folio_check_references
   - 在扫描 inactive list 的时候调用，返回决定该 page 的四个状态
+
+总体来说，mark_page_accessed / folio_mark_accessed 是内核的执行过程中，将页进行标记，说明其一定是活跃的，
+但是一个页被读写之后，分配之后，可能被用户程序长时间的访问，这个就要靠 folio_check_references。
 
 这个逻辑好奇怪啊，为什么在 exit 的时候还需要来 mark_page_accessed 一下
 ```txt

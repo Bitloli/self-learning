@@ -6,7 +6,15 @@
 fadvise 很简单，阅读
 2. mm/fadvise.c 的源代码只有 200 行，具体可以看看 Man fadvise(2)
 
+## 总体分析
+- MADV_COLD : deactivate_page : 将 page active 的 lru 中放到 inactive 中
+- MADV_PAGEOUT : reclaim_pages -> shrink_list -> reclaim_page_list -> shrink_page_list 将 page 写回。
+- MADV_REMOVE
+- MADV_DONTNEED
+- MADV_WILLNEED :
+
 ## MAP_COLD
+其中的 page walk 框架可以分析一下。
 
 - 核心: madvise_cold_or_pageout_pte_range
 
@@ -50,6 +58,14 @@ static inline bool can_madv_lru_vma(struct vm_area_struct *vma)
 - [ ] VM_LOCKED ?
 - [ ] VM_PFNMAP ?
 
+```txt
+man madvise(2)
+              MADV_DONTNEED cannot be applied to locked pages, Huge TLB pages, or VM_PFNMAP pages.  (Pages marked with the kernel-in‐
+              ternal VM_PFNMAP flag are special memory areas that are not managed by the virtual memory subsystem.   Such  pages  are
+              typically created by device drivers that map the pages into user space.)
+
+```
+
 - [ ] 为什么是在 pmd 上注册的哇?
 ```c
 static const struct mm_walk_ops cold_walk_ops = {
@@ -58,9 +74,6 @@ static const struct mm_walk_ops cold_walk_ops = {
 ```
 
 - MADV_COLD 和 MADV_PAGEOUT 共用这一个 handler :  madvise_cold_or_pageout_pte_range
-
-- MADV_COLD :  deactivate_page : 将 page active 的 lru 中放到 inactive 中
-- MADV_PAGEOUT : reclaim_pages -> shrink_list -> reclaim_page_list -> shrink_page_list 将 page 写回。
 
 
 ```diff

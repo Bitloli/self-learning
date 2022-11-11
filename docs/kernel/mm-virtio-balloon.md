@@ -1,9 +1,11 @@
 # balloon
 
+调查下，这些函数的 backtrace:
+- [ ] balloon_ack
+
 ## 使用方法
 - info balloon
 - balloon N
-
 
 - 基本的流程 : guest -> virtio device
   - 问题在于，guest 以为自己的内存是足够的，是不会换出的
@@ -53,10 +55,13 @@ Num     Type           Disp Enb Address            What
 ## [ ] qemu 的 stat 功能分析一下
 - https://qemu.readthedocs.io/en/latest/interop/virtio-balloon-stats.html
 
+## 为什么将 update_balloon_size_func 和 update_balloon_stats_func 设置为 workqueue 的
+
 ## 具体代码上的分析
 - free_page_hint_status
 
-## 如何使用
+## 内核流程
+
 想不到吧，balloon N 居然会导致这个 backtrace
 ```txt
 #0  virtio_balloon_queue_free_page_work (vb=<optimized out>) at drivers/virtio/virtio_balloon.c:425
@@ -189,15 +194,14 @@ struct VirtIOBalloon {
 };
 ```
 
-## qemu 的一些 backtrace
-- [ ] virtio_balloon_handle_output
-- [ ] 几个 qom 初始化的过程
+# qemu 的一些 backtrace
 
 ### virtio_balloon_get_config
+- virtio_balloon_get_config
 
-virtio_balloon_get_config 最开始的时候也是会调用一次:
+- virtio_balloon_get_config 最开始的时候也是会调用一次，处于何种考虑
 
-设置的时候:
+balloon N 的时候，可以会触发这个:
 ```txt
 #0  virtio_balloon_get_config (vdev=0x5555578d5c00, config_data=0x5555578de1a0 "") at ../hw/virtio/virtio-balloon.c:711
 #1  0x0000555555b204f5 in virtio_config_modern_readl () at ../hw/virtio/virtio.c:2163
@@ -216,6 +220,8 @@ virtio_balloon_get_config 最开始的时候也是会调用一次:
 #14 0x00007ffff76d2ff2 in start_thread () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
 #15 0x00007ffff7755bfc in clone3 () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
 ```
+- [ ] human control interface 为什么会触发这个操作，我不理解?
+- [ ] 应该还是存在其他的什么操作的吧？
 
 ```txt
 #0  virtio_balloon_handle_output (vdev=0x5555578d5c00, vq=0x7ffff428d010) at ../hw/virtio/virtio-balloon.c:391
@@ -338,10 +344,110 @@ index 8543c9a97307..7efc32945810 100644
  }
 ```
 
-## Out of puff! Can't get 1 pages
+## [ ] Out of puff! Can't get 1 pages
 直接访问
-
 
 似乎有时候会触发连续的这个报错
 
-## 似乎有时候，设置 balloon 不会立刻得到响应
+## [ ] 似乎有时候，设置 balloon 不会立刻得到响应
+
+## 基本理解
+QEMU 中:
+- virtio_balloon_device_realize 中创建两个 virt queue 的
+
+从 QEMU 这端会接受 page ，最后分别调用到:
+```c
+    if (vq == s->ivq) {
+        balloon_inflate_page(s, section.mr,
+                             section.offset_within_region, &pbp);
+    } else if (vq == s->dvq) {
+        balloon_deflate_page(s, section.mr, section.offset_within_region);
+```
+
+- QEMU_MADV_REMOVE
+- QEMU_MADV_DONTNEED
+```c
+madvise(host_startaddr, length, QEMU_MADV_REMOVE); // share anonymous 采用此方法
+madvise(host_startaddr, length, QEMU_MADV_DONTNEED);
+```
+
+```c
+qemu_madvise(host_addr, rb_page_size, QEMU_MADV_WILLNEED);
+```
+
+- [ ] 关于 share anonymous 需要使用 QEMU_MADV_REMOVE 而不是 QEMU_MADV_DONTNEED
+  - 大致原因，应该是使用 QEMU_MADV_DONTNEED, 如果是 shared anonymous 的，其实只能将 page table 删除，而不可以页面删除。
+  - QEMU_MADV_REMOVE 和 QEMU_MADV_DONTNEED 的实现原理，暂时没有时间分析。
+    - QEMU_MADV_REMOVE 在调用的时候，明显
+
+- 我看了下内核的实现，感觉明显不科学啊?
+```diff
+History:        #0
+Commit:         cdfa56c551bb48f286cfe1f2daa1083d333ee45d
+Author:         David Hildenbrand <david@redhat.com>
+Committer:      Paolo Bonzini <pbonzini@redhat.com>
+Author Date:    Tue 06 Apr 2021 04:01:25 PM CST
+Committer Date: Wed 16 Jun 2021 02:27:37 AM CST
+
+softmmu/physmem: Fix ram_block_discard_range() to handle shared anonymous memory
+
+We can create shared anonymous memory via
+    "-object memory-backend-ram,share=on,..."
+which is, for example, required by PVRDMA for mremap() to work.
+
+Shared anonymous memory is weird, though. Instead of MADV_DONTNEED, we
+have to use MADV_REMOVE: MADV_DONTNEED will only remove / zap all
+relevant page table entries of the current process, the backend storage
+will not get removed, resulting in no reduced memory consumption and
+a repopulation of previous content on next access.
+
+Shared anonymous memory is internally really just shmem, but without a
+fd exposed. As we cannot use fallocate() without the fd to discard the
+backing storage, MADV_REMOVE gets the same job done without a fd as
+documented in "man 2 madvise". Removing backing storage implicitly
+invalidates all page table entries with relevant mappings - an additional
+MADV_DONTNEED is not required.
+
+Fixes: 06329ccecfa0 ("mem: add share parameter to memory-backend-ram")
+Reviewed-by: Peter Xu <peterx@redhat.com>
+Reviewed-by: Dr. David Alan Gilbert <dgilbert@redhat.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+Message-Id: <20210406080126.24010-3-david@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+
+diff --git a/softmmu/physmem.c b/softmmu/physmem.c
+index b78b30e7ba..c0a3c47167 100644
+--- a/softmmu/physmem.c
++++ b/softmmu/physmem.c
+@@ -3527,6 +3527,7 @@ int ram_block_discard_range(RAMBlock *rb, uint64_t start, size_t length)
+         /* The logic here is messy;
+          *    madvise DONTNEED fails for hugepages
+          *    fallocate works on hugepages and shmem
++         *    shared anonymous memory requires madvise REMOVE
+          */
+         need_madvise = (rb->page_size == qemu_host_page_size);
+         need_fallocate = rb->fd != -1;
+@@ -3560,7 +3561,11 @@ int ram_block_discard_range(RAMBlock *rb, uint64_t start, size_t length)
+              * fallocate'd away).
+              */
+ #if defined(CONFIG_MADVISE)
+-            ret =  madvise(host_startaddr, length, MADV_DONTNEED);
++            if (qemu_ram_is_shared(rb) && rb->fd < 0) {
++                ret = madvise(host_startaddr, length, QEMU_MADV_REMOVE);
++            } else {
++                ret = madvise(host_startaddr, length, QEMU_MADV_DONTNEED);
++            }
+             if (ret) {
+                 ret = -errno;
+                 error_report("ram_block_discard_range: Failed to discard range "
+```
+
+## 统计信息是如何导出的
+
+## 如何理解 qapi_event_send_balloon_change
+```c
+    if (dev->actual != oldactual) {
+        qapi_event_send_balloon_change(vm_ram_size -
+                        ((ram_addr_t) dev->actual << VIRTIO_BALLOON_PFN_SHIFT));
+    }
+```

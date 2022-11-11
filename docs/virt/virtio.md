@@ -726,3 +726,11 @@ You can find the source to the various front-end drivers within the ./drivers su
 
 [^4]: [Standardizing virtio](https://lwn.net/Articles/580186/)
 [^5]: https://developer.ibm.com/articles/l-virtio/
+
+## 如何理解 virtio config
+- 之前一直以为是类似 PCI 配置空间，但是似乎不是
+  - virtio_balloon_get_config 是做什么的
+
+## 我靠，无法理解 virtio_find_vqs
+
+2022-11-10 : virtio-balloon 的 init-vqs

@@ -1,4 +1,4 @@
-## wait_queue
+# wait_queue
 wait_queue 的机制 : 将自己加入到队列，然后睡眠，之后其他的 thread 利用 wake up 将队列出队, 并且执行事先注册好的函数，这个函数一般就是 try_to_wake_up, 从而达到 wait 事件的过程自己在睡眠
 
 - [x] wait_event : sleep until a condition gets true
