@@ -7,7 +7,7 @@
 > @todo 理解 writeback 和 cgroup 的关系
 
 
-## 此处不处理具体的写回操作，谢谢!
+## 此处不处理具体的写回操作，谢谢
 
 
 ## domain node global
@@ -33,7 +33,7 @@
  */
 void balance_dirty_pages_ratelimited(struct address_space *mapping)
 // 1. balance_dirty_pages : 300 行的大函数
-// 2. 
+// 2.
 ```
 
 ## ratelimit_pages
@@ -53,7 +53,7 @@ void balance_dirty_pages_ratelimited(struct address_space *mapping)
 
 void writeback_set_ratelimit(void)
 {
-	struct wb_domain *dom = &global_wb_domain; // todo 
+	struct wb_domain *dom = &global_wb_domain; // todo
 	unsigned long background_thresh;
 	unsigned long dirty_thresh;
 
@@ -111,7 +111,7 @@ void tag_pages_for_writeback(struct address_space *mapping,
  * just fall through and assume that it wants buffer_heads.
  */
 int set_page_dirty(struct page *page)
-// 似乎这是全部的内容了 
+// 似乎这是全部的内容了
 ```
 
 
@@ -152,6 +152,7 @@ int write_cache_pages(struct address_space *mapping,
 
 
 > 分析各种注册到 address_space 上的 writepage !
+
 ```c
 // ext2  : 依赖于公共框架
 static int ext2_readpage(struct file *file, struct page *page)
@@ -163,12 +164,12 @@ static int ext2_readpage(struct file *file, struct page *page)
 static int ext2_writepage(struct page *page, struct writeback_control *wbc)
 {
   // 其实这个就让人觉得特别奇怪
-  // TODO 如果page cache 连接到 ext2_writepage 中间，但是现在又依赖于buffer 机制
+  // TODO 如果 page cache 连接到 ext2_writepage 中间，但是现在又依赖于 buffer 机制
 	return block_write_full_page(page, ext2_get_block, wbc);
 }
 
 
-// ext4 : 直接进入block层，自己实现。
+// ext4 : 直接进入 block 层，自己实现。
 static int ext4_readpage(struct file *file, struct page *page)
 {
 	int ret = -EAGAIN;
@@ -189,16 +190,16 @@ static int ext4_readpage(struct file *file, struct page *page)
 int ext4_mpage_readpages(struct address_space *mapping,
 			 struct list_head *pages, struct page *page,
 			 unsigned nr_pages, bool is_readahead)
-// 一个非常长的函数，直接进入到block layer 层次
+// 一个非常长的函数，直接进入到 block layer 层次
 
 
 static int ext4_writepage(struct page *page,
 			  struct writeback_control *wbc)
-// 也是ext4自己的负责的内容
+// 也是 ext4 自己的负责的内容
 
 
 // 进一步分析 ext4_writepages 和 ext4_readpages，前者其实依赖 generic_writepages 然后反复调用自己的 writepage 函数
-// 但是后者没有generic 这一部分，因为写会依赖于 page cache 中间的 radix tree 的功能，但是 read 不需要。
+// 但是后者没有 generic 这一部分，因为写会依赖于 page cache 中间的 radix tree 的功能，但是 read 不需要。
 
 // swap : page_io.c 中间实现。
 
@@ -235,7 +236,7 @@ static ssize_t ext2_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	return generic_file_write_iter(iocb, from);
 }
 
-// ext4 : 还是依赖于filemap.c 
+// ext4 : 还是依赖于filemap.c
 static ssize_t ext4_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
 	if (unlikely(ext4_forced_shutdown(EXT4_SB(file_inode(iocb->ki_filp)->i_sb))))
@@ -292,7 +293,7 @@ void __init page_writeback_init(void)
 ```
 
 
-## set_page_dirty : 不是设置一个标志位的事情，而是 ... 
+## set_page_dirty : 不是设置一个标志位的事情，而是
 1. 一般来说调用 `__set_page_dirty_buffers` 完成工作, 同时标记两个内容
 
 > `set_page_dirty` allows an address space to provide a specific method of marking a page as
@@ -520,7 +521,7 @@ int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
 		if (mapping->a_ops->writepages)
 			ret = mapping->a_ops->writepages(mapping, wbc);
 		else
-			ret = generic_writepages(mapping, wbc); // 
+			ret = generic_writepages(mapping, wbc); //
 		if ((ret != -ENOMEM) || (wbc->sync_mode != WB_SYNC_ALL))
 			break;
 		cond_resched();

@@ -40,3 +40,5 @@ Total                        2.32            3.78            6.10
 
 是对于 stress-ng 理解有什么问题吗?
 - fixmap 是做啥的
+
+- cgroup v2 中存在 writeback 吗?

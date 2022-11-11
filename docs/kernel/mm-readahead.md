@@ -1,14 +1,14 @@
 # mm/readahead.c
 
 总体:
-1. 提供两个终极外部接口 : page_cache_sync_readahead 和 page_cache_async_readahead 
+1. 提供两个终极外部接口 : page_cache_sync_readahead 和 page_cache_async_readahead
 2. read_pages 调用 : `mapping->a_ops->readpages` 或者 `mapping->a_ops->readpage` 实现真正读取工作
 
 
 ## file_ra_state_init
 // todo 实现简单，但是可以找到 ra 状态一下。
 
-## page_cache_sync_readahead 和 page_cache_async_readahead 
+## page_cache_sync_readahead 和 page_cache_async_readahead
 
 ```c
 /**
@@ -78,7 +78,7 @@ unsigned int __do_page_cache_readahead(struct address_space *mapping,
 ```
 
 ```c
-// 三个 ref 
+// 三个 ref
 /*
  * Submit IO for the read-ahead request in file_ra_state.
  */
@@ -135,6 +135,6 @@ int force_page_cache_readahead(struct address_space *mapping, struct file *filp,
 参数 file * 从 generic_file_buffered_read 的位置发生了变化了吗 ?
 
 ```c
-1. blk_start_plug 
+1. blk_start_plug
 2. list_del(&page->lru); // todo 到底其中 page->lru 的作用是什么 : 从slub的位置就看到了
 ```

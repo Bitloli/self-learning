@@ -4,8 +4,8 @@
 
 ## Principal
 
-1. 当然，还有一点要注意，那就是在访问Per-CPU变量的时候，不能调度，当然更准确的说法是该task不能调度到其他CPU上去。
-目前的内核的做法是在访问Per-CPU变量的时候disable preemptive，虽然没有能够完全避免使用锁的机制（disable preemptive也是一种锁的机制），但毫无疑问，这是一种代价比较小的锁。
+1. 当然，还有一点要注意，那就是在访问 Per-CPU 变量的时候，不能调度，当然更准确的说法是该 task 不能调度到其他 CPU 上去。
+目前的内核的做法是在访问 Per-CPU 变量的时候 disable preemptive，虽然没有能够完全避免使用锁的机制（disable preemptive 也是一种锁的机制），但毫无疑问，这是一种代价比较小的锁。
 
 
 ```c
@@ -44,7 +44,7 @@ do {									\
 
 ## Question
 1. 如何处理 cpuplug 的问题 ?
-2. 如果是NUMA 结构，那么 percpu 的内容都是在哪里的 ?
+2. 如果是 NUMA 结构，那么 percpu 的内容都是在哪里的 ?
 3. 本以为是闹着玩，结果似乎其可以面向大量的类似
 4. chunk 和 block 的内容是什么 ?
 
@@ -64,41 +64,41 @@ do {									\
 
 1. http://www.wowotech.net/kernel_synchronization/per-cpu.html : 分析了静态的全部内容
 
-1、静态声明和定义Per-CPU变量的API如下表所示：
+1、静态声明和定义 Per-CPU 变量的 API 如下表所示：
 
-声明和定义Per-CPU变量的API	描述
+声明和定义 Per-CPU 变量的 API	描述
 | Interface                                                                            | Type                                                                                            |
 |--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| DECLARE_PER_CPU(type, name) DEFINE_PER_CPU(type, name)                               | 普通的、没有特殊要求的per cpu变量定义接口函数。没有对齐的要求
-| DECLARE_PER_CPU_FIRST(type, name) DEFINE_PER_CPU_FIRST(type, name)                   | 通过该API定义的per cpu变量位于整个per cpu相关section的最前面。
-| DECLARE_PER_CPU_SHARED_ALIGNED(type, name) DEFINE_PER_CPU_SHARED_ALIGNED(type, name) | 通过该API定义的per cpu变量在SMP的情况下会对齐到L1 cache line ，对于UP，不需要对齐到cachine line
-| DECLARE_PER_CPU_ALIGNED(type, name) DEFINE_PER_CPU_ALIGNED(type, name)               | 无论SMP或者UP，都是需要对齐到L1 cache line
-| DECLARE_PER_CPU_PAGE_ALIGNED(type, name) DEFINE_PER_CPU_PAGE_ALIGNED(type, name)     | 为定义page aligned per cpu变量而设定的API接口
-| DECLARE_PER_CPU_READ_MOSTLY(type, name) DEFINE_PER_CPU_READ_MOSTLY(type, name)       | 通过该API定义的per cpu变量是read mostly的
+| DECLARE_PER_CPU(type, name) DEFINE_PER_CPU(type, name)                               | 普通的、没有特殊要求的 per cpu 变量定义接口函数。没有对齐的要求
+| DECLARE_PER_CPU_FIRST(type, name) DEFINE_PER_CPU_FIRST(type, name)                   | 通过该 API 定义的 per cpu 变量位于整个 per cpu 相关 section 的最前面。
+| DECLARE_PER_CPU_SHARED_ALIGNED(type, name) DEFINE_PER_CPU_SHARED_ALIGNED(type, name) | 通过该 API 定义的 per cpu 变量在 SMP 的情况下会对齐到 L1 cache line ，对于 UP，不需要对齐到 cachine line
+| DECLARE_PER_CPU_ALIGNED(type, name) DEFINE_PER_CPU_ALIGNED(type, name)               | 无论 SMP 或者 UP，都是需要对齐到 L1 cache line
+| DECLARE_PER_CPU_PAGE_ALIGNED(type, name) DEFINE_PER_CPU_PAGE_ALIGNED(type, name)     | 为定义 page aligned per cpu 变量而设定的 API 接口
+| DECLARE_PER_CPU_READ_MOSTLY(type, name) DEFINE_PER_CPU_READ_MOSTLY(type, name)       | 通过该 API 定义的 per cpu 变量是 read mostly 的
 
-看到这样“丰富多彩”的Per-CPU变量的API，你是不是已经醉了。这些定义使用在不同的场合，主要的factor包括：
+看到这样“丰富多彩”的 Per-CPU 变量的 API，你是不是已经醉了。这些定义使用在不同的场合，主要的 factor 包括：
 
-- 该变量在section中的位置
+- 该变量在 section 中的位置
 - 该变量的对齐方式
-- 该变量对SMP和UP的处理不同
-- 访问per cpu的形态 (@todo 什么叫做 per cpu 的心态)
+- 该变量对 SMP 和 UP 的处理不同
+- 访问 per cpu 的形态 (@todo 什么叫做 per cpu 的心态)
 
-例如：如果你准备定义的per cpu变量是要求按照page对齐的，那么在定义该per cpu变量的时候需要使用DECLARE_PER_CPU_PAGE_ALIGNED。如果只要求在SMP的情况下对齐到cache line，那么使用DECLARE_PER_CPU_SHARED_ALIGNED来定义该per cpu变量。
+例如：如果你准备定义的 per cpu 变量是要求按照 page 对齐的，那么在定义该 per cpu 变量的时候需要使用 DECLARE_PER_CPU_PAGE_ALIGNED。如果只要求在 SMP 的情况下对齐到 cache line，那么使用 DECLARE_PER_CPU_SHARED_ALIGNED 来定义该 per cpu 变量。
 
-3. 动态分配Per-CPU变量的API如下表所示：
+3. 动态分配 Per-CPU 变量的 API 如下表所示：
 
 | Interface                              | desc                                                                            |
 |----------------------------------------|---------------------------------------------------------------------------------|
-| alloc_percpu(type)                     | 分配类型是type的per cpu变量，返回per cpu变量的地址（注意：不是各个CPU上的副本）
-| `void free_percpu(void __percpu *ptr)` | 释放ptr指向的per cpu变量空间
+| alloc_percpu(type)                     | 分配类型是 type 的 per cpu 变量，返回 per cpu 变量的地址（注意：不是各个 CPU 上的副本）
+| `void free_percpu(void __percpu *ptr)` | 释放 ptr 指向的 per cpu 变量空间
 
-4. 访问动态分配Per-CPU变量的API如下表所示：
+4. 访问动态分配 Per-CPU 变量的 API 如下表所示：
 
 | Interface             | desc                                                                                              |
 |-----------------------|---------------------------------------------------------------------------------------------------|
-| get_cpu_ptr           | 这个接口是和访问静态Per-CPU变量的get_cpu_var接口是类似的，当然，这个接口是for 动态分配Per-CPU变量
+| get_cpu_ptr           | 这个接口是和访问静态 Per-CPU 变量的 get_cpu_var 接口是类似的，当然，这个接口是 for 动态分配 Per-CPU 变量
 | put_cpu_ptr           | 和静态相同，静态访问的另一个方法是 : get_cpu_var
-| per_cpu_ptr(ptr, cpu) | 根据per cpu变量的地址和cpu number，返回指定CPU number上该per cpu变量的地址
+| per_cpu_ptr(ptr, cpu) | 根据 per cpu 变量的地址和 cpu number，返回指定 CPU number 上该 per cpu 变量的地址
 
 ## API : `__alloc_percpu_gfp` `__alloc_percpu` free_percpu
 1. 静态初始化的内容在哪里 ?

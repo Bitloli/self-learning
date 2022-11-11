@@ -1,10 +1,12 @@
-# mm/memory.c
+# pagefault
+
+主要分析 mm/memory.c 中的内容
 
 ## KeyNote
 1. swapbacked 似乎用于表示 : 这个 page 是 anon vma 中间的，所有 anon vma 中间 page 都是需要走这一个(tmpfs 暂时不知道怎么回事)，
     page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 __SetPageSwapBacked
 2. 相对比的是 : PG_swapcache 表示当前 page 在 swap cache 中间，也即是当前的 page 在 radix tree 中间的
-    1. PageSwapCache 函数 : 也可以说明，必须首先是 anon vma 中间的page ，然后才可以是 swap cache 的内容
+    1. PageSwapCache 函数 : 也可以说明，必须首先是 anon vma 中间的 page ，然后才可以是 swap cache 的内容
     2. PageAnon 和 PageSwapBacked 有什么区别吗 ?
 
 ## 问题
@@ -50,10 +52,10 @@ typedef struct { pteval_t pte; } pte_t;
 ```
 
 > mm/memory.c 中间，其实是一些熟悉的内容。
-1. pte 和 tlb 的操作，主要是为pg_fault 支持的
+1. pte 和 tlb 的操作，主要是为 pg_fault 支持的
 2. page_fault
 
-> 总是都是修改page table 之类的事情
+> 总是都是修改 page table 之类的事情
 
 
 ```c
@@ -442,7 +444,7 @@ out_release:
 3. 猜测实现:
     1. 复制 pte : 整个 page walk
     2. 去掉 flag
-    3. 分配新的page , 拷贝原来的 page
+    3. 分配新的 page , 拷贝原来的 page
     4. rmap
 
 4. 实际上:
@@ -835,7 +837,7 @@ vm_fault_t finish_fault(struct vm_fault *vmf)
 三个函数功能的猜测:
 1. 首先至少都是需要完成读入操作吧，读入的到 page cache 中间里面去 (正确)
 2. do_shared_fault 似乎不用做任何事情吧，相对于 do_read_fault (正确)
-3. cow 会分配两次page frame ，一次在 page cache 中间，一次自己使，(正确)
+3. cow 会分配两次 page frame ，一次在 page cache 中间，一次自己使，(正确)
 
 实际: 全部调用
 1. `__do_fault` : 到 page cache 中间获取 page
