@@ -51,3 +51,7 @@ static inline void *kmap_atomic(struct page *page)
     return page_address(page);
 }
 ```
+
+Code that is safe from concurrent access from an interrupt handler is said to be
+**interrupt-safe**. Code that is safe from concurrency on symmetrical multiprocessing
+machines is **SMP-safe**. Code that is safe from concurrency with kernel preemption is **preempt-safe**.
