@@ -7,7 +7,7 @@
 ## VMALLOC_START
 
 1. arch/x86/Kconfig
-```
+```plain
 config DYNAMIC_MEMORY_LAYOUT
 	bool
 	---help---
@@ -161,7 +161,7 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 	if (!size || (size >> PAGE_SHIFT) > totalram_pages)
 		goto fail;
 
-	area = __get_vm_area_node(size, align, VM_ALLOC | VM_UNINITIALIZED | // 首先获取 vm_struct 也就是虚拟空间上分配 
+	area = __get_vm_area_node(size, align, VM_ALLOC | VM_UNINITIALIZED | // 首先获取 vm_struct 也就是虚拟空间上分配
 				vm_flags, start, end, node, gfp_mask, caller);
 	if (!area)
 		goto fail;
@@ -203,7 +203,7 @@ https://stackoverflow.com/questions/1693011/how-can-i-determine-the-return-addre
 
 ## vmap
 
-给定了pages, 只需要分配 vm_struct ，然后利用 map_vm_area 将两者勾连起来即可。
+给定了 pages, 只需要分配 vm_struct ，然后利用 map_vm_area 将两者勾连起来即可。
 
 ```c
 /**

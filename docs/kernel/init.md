@@ -1,5 +1,22 @@
+## 基本启动流程
+- start_kernel : 进入通用启动流程
+  - setup_arch : 架构相关启动
+    - setup_memory_region
+    - parse_early_param
+    - e820_register_active_region
+      - add_active_range
+    - init_memory_mapping : 构建内核地址空间的直接映射
+    - paging_init
+      - free_area_init_nodes
+  - setup_per_cpu_areas
+  - build_all_zonelists
+  - setup_per_cpu_pageset
+
+## TODO
 - [ ] 可以将 Loongson 的启动整理过来吗 ?
 - [ ] 将陈华才的整理过来一下
+
+
 
 | File               | blank | comment | code |desc|
 |--------------------|-------|---------|------||
