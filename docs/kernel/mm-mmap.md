@@ -875,3 +875,45 @@ anon_vma_interval_tree_post_update_vma(struct vm_area_struct *vma)
 ```
 
 ## get_unmapped_area
+
+## shared anon 的内存实际上是关联了文件的
+
+```txt
+#0  shmem_zero_setup (vma=vma@entry=0xffff88812c40d558) at mm/shmem.c:4227
+#1  0xffffffff812e6a49 in mmap_region (file=file@entry=0x0 <fixed_percpu_data>, addr=addr@entry=140537761943552, len=len@entry=4096, vm_flags=vm_flags@entry=251, pgoff=0, uf=uf@entry=0xffffc9000201bef0) at mm/mmap.c:2665
+#2  0xffffffff812e6f2f in do_mmap (file=file@entry=0x0 <fixed_percpu_data>, addr=140537761943552, addr@entry=0, len=4096, len@entry=4, prot=<optimized out>, prot@entry=3, flags=flags@entry=33, pgoff=<optimized out>, pgoff@entry=0, populate=0xffffc9000201bee8, uf=0xffffc9000201bef0) at mm/mmap.c:1412
+#3  0xffffffff812b9a55 in vm_mmap_pgoff (file=0x0 <fixed_percpu_data>, addr=0, len=4, prot=3, flag=33, pgoff=0) at mm/util.c:520
+#4  0xffffffff81fa4bdb in do_syscall_x64 (nr=<optimized out>, regs=0xffffc9000201bf58) at arch/x86/entry/common.c:50
+#5  do_syscall_64 (regs=0xffffc9000201bf58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#6  0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+```
+
+从内核的角度来看，也就是 `vma_is_anonymous` ，是判断 `vm_ops`，在 `shmem_zero_setup` 中，会为该 anon share 创建一个文件。
+
+https://stackoverflow.com/questions/13274786/how-to-share-memory-between-processes-created-by-fork
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+static int *glob_var;
+
+int main(void) {
+  glob_var = mmap(NULL, sizeof *glob_var, PROT_READ | PROT_WRITE,
+                  MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+  if (fork() == 0) {
+    *glob_var = 5;
+    exit(EXIT_SUCCESS);
+  } else {
+    wait(NULL);
+    printf("%d\n", *glob_var);
+    munmap(glob_var, sizeof *glob_var);
+  }
+  return 0;
+}
+```

@@ -1,43 +1,144 @@
 # rmap
 
-## rmap_walk
+## anon
+如果想要知道一个 page 被那些地址空间映射:
+1. 给 page 创建的时候在那个 vma 中间。
+2. 该 vma 进一步 fork 出来了那些 vma 。
 
-- 一个 vma 共享，除了 fork 存在其他的方法吗?
-- 如何修改一个 vma 的属性 int prot, int flags
-- memfd 是不是创建出来了可以共享的 anonymous 映射，而再次之前，这是做不到的 ?
 
-
-[TO BE CONTINUE](https://www.cnblogs.com/LoyenWang/p/12164683.html)
-
-4. 匿名页的反向映射
-  - 相关数据结构体介绍
-  - vma 和 av 首次建立 rmap 大厦
-  - fork 时为子进程构建 rmap 大厦
-  - 缺页异常时 page 关联 av
-  - 反向映射查找匿名页 pte
-  - 匿名页 rmap 情景分析
-5. 文件页的反向映射
-  - 相关数据结构体介绍
-  - 文件打开关联 address_space
-  - vma 添加到文件页的 rmap 的红黑树
-  - 缺页异常读取文件页
-  - 反向映射查找文件 pte
-  - 文件页 rmap 情景分析
-6. ksm 和 ksm 页反向映射
-  - 相关数据结构体介绍
-  - ksm 机制剖析（上）
-  - ksm 机制剖析（下）
-  - 反向映射查找 ksm 页 pte
-  - ksm 实践
-
-1. 当发生 cow 的时候，将新创建出来的 `page->mapping` 指向 子进程的 anon_vma
 2. avc 挂载到 `vma->anon_vma_chain` 这个链表上，同时在 av 的 `anon_vma->rb_root` 上
   1. 当发生 rmap 遍历，利用 `page->mapping` 找到 anon_vma, 然找到  `anon_vma->rb_root` 来在红黑树中间查找到 avc
 3. avc 是 vma 用来挂载到 av 上的钩子
-2. va 绑定在 vma 上
+2. 一个 vma 对应一个 av
 4. 进程每创建一个子进程，父进程的 AV 的红黑树中会增加每一个起“桥梁”作用的 AVC，以此连接到子进程的 VMA
 5. 第 n 个层次的 child 需要创建创建 n 个 avc, 分别将 avc 放到自己和自己的 n - 1 个祖先中间
-6. 将 avc 挂载到 av 上，表示该 avc
+
+
+![AVC AV 和 VMA 的关系](https://img2018.cnblogs.com/blog/1771657/202001/1771657-20200108072200806-1580650219.png)
+
+![page->mapping 中指向的是 AV](https://img2018.cnblogs.com/blog/1771657/202001/1771657-20200108072227687-242824885.png)
+
+## 构建
+
+```c
+/**
+ * __page_set_anon_rmap - set up new anonymous rmap
+ * @page:	Page or Hugepage to add to rmap
+ * @vma:	VM area to add page to.
+ * @address:	User virtual address of the mapping
+ * @exclusive:	the page is exclusively owned by the current process
+ */
+static void __page_set_anon_rmap(struct page *page,
+	struct vm_area_struct *vma, unsigned long address, int exclusive)
+{
+	struct anon_vma *anon_vma = vma->anon_vma;
+
+	BUG_ON(!anon_vma);
+
+	if (PageAnon(page))
+		goto out;
+
+	/*
+	 * If the page isn't exclusively mapped into this vma,
+	 * we must use the _oldest_ possible anon_vma for the
+	 * page mapping!
+	 */
+	if (!exclusive)
+		anon_vma = anon_vma->root;
+
+	/*
+	 * page_idle does a lockless/optimistic rmap scan on page->mapping.
+	 * Make sure the compiler doesn't split the stores of anon_vma and
+	 * the PAGE_MAPPING_ANON type identifier, otherwise the rmap code
+	 * could mistake the mapping for a struct address_space and crash.
+	 */
+	anon_vma = (void *) anon_vma + PAGE_MAPPING_ANON;
+	WRITE_ONCE(page->mapping, (struct address_space *) anon_vma);
+	page->index = linear_page_index(vma, address);
+out:
+	if (exclusive)
+		SetPageAnonExclusive(page);
+}
+```
+
+```txt
+#0  __page_set_anon_rmap (page=0xffffea0000997380, vma=0xffff888127fc7688, address=94283249184768, exclusive=1) at mm/rmap.c:1126
+#1  0xffffffff812dd09b in do_anonymous_page (vmf=0xffffc90001967df8) at mm/memory.c:4153
+#2  handle_pte_fault (vmf=0xffffc90001967df8) at mm/memory.c:4953
+#3  __handle_mm_fault (vma=vma@entry=0xffff888127fc7688, address=address@entry=94283249184872, flags=flags@entry=597) at mm/memory.c:5097
+#4  0xffffffff812dd620 in handle_mm_fault (vma=0xffff888127fc7688, address=address@entry=94283249184872, flags=flags@entry=597, regs=regs@entry=0xffffc90001967f58) at mm/memory.c:5218
+#5  0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc90001967f58, error_code=error_code@entry=6, address=address@entry=94283249184872) at arch/x86/mm/fault.c:1428
+#6  0xffffffff81fa8e12 in handle_page_fault (address=94283249184872, error_code=6, regs=0xffffc90001967f58) at arch/x86/mm/fault.c:1519
+#7  exc_page_fault (regs=0xffffc90001967f58, error_code=6) at arch/x86/mm/fault.c:1575
+#8  0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+```
+
+- 如何理解 exclusive ?
+
+- page_add_anon_rmap : 需要判断是不是新创建的
+- page_add_new_anon_rmap : 调用 `__page_set_anon_rmap` 的时候，本 vma 一定是 root 的，参数 exclusive 是 1
+- 如果是 exclusive 的，那么 `page->mapping` 中指向本 vma 的 `anon_vma`，否则指向 `anon_vma->root`
+- 大多数的时候是 exclusive 的
+
+
+看代码，似乎是只要是新创建的 page，目前熟悉的场景中，发生 pf 的 vma 就是 root ，但是:
+- 只有 share vma 才会需要 rmap 的吧
+- share 给 child，如果 pf 是 child 触发的，但是还是需要设置 parent 的 vma 为 root 吧
+
+## anon_vma_fork 和 anon_vma_clone
+
+- anon_vma_fork :
+  - anon_vma_clone : 复制 avc ，并且将 avc 添加到红黑树和链表中
+  - 创建 avc av ，并且和 vma 链接起来
+
+```txt
+@[
+    anon_vma_fork+1
+    dup_mm+931
+    copy_process+6704
+    kernel_clone+151
+    __do_sys_clone+102
+    do_syscall_64+59
+    entry_SYSCALL_64_after_hwframe+99
+]: 3953
+```
+
+```txt
+@[
+    anon_vma_clone+1
+    copy_vma+385
+    move_vma+331
+    __do_sys_mremap+820
+    do_syscall_64+59
+    entry_SYSCALL_64_after_hwframe+99
+]: 1
+
+@[
+    anon_vma_clone+1
+    __split_vma+145
+    __do_munmap+996
+    __vm_munmap+120
+    __x64_sys_munmap+23
+    do_syscall_64+59
+    entry_SYSCALL_64_after_hwframe+99
+]: 1132
+@[
+    anon_vma_clone+1
+    anon_vma_fork+51
+    dup_mm+931
+    copy_process+6704
+    kernel_clone+151
+    __do_sys_clone+102
+    do_syscall_64+59
+    entry_SYSCALL_64_after_hwframe+99
+]: 4328
+```
+
+## cow
+1. 当发生 cow 的时候，将新创建出来的 `page->mapping` 指向子进程的 anon_vma
+
+## rmap_walk
+- memfd 是不是创建出来了可以共享的 anonymous 映射，而再次之前，这是做不到的 ?
 
 ## rmap.c
 
@@ -52,9 +153,6 @@
     2. 一个 anon_vma 是可以关联多个 vma 的，一个 vma 也可以关联多个 anon_vma，通过 `avc->same_vma`
     3. **vma 为什么需要找到与其关联的所有 anon_vma**
         1. 释放一个 vma 需要找到该 vma 关联的所有 av
-    4. cow 机制 : 当 children 在 anon vma 上 page fault，那么 parent 也会得到哪一个 page 吗 ?
-    4. cow 机制 : 当 parent 在 anon vma 上 page fault ，那么 children 会得到该 page 吗 ?
-       1. 不会的，违背了 cow 的语义
     5. vma 总会关联一个独享的 vma_anon ，在哪一个 vma 上 pgfault，page.mapping 就会指向该 anon_vma
     3. 如果该 page 是在"我"这里创建的，那么就需要"我"就需要创建出来一个 anon_vma 来
 而且，从我这里 fork 出来的所有 vma 都需要挂到"我"这里。
@@ -90,8 +188,6 @@
 
 
 8. 通过 mmu notifiers 机制，可以实现检查 page 最近被 referenced 过没有 :  https://lwn.net/Articles/732952/
-
-1. anon_vma_fork 和 anon_vma_clone 的区别是不是一个是同级别，一个是创建 children 的。
 
 2. unlink_anon_vmas && anon_vma_chain_link 功能猜测和总结
 
@@ -275,41 +371,6 @@ void page_add_anon_rmap(struct page *page,
 ```
 
 ```c
-/**
- * __page_set_anon_rmap - set up new anonymous rmap
- * @page:	Page to add to rmap
- * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping
- * @exclusive:	the page is exclusively owned by the current process
- */
-static void __page_set_anon_rmap(struct page *page,
-	struct vm_area_struct *vma, unsigned long address, int exclusive)
-{
-	struct anon_vma *anon_vma = vma->anon_vma;
-
-	BUG_ON(!anon_vma);
-
-  // 这里可能有点问题
-	if (PageAnon(page))
-		return;
-
-  // 导致 exclusive 前面的映射直接抛弃吗 ?
-	/*
-	 * If the page isn't exclusively mapped into this vma,
-	 * we must use the _oldest_ possible anon_vma for the
-	 * page mapping!
-	 */
-	if (!exclusive)
-		anon_vma = anon_vma->root;
-
-  // 除非在fork 的时候，关系已经被处理了 !
-  // 非 exclusive 的直接设置一遍，所以当前的vma 是不是早就添加到 tree 上去了!
-  // rmap 关联的根源，page frame，所以 page frame 被换出的时候如何处理 ?
-	anon_vma = (void *) anon_vma + PAGE_MAPPING_ANON;
-	page->mapping = (struct address_space *) anon_vma;
-	page->index = linear_page_index(vma, address);
-}
-
 struct Page{
     // page cache 和 anonymous page 才注意到类似于 kmalloc 的内容不属于任何这两者任何一个
 
@@ -548,49 +609,12 @@ static void __page_set_anon_rmap(struct page *page,
 ```
 
 1. VM_MERGEABLE 的含义是什么 ?  谁使用过 ?
-2. CONFIG_KSM ?
 3. PAGE_MAPPING_MOVABLE 的含义
  * Please note that, confusingly, "page_mapping" refers to the inode
  * address_space which maps the page from disk; whereas "page_mapped"
  * refers to user virtual address space into which the page is mapped.
 
-5. page-> mapping 的复用的内容是 ?
-
-
-1. 作为 anon 的效果
-```c
-/**
- * __page_set_anon_rmap - set up new anonymous rmap
- * @page:	Page or Hugepage to add to rmap
- * @vma:	VM area to add page to.
- * @address:	User virtual address of the mapping
- * @exclusive:	the page is exclusively owned by the current process
- */
-static void __page_set_anon_rmap(struct page *page,
-	struct vm_area_struct *vma, unsigned long address, int exclusive)　// 对称的 get_anon_rmap 函数，其访问的时候也是需要进行一下操作
-{
-	struct anon_vma *anon_vma = vma->anon_vma;
-
-	BUG_ON(!anon_vma);
-
-	if (PageAnon(page))
-		return;
-
-	/*
-	 * If the page isn't exclusively mapped into this vma,
-	 * we must use the _oldest_ possible anon_vma for the
-	 * page mapping!
-	 */
-	if (!exclusive)
-		anon_vma = anon_vma->root;
-
-	anon_vma = (void *) anon_vma + PAGE_MAPPING_ANON;
-	page->mapping = (struct address_space *) anon_vma;
-	page->index = linear_page_index(vma, address);
-}
-```
-
-2. 作为指向 address_space 的时候，应该是直接访问吧 ! 也就是说，address_space 和这些蛇皮 FLAG 没有任何的关系。
+`page->mapping` 的复用结果，分别找到两个
 
 ```c
 struct address_space *page_mapping(struct page *page)
@@ -743,3 +767,19 @@ vm_fault_t alloc_set_pte(struct vm_fault *vmf, struct mem_cgroup *memcg,
 
 ## 分析是不是让 idle pagetracking
 - page_idle_clear_pte_refs
+
+## 上锁机制 :anon_vma_clone  lock_anon_vma_root
+
+## 关键参考
+- [](https://www.cnblogs.com/LoyenWang/p/12164683.html)
+- http://www.wowotech.net/memory_management/reverse_mapping.html
+
+## TODO
+- anon_vma_clone : 关注一下其调用者，应该可以可以用来理解各种操作 vma 大小的情况, split 和 merge 之类的
+
+6. ksm 和 ksm 页反向映射
+  - 相关数据结构体介绍
+  - ksm 机制剖析（上）
+  - ksm 机制剖析（下）
+  - 反向映射查找 ksm 页 pte
+  - ksm 实践

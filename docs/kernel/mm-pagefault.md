@@ -2,9 +2,16 @@
 
 主要分析 mm/memory.c 中的内容
 
+- handle_pte_fault
+  - do_anonymous_page : 处理匿名映射
+  - do_fault : 处理文件映射
+    - do_read_fault
+    - do_cow_fault
+    - do_shared_fault
+
 ## KeyNote
 1. swapbacked 似乎用于表示 : 这个 page 是 anon vma 中间的，所有 anon vma 中间 page 都是需要走这一个(tmpfs 暂时不知道怎么回事)，
-    page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 __SetPageSwapBacked
+    page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 `__SetPageSwapBacked`
 2. 相对比的是 : PG_swapcache 表示当前 page 在 swap cache 中间，也即是当前的 page 在 radix tree 中间的
     1. PageSwapCache 函数 : 也可以说明，必须首先是 anon vma 中间的 page ，然后才可以是 swap cache 的内容
     2. PageAnon 和 PageSwapBacked 有什么区别吗 ?
@@ -15,6 +22,7 @@
 2. 检查一下使用 pte_same 的位置，是不是为了处理 page table 上锁的情况 ?
 3. pte_mkdirty pte_mkyoung
 4. pte_lockptr
+
 
 ## page table 的操作
 ```c
@@ -1004,4 +1012,170 @@ static vm_fault_t fault_dirty_shared_page(struct vm_fault *vmf)
 
 	return 0;
 }
+```
+
+## page fault
+- [ ] vmf_insert_pfn : 给驱动使用的直接，在 vma 连接 va 和 pa
+
+[TO BE CONTINUE](https://www.cnblogs.com/LoyenWang/p/12116570.html), this is a awesome post.
+
+handle_pte_fault 的调用路径图:
+1. do_anonymous_page : anon page
+2. do_fault : 和 file 相关的
+5. do_numa_page
+3. do_swap_page
+    4. do_wp_page : 如果是 cow 一个在 disk 的 page ，其实不能理解，如果 cow ，那么为什么不是直接复制 swp_entry_t ，为什么还会有别的蛇皮东西 !
+    2. @todo 由于 cow 机制的存在, 岂不是需要将所有的 pte 全部标记一遍，找到证据!
+4. do_wp_page
+
+
+- [ ] `enum vm_fault_reason` : check it's entry one by one
+
+- [ ] I guess the only user of `struct vm_operations_struct` is page fault
+
+```c
+static const struct vm_operations_struct xfs_file_vm_ops = {
+  .fault    = xfs_filemap_fault,
+  .huge_fault = xfs_filemap_huge_fault,
+  .map_pages  = xfs_filemap_map_pages,
+  .page_mkwrite = xfs_filemap_page_mkwrite,
+  .pfn_mkwrite  = xfs_filemap_pfn_mkwrite,
+};
+```
+
+#### page table
+- [ ] https://stackoverflow.com/questions/32943129/how-does-arm-linux-emulate-the-dirty-accessed-and-file-bits-of-a-pte
+
+
+#### paging
+> 准备知识
+- [todo 首先深入理解 x86 paging 机制](https://cirosantilli.com/x86-paging)
+- [todo](https://0xax.gitbooks.io/linux-insides/content/Theory/linux-theory-1.html)
+- [todo](https://stackoverflow.com/questions/12557267/linux-kernel-memory-management-paging-levels)
+
+A. 到底存在多少级 ?
+arch/x86/include/asm/pgtable_types.h
+一共 5 级，每一级的作用都是相同的
+1. 如果处理模拟的各种数量的 level : CONFIG_PGTABLE_LEVELS
+2. 似乎 获取 address 的，似乎各种 flag 占用的 bit 数量太多了，应该问题不大，反正这些 table 的高位都是在内核的虚拟地址空间，所有都是
+
+
+B. 通过分析 `__handle_mm_fault` 说明其中的机制：
+由于 page walk 需要硬件在 TLB 和 tlb miss 的情况下提供额外的支持。
+
+// 有待处理的
+1. vm_fault 所有成员解释 todo
+3. devmap : pud_devmap 的作用是什么 ?
+
+
+```c
+/*
+ * By the time we get here, we already hold the mm semaphore
+ *
+ * The mmap_sem may have been released depending on flags and our
+ * return value.  See filemap_fault() and __lock_page_or_retry().
+ */
+static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
+    unsigned long address, unsigned int flags)
+{
+  struct vm_fault vmf = {
+    .vma = vma,
+    .address = address & PAGE_MASK,
+    .flags = flags,
+    .pgoff = linear_page_index(vma, address),
+    .gfp_mask = __get_fault_gfp_mask(vma),
+  };
+  unsigned int dirty = flags & FAULT_FLAG_WRITE;
+  struct mm_struct *mm = vma->vm_mm;
+  pgd_t *pgd;
+  p4d_t *p4d;
+  vm_fault_t ret;
+
+  pgd = pgd_offset(mm, address); // 访问 mm_struct::pgd 以及 address 的偏移，但是可以从此处获取到
+  p4d = p4d_alloc(mm, pgd, address); // 如果 pgd 指向 p4d entry 是无效的，首先分配。如果有效，只是简单的计算地址。
+  if (!p4d)
+    return VM_FAULT_OOM;
+
+  vmf.pud = pud_alloc(mm, p4d, address); // vmf.pud 指向 pmd。vmf.pud 对应的映射范围 : pmd 的 entry *  page table 的 entry * PAGE_SIZE
+  if (!vmf.pud)
+    return VM_FAULT_OOM;
+retry_pud:
+  if (pud_none(*vmf.pud) && __transparent_hugepage_enabled(vma)) {
+    ret = create_huge_pud(&vmf);
+    if (!(ret & VM_FAULT_FALLBACK))
+      return ret;
+  } else {
+    pud_t orig_pud = *vmf.pud;
+
+    barrier(); // TODO 现在不清楚为什么需要添加 barrier
+    if (pud_trans_huge(orig_pud) || pud_devmap(orig_pud)) {
+
+      /* NUMA case for anonymous PUDs would go here */
+
+      if (dirty && !pud_write(orig_pud)) {
+        ret = wp_huge_pud(&vmf, orig_pud); //
+        if (!(ret & VM_FAULT_FALLBACK))
+          return ret;
+      } else {
+        huge_pud_set_accessed(&vmf, orig_pud);
+        return 0;
+      }
+    }
+  }
+
+  vmf.pmd = pmd_alloc(mm, vmf.pud, address); // 如果处理的不是 vmf.pud 指向的不是 pgfault
+  if (!vmf.pmd)
+    return VM_FAULT_OOM;
+
+  /* Huge pud page fault raced with pmd_alloc? */
+  if (pud_trans_unstable(vmf.pud)) // 当线程同时在进行 page fault
+    goto retry_pud;
+
+  if (pmd_none(*vmf.pmd) && __transparent_hugepage_enabled(vma)) {
+    ret = create_huge_pmd(&vmf);
+    if (!(ret & VM_FAULT_FALLBACK))
+      return ret;
+  } else {
+    pmd_t orig_pmd = *vmf.pmd;
+
+    barrier();
+    if (unlikely(is_swap_pmd(orig_pmd))) { // TODO swap 的关系是什么
+      VM_BUG_ON(thp_migration_supported() &&
+            !is_pmd_migration_entry(orig_pmd));
+      if (is_pmd_migration_entry(orig_pmd))
+        pmd_migration_entry_wait(mm, vmf.pmd);
+      return 0;
+    }
+    if (pmd_trans_huge(orig_pmd) || pmd_devmap(orig_pmd)) {
+      if (pmd_protnone(orig_pmd) && vma_is_accessible(vma))
+        return do_huge_pmd_numa_page(&vmf, orig_pmd); // TODO 处理内容
+
+      if (dirty && !pmd_write(orig_pmd)) {
+        ret = wp_huge_pmd(&vmf, orig_pmd);
+        if (!(ret & VM_FAULT_FALLBACK))
+          return ret;
+      } else {
+        huge_pmd_set_accessed(&vmf, orig_pmd);
+        return 0;
+      }
+    }
+  }
+
+  return handle_pte_fault(&vmf);
+}
+```
+
+
+```txt
+#0  do_set_pte (vmf=vmf@entry=0xffffc90001a2bb88, page=page@entry=0xffffea0004a5c0c0, addr=94425197883392) at mm/memory.c:4321
+#1  0xffffffff812d7aff in finish_fault (vmf=vmf@entry=0xffffc90001a2bb88) at mm/memory.c:4422
+#2  0xffffffff812d7f3e in do_cow_fault (vmf=0xffffc90001a2bb88) at mm/memory.c:4593
+#3  do_fault (vmf=vmf@entry=0xffffc90001a2bb88) at mm/memory.c:4685
+#4  0xffffffff812dc944 in handle_pte_fault (vmf=0xffffc90001a2bb88) at mm/memory.c:4955
+#5  __handle_mm_fault (vma=vma@entry=0xffff8881239052f8, address=address@entry=94425197883412, flags=flags@entry=533) at mm/memory.c:5097
+#6  0xffffffff812dd620 in handle_mm_fault (vma=0xffff8881239052f8, address=address@entry=94425197883412, flags=flags@entry=533, regs=regs@entry=0xffffc90001a2bce8) at mm/memory.c:5218
+#7  0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc90001a2bce8, error_code=error_code@entry=2, address=address@entry=94425197883412) at arch/x86/mm/fault.c:1428
+#8  0xffffffff81fa8e12 in handle_page_fault (address=94425197883412, error_code=2, regs=0xffffc90001a2bce8) at arch/x86/mm/fault.c:1519
+#9  exc_page_fault (regs=0xffffc90001a2bce8, error_code=2) at arch/x86/mm/fault.c:1575
+#10 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
 ```
