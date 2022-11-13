@@ -10,3 +10,5 @@
 - https://lwn.net/Articles/768785/
 
 - https://lwn.net/Articles/835342/
+
+- memfd 是不是创建出来了可以共享的 anonymous 映射，而再次之前，这是做不到的 ?

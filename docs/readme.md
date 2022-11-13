@@ -38,18 +38,18 @@
 - [QEMU 和 seabios 的数据传输协议: `fw_cfg`](./qemu/fw_cfg.md)
 - [QEMU 如何加载 Linux kernel image](./qemu/load-kernel-image.md)
 - [QEMU 的参数解析](./qemu/options.md)
-<!-- - 🚧 [QEMU 二进制翻译基础](./qemu/tcg.md) -->
-<!-- - 🚧 [QEMU 时钟模拟](./qemu/timer.md) -->
-<!-- - 🚧 [QEMU 如何模拟 PCI 设备](./qemu/pci.md) -->
-<!-- - 🚧 [seabios 源码分析](./qemu/seabios.md) -->
-<!-- - 🚧 [QEMU Hash Table 设计](./qemu/qht.md) -->
-<!-- - 🚧 [QEMU Hotplug 和 Reset](./qemu/reset.md) -->
 - [QEMU 中的线程和事件循环](./qemu/threads.md)
 - [QEMU 中的锁](./qemu/cpus.md)
 - [QEMU 如何模拟中断](./qemu/interrupt.md)
 - [QEMU 中的面向对象 : QOM](./qemu/qom.md)
 - [QEMU 中的时钟](./qemu/timer.md)
 - [QEMU 字符设备模拟](./qemu/char.md)
+<!-- - 🚧 [QEMU 二进制翻译基础](./qemu/tcg.md) -->
+<!-- - 🚧 [QEMU 时钟模拟](./qemu/timer.md) -->
+<!-- - 🚧 [QEMU 如何模拟 PCI 设备](./qemu/pci.md) -->
+<!-- - 🚧 [seabios 源码分析](./qemu/seabios.md) -->
+<!-- - 🚧 [QEMU Hash Table 设计](./qemu/qht.md) -->
+<!-- - 🚧 [QEMU Hotplug 和 Reset](./qemu/reset.md) -->
 <!-- 介绍 libvirt -->
 
 ## 淦，打一把英雄联盟不可能这么难
@@ -108,11 +108,12 @@
 - [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md)
 - [tty 到底是什么](./kernel/tty.md)
 - [mknod](./kernel/mknod.md)
-- [oom](./kernel/mm-oom.md)
-- [memblock](./kernel/mm-memblock.md)
-- [cmd](./kernel/mm-cma.md)
-- [sparse vmemmap](./kernel/mm-vmemmap.md)
-- [watermark](./kernel/mm-watermark.md)
+- 内存管理
+  - [oom](./kernel/mm-oom.md)
+  - [memblock](./kernel/mm-memblock.md)
+  - [cma](./kernel/mm-cma.md)
+  - [sparse vmemmap](./kernel/mm-vmemmap.md)
+  - [watermark](./kernel/mm-watermark.md)
 <!-- - [swap](./kernel/swap.md) -->
 <!-- - [为什么 Linux 6.0 相比于 Linux 0.1 复杂那么多](./kernel/why-so-complex.md) -->
 <!-- - 🚧 [syscall](./kernel/syscall.md) -->

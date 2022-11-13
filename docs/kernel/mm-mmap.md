@@ -874,6 +874,110 @@ anon_vma_interval_tree_post_update_vma(struct vm_area_struct *vma)
 }
 ```
 
+## try_to_unmap
+```c
+			/*
+			 * No need to invalidate here it will synchronize on
+			 * against the special swap migration pte.
+			 */
+		} else if (PageAnon(page)) {
+			swp_entry_t entry = { .val = page_private(subpage) };
+			pte_t swp_pte;
+			/*
+			 * Store the swap location in the pte.
+			 * See handle_pte_fault() ...
+			 */
+			if (unlikely(PageSwapBacked(page) != PageSwapCache(page))) { // 下面的注释说，在 try_to_unmap 的调用路径上，不应该出现这种组合。
+/* mm: fix lazyfree BUG_ON check in try_to_unmap_one() */
+
+/* If a page is swapbacked, it means it should be in swapcache in */
+/* try_to_unmap_one's path. */
+
+/* If a page is !swapbacked, it mean it shouldn't be in swapcache in */
+/* try_to_unmap_one's path. */
+
+/* Check both two cases all at once and if it fails, warn and return */
+/* SWAP_FAIL.  Such bug never mean we should shut down the kernel. */
+				WARN_ON_ONCE(1);
+				ret = false;
+				/* We have to invalidate as we cleared the pte */
+				mmu_notifier_invalidate_range(mm, address,
+							address + PAGE_SIZE);
+				page_vma_mapped_walk_done(&pvmw);
+				break;
+			}
+
+      // todo PageAnon 为什么可以不是 PageSwapBacked 的，除非 SwapBacked 就是表示在 swap 中间存在
+			/* MADV_FREE page check */
+			if (!PageSwapBacked(page)) {
+				if (!PageDirty(page)) {  // todo 猜测此处是那种 VM_SHARED 的那种造成的
+					/* Invalidate as we cleared the pte */
+					mmu_notifier_invalidate_range(mm,
+						address, address + PAGE_SIZE);
+					dec_mm_counter(mm, MM_ANONPAGES);
+					goto discard;
+				}
+
+				/*
+				 * If the page was redirtied, it cannot be
+				 * discarded. Remap the page to page table.
+				 */
+				set_pte_at(mm, address, pvmw.pte, pteval);
+				SetPageSwapBacked(page);
+				ret = false;
+				page_vma_mapped_walk_done(&pvmw);
+				break;
+			}
+
+			if (swap_duplicate(entry) < 0) { // Verify that a swap entry is valid and increment its swap map count.
+				set_pte_at(mm, address, pvmw.pte, pteval);
+				ret = false;
+				page_vma_mapped_walk_done(&pvmw);
+				break;
+			}
+
+			if (list_empty(&mm->mmlist)) {
+				spin_lock(&mmlist_lock);
+				if (list_empty(&mm->mmlist))
+					list_add(&mm->mmlist, &init_mm.mmlist); // todo 作用是什么 ?
+				spin_unlock(&mmlist_lock);
+			}
+			dec_mm_counter(mm, MM_ANONPAGES);
+			inc_mm_counter(mm, MM_SWAPENTS);
+			swp_pte = swp_entry_to_pte(entry);
+			if (pte_soft_dirty(pteval))
+				swp_pte = pte_swp_mksoft_dirty(swp_pte);
+			set_pte_at(mm, address, pvmw.pte, swp_pte);
+			/* Invalidate as we cleared the pte */
+			mmu_notifier_invalidate_range(mm, address,
+						      address + PAGE_SIZE);
+		} else {
+			/*
+			 * This is a locked file-backed page, thus it cannot
+			 * be removed from the page cache and replaced by a new
+			 * page before mmu_notifier_invalidate_range_end, so no
+			 * concurrent thread might update its page table to
+			 * point at new page while a device still is using this
+			 * page.
+			 *
+			 * See Documentation/vm/mmu_notifier.rst
+			 */
+			dec_mm_counter(mm, mm_counter_file(page));
+		}
+discard:
+		/*
+		 * No need to call mmu_notifier_invalidate_range() it has be
+		 * done above for all cases requiring it to happen under page
+		 * table lock before mmu_notifier_invalidate_range_end()
+		 *
+		 * See Documentation/vm/mmu_notifier.rst
+		 */
+		page_remove_rmap(subpage, PageHuge(page)); // 这里会减少 _mapcount
+		put_page(page); // 这里会减少 _refcount
+	}
+```
+
+
 ## get_unmapped_area
 
 ## shared anon 的内存实际上是关联了文件的

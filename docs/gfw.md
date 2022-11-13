@@ -107,7 +107,7 @@ reference : https://einverne.github.io/post/2021/03/linux-use-clash.html
 
 ```txt
 ➜ cd /home/maritns3/.local/share/applications
-➜ cat sourcetrail.desktop
+➜ cat clash.desktop
 [Desktop Entry]
 Name=clash
 Comment=vpn

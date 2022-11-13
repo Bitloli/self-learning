@@ -79,4 +79,11 @@ static void cmp_and_merge_page(struct page *page, struct rmap_item *rmap_item)
 #define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 ```
 
+6. ksm 和 ksm 页反向映射
+  - 相关数据结构体介绍
+  - ksm 机制剖析（上）
+  - ksm 机制剖析（下）
+  - 反向映射查找 ksm 页 pte
+  - ksm 实践
+
 [^15]: [kernel doc : Kernel Samepage Merging](https://www.kernel.org/doc/html/latest/vm/ksm.html)

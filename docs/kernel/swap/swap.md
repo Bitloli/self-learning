@@ -861,3 +861,5 @@ swp_entry_t get_swap_page(struct page *page)
 ```
 当 get_swap_page 将 cache 耗尽之后，会调用 swapfile::get_swap_pages 来维持生活
 也就是 swap_slots.c 其实是 slots cache 机制。
+
+2. 为什么 `page->private` 需要保存 `swp_entry_t`　的内容, 难道不是 page table entry 保存吗 ? (当其需要再次被写回的时候，依靠这个确定位置，和删除在 radix tree 的关系!)

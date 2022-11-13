@@ -1,5 +1,81 @@
 # folio
 
+## 快捷参考
+```c
+
+/**
+ * struct folio - Represents a contiguous set of bytes.
+ * @flags: Identical to the page flags.
+ * @lru: Least Recently Used list; tracks how recently this folio was used.
+ * @mlock_count: Number of times this folio has been pinned by mlock().
+ * @mapping: The file this page belongs to, or refers to the anon_vma for
+ *    anonymous memory.
+ * @index: Offset within the file, in units of pages.  For anonymous memory,
+ *    this is the index from the beginning of the mmap.
+ * @private: Filesystem per-folio data (see folio_attach_private()).
+ *    Used for swp_entry_t if folio_test_swapcache().
+ * @_mapcount: Do not access this member directly.  Use folio_mapcount() to
+ *    find out how many times this folio is mapped by userspace.
+ * @_refcount: Do not access this member directly.  Use folio_ref_count()
+ *    to find how many references there are to this folio.
+ * @memcg_data: Memory Control Group data.
+ * @_flags_1: For large folios, additional page flags.
+ * @__head: Points to the folio.  Do not use.
+ * @_folio_dtor: Which destructor to use for this folio.
+ * @_folio_order: Do not use directly, call folio_order().
+ * @_total_mapcount: Do not use directly, call folio_entire_mapcount().
+ * @_pincount: Do not use directly, call folio_maybe_dma_pinned().
+ * @_folio_nr_pages: Do not use directly, call folio_nr_pages().
+ *
+ * A folio is a physically, virtually and logically contiguous set
+ * of bytes.  It is a power-of-two in size, and it is aligned to that
+ * same power-of-two.  It is at least as large as %PAGE_SIZE.  If it is
+ * in the page cache, it is at a file offset which is a multiple of that
+ * power-of-two.  It may be mapped into userspace at an address which is
+ * at an arbitrary page offset, but its kernel virtual address is aligned
+ * to its size.
+ */
+struct folio {
+	/* private: don't document the anon union */
+	union {
+		struct {
+	/* public: */
+			unsigned long flags;
+			union {
+				struct list_head lru;
+	/* private: avoid cluttering the output */
+				struct {
+					void *__filler;
+	/* public: */
+					unsigned int mlock_count;
+	/* private: */
+				};
+	/* public: */
+			};
+			struct address_space *mapping;
+			pgoff_t index;
+			void *private;
+			atomic_t _mapcount;
+			atomic_t _refcount;
+#ifdef CONFIG_MEMCG
+			unsigned long memcg_data;
+#endif
+	/* private: the union with struct page is transitional */
+		};
+		struct page page;
+	};
+	unsigned long _flags_1;
+	unsigned long __head;
+	unsigned char _folio_dtor;
+	unsigned char _folio_order;
+	atomic_t _total_mapcount;
+	atomic_t _pincount;
+#ifdef CONFIG_64BIT
+	unsigned int _folio_nr_pages;
+#endif
+};
+```
+
 ## 阅读一下各种资料
 - [An introduction to compound pages](https://lwn.net/Articles/619514/)
   - Compound pages can serve as anonymous memory or be used as buffers within the kernel; they cannot, however, appear in the page cache, which is only prepared to deal with singleton pages.
@@ -87,3 +163,42 @@ This field occupies the same storage as the private field, the spinlock used whe
 
 ## 更多资料
 - https://lwn.net/Articles/565097/
+
+## 阅读其他章节想到的问题
+- struct folio 很多项目和 struct page 中也是有的
+
+尤其是 struct page 中这部分内容:
+```c
+		struct {	/* Page cache and anonymous pages */
+			/**
+			 * @lru: Pageout list, eg. active_list protected by
+			 * lruvec->lru_lock.  Sometimes used as a generic list
+			 * by the page owner.
+			 */
+			union {
+				struct list_head lru;
+
+				/* Or, for the Unevictable "LRU list" slot */
+				struct {
+					/* Always even, to negate PageTail */
+					void *__filler;
+					/* Count page's or folio's mlocks */
+					unsigned int mlock_count;
+				};
+
+				/* Or, free page */
+				struct list_head buddy_list;
+				struct list_head pcp_list;
+			};
+			/* See page-flags.h for PAGE_MAPPING_FLAGS */
+			struct address_space *mapping;
+			pgoff_t index;		/* Our offset within mapping. */
+			/**
+			 * @private: Mapping-private opaque data.
+			 * Usually used for buffer_heads if PagePrivate.
+			 * Used for swp_entry_t if PageSwapCache.
+			 * Indicates order in the buddy system if PageBuddy.
+			 */
+			unsigned long private;
+		};
+```

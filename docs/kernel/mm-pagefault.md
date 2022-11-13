@@ -9,6 +9,19 @@
     - do_cow_fault
     - do_shared_fault
 
+do_read_fault
+  - `__do_fault`
+    - vma->vm_ops->fault(vmf);
+      - filemap_fault : 一般注册的是这个
+        - filemap_get_folio : 询问 page cache
+        - folio_file_page : 访问文件系统之类的
+  - finish_fault
+    - do_set_pte : 设置上 pte
+
+- finish_fault
+  - do_set_pte
+    - page_add_file_rmap : 完全无法理解
+
 ## KeyNote
 1. swapbacked 似乎用于表示 : 这个 page 是 anon vma 中间的，所有 anon vma 中间 page 都是需要走这一个(tmpfs 暂时不知道怎么回事)，
     page_add_new_anon_rmap(page, vma, vmf->address, false); // 无条件调用 `__SetPageSwapBacked`
@@ -22,6 +35,12 @@
 2. 检查一下使用 pte_same 的位置，是不是为了处理 page table 上锁的情况 ?
 3. pte_mkdirty pte_mkyoung
 4. pte_lockptr
+
+
+- cow 如何处理这种场景:
+例如 anon vma 连续 fork 1000 个 child，然后修改 page ，因为 child 需要观察到原来的 page 的样子，称之为 page A
+此时触发 page fault，
+将会产生一个新的 page B，那么是不是要拷贝 1000 个 page A 出来给 child 使用
 
 
 ## page table 的操作

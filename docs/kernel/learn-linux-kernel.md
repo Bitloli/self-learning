@@ -34,7 +34,7 @@
 ## 环境准备
 1. 阅读环境准备
     - 首先你要保证你的操作系统是 Linux 内核，让自己对于 kernel 支撑起来的用户态环境有一个感性的认识。
-2. 保证你的编辑器可以正确跳转，如果你恰好使用的是 neovim, 可以参考[我的 neovim 配置](https://github.com/Martins3/My-Linux-Config), 图形化的工具，我使用过[sourcetrail](https://www.sourcetrail.com/)，很不错，但是很卡。
+2. 保证你的编辑器可以正确跳转，如果你恰好使用的是 neovim, 可以参考[我的 neovim 配置](https://github.com/Martins3/My-Linux-Config)
     - 或者 VSCode 的配置: [DKernel-Plus](https://github.com/ShaoxunZeng/DKernel-Plus)
 3. [QEMU, dataframe 和 bpftrace](./tips-reading-kernel.md) 等工具也是可以大大加快分析的速度的。
 
