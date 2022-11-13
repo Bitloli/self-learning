@@ -42,3 +42,4 @@ Total                        2.32            3.78            6.10
 - fixmap 是做啥的
 
 - cgroup v2 中存在 writeback 吗?
+- 无法理解 PAGE_MAPPING_MOVABLE 以及相关的几个 flag

@@ -1021,3 +1021,14 @@ int main(void) {
   return 0;
 }
 ```
+
+## page_mapped 和 page_mapping
+
+1. page_mapped : 返回是否映射到地址空间中
+2. page_mapping : 返回关联的 file
+```c
+struct address_space *page_mapping(struct page *page)
+bool page_mapped(struct page *page)
+```
+
+- page_mapcount = `_mapcount` + 1 表示该 page 出现在 page table 的次数
