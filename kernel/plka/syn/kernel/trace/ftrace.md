@@ -39,3 +39,14 @@ crash> dis ktime_get
 0xffffffff82105a45 <ktime_get+21>:      push   %r12
 0xffffffff82105a47 <ktime_get+23>:      push   %rbx
 ```
+
+## 这种操作的基础是什么
+https://lore.kernel.org/lkml/YmU2izhF0HDlgbrW@casper.infradead.org/T/
+```c
+root@pepe-kvm:~# mkfs.xfs /dev/sdb
+root@pepe-kvm:~# mount /dev/sdb /mnt/
+root@pepe-kvm:~# truncate -s 10G /mnt/bigfile
+root@pepe-kvm:~# echo 1 >/sys/kernel/tracing/events/filemap/mm_filemap_add_to_page_cache/enable
+root@pepe-kvm:~# dd if=/mnt/bigfile of=/dev/null bs=100K count=4
+root@pepe-kvm:~# cat /sys/kernel/tracing/trace
+```

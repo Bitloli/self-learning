@@ -1,4 +1,5 @@
 ## 问题
+- 为什么 v2 将 cpuacct 取消了
 
 1. 如何确定将哪一个 thread 加入到哪一个 group ?
 2. 创建 thread group 的创建的时机是什么 ?
