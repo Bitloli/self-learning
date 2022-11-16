@@ -226,3 +226,23 @@ out_unlock:
 ```
 
 - [ ] /sys/devices/system/node/node0/ 是如何创建出来的?
+
+
+## 这几个选项都是做什么的
+```plain
+[root@localhost boot]# cat config-4.19.90-2112.8.0.0131.oe1.smartx.12.fi.x86_64 | grep INJECTI
+CONFIG_GENERIC_IRQ_INJECTION=y
+CONFIG_HAVE_FUNCTION_ERROR_INJECTION=y
+# CONFIG_BLK_DEV_NULL_BLK_FAULT_INJECTION is not set
+# CONFIG_EDAC_AMD64_ERROR_INJECTION is not set
+# CONFIG_NFSD_FAULT_INJECTION is not set
+# CONFIG_NOTIFIER_ERROR_INJECTION is not set
+CONFIG_FUNCTION_ERROR_INJECTION=y
+CONFIG_FAULT_INJECTION=y
+CONFIG_FAULT_INJECTION_DEBUG_FS=y
+[root@localhost boot]# cat config-4.19.90-2112.8.0.0131.oe1.smartx.12.fi.x86_64 | grep fail_mak -I
+[root@localhost boot]# cat config-4.19.90-2112.8.0.0131.oe1.smartx.12.fi.x86_64 | grep fail_mak -i
+CONFIG_FAIL_MAKE_REQUEST=y
+```
+
+## x86-64 的环境中，可以使用 kvm 运行 32 位内核吗

@@ -71,7 +71,7 @@ arg_hugetlb="default_hugepagesz=3M hugepagesz=1G hugepages=1 hugepagesz=2M hugep
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
-arg_mem_balloon="-device virtio-balloon,deflate-on-oom=true"
+arg_mem_balloon="-device virtio-balloon,deflate-on-oom=true,id=balloon0"
 
 case $hacking_memory in
 "numa")
@@ -148,7 +148,7 @@ arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=ne
 # @todo 尝试一下这个
 # -netdev tap,id=nd0,ifname=tap0 -device e1000,netdev=nd0
 arg_iothread="-object iothread,id=io0"
-arg_qmp="-qmp unix:${abs_loc}/test.socket,server,nowait"
+arg_qmp="-qmp tcp:localhost:4444,server,wait=off"
 arg_monitor="-serial mon:stdio -display none"
 if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
   arg_monitor="-serial mon:stdio"
@@ -175,12 +175,13 @@ show_help() {
   echo "-d 调试 QEMU"
   echo "   -m 调试 QEMU 的时候，打开 monitor"
   echo "   -c 调试 QEMU 的时候，打开 console"
+  echo "-q 连接上 QEMU 的 qmp"
   exit 0
 }
 mon_socket_path=/tmp/qemu-monitor-socket
 serial_socket_path=/tmp/qemu-serial-socket
 
-while getopts "dskthpcm" opt; do
+while getopts "dskthpcmq" opt; do
   case $opt in
   d)
     debug_qemu="gdb -ex \"handle SIGUSR1 nostop noprint\" --args"
@@ -194,8 +195,16 @@ while getopts "dskthpcm" opt; do
   k) LAUNCH_GDB=true ;;
   t) arg_machine="--accel tcg,thread=single" arg_mem_cpu="" ;;
   h) show_help ;;
-  c) socat -,echo=0,icanon=0 unix-connect:$serial_socket_path ;;
-  m) socat -,echo=0,icanon=0 unix-connect:$mon_socket_path ;;
+  c)
+    socat -,echo=0,icanon=0 unix-connect:$serial_socket_path
+    exit 0;;
+  m)
+    socat -,echo=0,icanon=0 unix-connect:$mon_socket_path
+    exit 0
+    ;;
+  q)
+    telnet localhost 4444
+    exit 0;;
   *) exit 0 ;;
   esac
 done
@@ -209,7 +218,7 @@ sure() {
   esac
 }
 
-if [ ! -f "$iso" ]; then
+if [ ! -f "$iso" ] && [ ! -f $disk_img ]; then
   echo "please download ${distribution}"
   # wget http://mirrors.ustc.edu.cn/centos/8-stream/isos/x86_64/CentOS-Stream-8-x86_64-latest-boot.iso
   exit 0

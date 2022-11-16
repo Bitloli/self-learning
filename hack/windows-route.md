@@ -18,3 +18,17 @@
 
 参考内容:
 - https://www.huanlintalk.com/2020/02/wsl-2-installation.html
+
+## 通过 virtio-ballon 来实现 windows 内核编程?
+
+## 有趣的 window 驱动开发
+https://learn.microsoft.com/zh-cn/windows-hardware/drivers/gettingstarted/
+
+- [ ] 似乎只能远程调试。
+
+## windows 内核编程
+
+## windows 核心编程
+
+## windows 文档
+https://learn.microsoft.com/zh-cn/windows-hardware/drivers/kernel/

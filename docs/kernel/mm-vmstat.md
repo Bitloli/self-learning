@@ -544,3 +544,85 @@ atomic_long_t vm_zone_stat[NR_VM_ZONE_STAT_ITEMS] __cacheline_aligned_in_smp;
 atomic_long_t vm_node_stat[NR_VM_NODE_STAT_ITEMS] __cacheline_aligned_in_smp;
 atomic_long_t vm_numa_event[NR_VM_NUMA_EVENT_ITEMS] __cacheline_aligned_in_smp;
 ```
+
+
+## /proc/pid/status : 进行每一个 process 的内存统计
+- [ ] cat /proc/self/stat 是什么关系
+
+- 这两个成员是做什么的
+```c
+		unsigned long hiwater_rss; /* High-watermark of RSS usage */
+		unsigned long hiwater_vm;  /* High-water virtual memory usage */
+```
+
+```txt
+😀  cat /proc/self/status
+Name:   cat
+Umask:  0022
+State:  R (running)
+Tgid:   3510141
+Ngid:   0
+Pid:    3510141
+PPid:   3508944
+TracerPid:      0
+Uid:    1000    1000    1000    1000
+Gid:    100     100     100     100
+FDSize: 64
+Groups: 1 67 100 131
+NStgid: 3510141
+NSpid:  3510141
+NSpgid: 3510141
+NSsid:  3508944
+VmPeak:   224484 kB
+VmSize:   224484 kB
+VmLck:         0 kB
+VmPin:         0 kB
+VmHWM:       392 kB
+VmRSS:       392 kB
+RssAnon:             100 kB
+RssFile:             292 kB
+RssShmem:              0 kB
+VmData:      452 kB
+VmStk:       164 kB
+VmExe:      1212 kB
+VmLib:      1636 kB
+VmPTE:        52 kB
+VmSwap:        0 kB
+HugetlbPages:          0 kB
+CoreDumping:    0
+THP_enabled:    1
+Threads:        1
+SigQ:   0/95382
+SigPnd: 0000000000000000
+ShdPnd: 0000000000000000
+SigBlk: 0000000000000000
+SigIgn: 0000000000000000
+SigCgt: 0000000000000000
+CapInh: 0000000000000000
+CapPrm: 0000000000000000
+CapEff: 0000000000000000
+CapBnd: 000001ffffffffff
+CapAmb: 0000000000000000
+NoNewPrivs:     0
+Seccomp:        0
+Seccomp_filters:        0
+Speculation_Store_Bypass:       vulnerable
+SpeculationIndirectBranch:      always enabled
+Cpus_allowed:   0000,00000000,00000000,00000000,00000000,00000000,0000ffff,ffffffff
+Cpus_allowed_list:      0-47
+Mems_allowed:   00000000,00000001
+Mems_allowed_list:      0
+voluntary_ctxt_switches:        0
+nonvoluntary_ctxt_switches:     0
+```
+
+```c
+		/*
+		 * Special counters, in some configurations protected by the
+		 * page_table_lock, in other configurations by being atomic.
+		 */
+		struct mm_rss_stat rss_stat;
+```
+
+MM_SWAPENTS 的使用非常奇怪:
+- 有时候是直接修改，有时候是调用 inc_mm_counter，关系是什么?

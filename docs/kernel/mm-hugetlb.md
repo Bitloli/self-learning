@@ -1134,3 +1134,15 @@ static inline bool is_file_hugepages(struct file *file)
 - cat /proc/cpuinfo | grep pdpe1gb | head -n 1
 
 但是不知道为什么，现在的 alpine.sh 拉起来的虚拟机中并不能支持 1gb 大页
+
+## hugepage anon mmap 的时候，大页的大小是不可以混合使用的
+
+虽然 mmap 的时候，可以创建多个 flags 的:
+```c
+#define MAP_HUGE_2MB    (21 << MAP_HUGE_SHIFT)
+#define MAP_HUGE_1GB    (30 << MAP_HUGE_SHIFT)
+```
+
+- ksys_mmap_pgoff
+  - hstate_sizelog
+    - for_each_hstate : 从小到大匹配，找到第一个就是返回的

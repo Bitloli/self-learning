@@ -332,8 +332,6 @@ unsigned long page_offset_base __ro_after_init = __PAGE_OFFSET_BASE_L4;
 rmap.c : page_add_new_anon_rmap : @todo 这个函数的调用者简直就是一个神经病
 
 memory.c : do_swap_page
-
-mempolicy.c : alloc_pages_vma
 ```
 
 3. `__read_swap_cache_async` 调用 `__SetPageSwapBacked`:

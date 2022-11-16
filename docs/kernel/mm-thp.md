@@ -9,10 +9,9 @@
         - [ ] /sys/kernel/mm/transparent_hugepage/hpage_pmd_size 的含义看，实际上，内核只是支持一共大小的 hugepage
     - [ ] 需要提供 TLB 知道自己正在访问虚拟地址是否被 hugetlb 映射
 
-transparent hugepage 和 swap 是相关的
+
 使用 transparent hugepage 的原因:
 1. TLB 的覆盖更大，可以降低 TLB miss rate
-2. page fault 的次数更少，可以忽略不计
 3. hugepage 的出现让原先的 page walk 的路径变短了
 
 几个 THP 需要考虑的核心问题:
@@ -20,52 +19,16 @@ transparent hugepage 和 swap 是相关的
 2. reference 的问题
 3. split 和 merge
 
+## transparent hugepage 和 swap 是相关的吗
+
 ## How to use hugepages with tmpfs
-尝试回答这个问题:
 https://stackoverflow.com/questions/67991417/how-to-use-hugepages-with-tmpfs
 
 ```sh
-sudo mount -t ramfs -osize=6G,mode=1777,id=$ID,huge=always tmpfs G
+sudo mount -t tmpfs -osize=6G,mode=1777,huge=always tmpfs mem
 ```
 
-```txt
-➜  g egrep 'trans|thp' /proc/vmstat
-nr_anon_transparent_hugepages 15
-thp_migration_success 0
-thp_migration_fail 0
-thp_migration_split 0
-thp_fault_alloc 19
-thp_fault_fallback 0
-thp_fault_fallback_charge 0
-thp_collapse_alloc 10
-thp_collapse_alloc_failed 0
-thp_file_alloc 0
-thp_file_fallback 0
-thp_file_fallback_charge 0
-thp_file_mapped 0
-thp_split_page 0
-thp_split_page_failed 0
-thp_deferred_split_page 9
-thp_split_pmd 44
-thp_scan_exceed_none_pte 0
-thp_scan_exceed_swap_pte 0
-thp_scan_exceed_share_pte 0
-thp_split_pud 0
-thp_zero_page_alloc 0
-thp_zero_page_alloc_failed 0
-thp_swpout 0
-thp_swpout_fallback 0
-➜  g grep AnonHugePages /proc/meminfo
-AnonHugePages:     32768 kB
-```
-- [ ] check /proc/vmstat
-- [ ] fallocate 在 G 上总是失败
-
-
-```txt
-sudo mount -t tmpfs -osize=6G,mode=1777,huge=always g
-```
-
+mount 的过程中的一个调用:
 ```txt
 #0  shmem_parse_one (fc=0xffff8881424ebc00, param=0xffffc90001247e50) at mm/shmem.c:3437
 #1  0xffffffff8139c8bb in vfs_parse_fs_param (param=0xffffc90001247e50, fc=0xffff8881424ebc00) at fs/fs_context.c:146
@@ -149,14 +112,6 @@ interface in sysfs :
             - [x] create_huge_pmd <= `__handle_mm_fault`
 
 - [ ] 好吧，transparent hugepage 只是支持 pmd(从 /proc/meminfo 的 HugePagesize 和 /sys/kernel/mm/transparent_hugepage/hpage_pmd_size)，但是实际上 pud 也是支持的.
-
-关键问题 A : do_huge_pmd_anonymous_page
-1. 检查是否 vma 中间是否可以容纳 hugepage
-2. 假如可以使用 zero page 机制
-3. 利用 alloc_hugepage_direct_gfpmask 计算出来 buddy allocator 处理分配 hugepage 的找不到之后的策略，到底是等待，还是立刻失败，还是
-4. prep_transhuge_page @todo 不知道干嘛的
-5. `__do_huge_pmd_anonymous_page` : 将分配的 page 和 page table 组装
-> 1. 进行分配的核心在于 : mempolicy.c 中间
 
 关键问题 B : split_huge_page_to_list
 
@@ -474,9 +429,6 @@ bool can_split_huge_page(struct page *page, int *pextra_pins)
 
 
 
-## huge_fault 到底注册的怎样的函数
-
-
 ## anonymous 和 shared 都是如何初始化的
 
 
@@ -499,3 +451,26 @@ bool transparent_hugepage_enabled(struct vm_area_struct *vma)
 	return false;
 }
 ```
+
+## page fault
+
+```txt
+#0  __do_huge_pmd_anonymous_page (gfp=<optimized out>, page=<optimized out>, vmf=<optimized out>) at mm/huge_memory.c:837
+#1  do_huge_pmd_anonymous_page (vmf=vmf@entry=0xffffc900017afdf8) at mm/huge_memory.c:837
+#2  0xffffffff812dcec8 in create_huge_pmd (vmf=0xffffc900017afdf8) at mm/memory.c:4820
+#3  __handle_mm_fault (vma=vma@entry=0xffff888125587da8, address=address@entry=140581166645248, flags=flags@entry=597) at mm/memory.c:5067
+#4  0xffffffff812dd680 in handle_mm_fault (vma=0xffff888125587da8, address=address@entry=140581166645248, flags=flags@entry=597, regs=regs@entry=0xffffc900017aff58) at mm/memory.c:5218
+#5  0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc900017aff58, error_code=error_code@entry=6, address=address@entry=140581166645248) at arch/x86/mm/fault.c:1428
+#6  0xffffffff81fa8f72 in handle_page_fault (address=140581166645248, error_code=6, regs=0xffffc900017aff58) at arch/x86/mm/fault.c:1519
+#7  exc_page_fault (regs=0xffffc900017aff58, error_code=6) at arch/x86/mm/fault.c:1575
+#8  0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+```
+
+- `__handle_mm_fault`
+  - do_huge_pmd_anonymous_page
+    - transhuge_vma_suitable : 检查是否 vma 中间是否可以容纳 hugepage
+    - 假如可以使用 zero page 机制
+    - vma_thp_gfp_mask : 根据 vma 获取 gfp
+    - vma_alloc_folio : 分配 page
+      - `__do_huge_pmd_anonymous_page` : 将分配的 page 和 page table 组装
+  - vmf->vma->vm_ops->huge_fault : 文件映射，如果文件系统注册了

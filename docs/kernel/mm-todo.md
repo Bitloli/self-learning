@@ -43,3 +43,33 @@ Total                        2.32            3.78            6.10
 
 - cgroup v2 中存在 writeback 吗?
 - 无法理解 PAGE_MAPPING_MOVABLE 以及相关的几个 flag
+
+```c
+enum migratetype {
+	MIGRATE_UNMOVABLE,
+	MIGRATE_MOVABLE,
+	MIGRATE_RECLAIMABLE,
+	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
+	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
+#ifdef CONFIG_CMA
+	/*
+	 * MIGRATE_CMA migration type is designed to mimic the way
+	 * ZONE_MOVABLE works.  Only movable pages can be allocated
+	 * from MIGRATE_CMA pageblocks and page allocator never
+	 * implicitly change migration type of MIGRATE_CMA pageblock.
+	 *
+	 * The way to use it is to change migratetype of a range of
+	 * pageblocks to MIGRATE_CMA which can be done by
+	 * __free_pageblock_cma() function.
+	 */
+	MIGRATE_CMA,
+#endif
+#ifdef CONFIG_MEMORY_ISOLATION
+	MIGRATE_ISOLATE,	/* can't allocate from here */
+#endif
+	MIGRATE_TYPES
+};
+```
+- MIGRATE_RECLAIMABLE : 几乎没有什么引用的位置，而从 fgp flags 看，似乎只有 slub 才是 reclaimable 的
+  - 而 page cache 是 unremovable 的
+  - 但是这怎么可能?
