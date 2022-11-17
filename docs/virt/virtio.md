@@ -1,3 +1,6 @@
+- [ ] 参考一下狼书 P322 理解一下 vring vring_avail vring_used vring_desc 和 sg 的关系
+- [ ] vring_interrupt 是在 softirq 的环境中吗?
+
 ## 文档
 - https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html
 
@@ -335,7 +338,7 @@ static const struct blk_mq_ops virtio_mq_ops = {
 
 - vp_find_vqs : 初始化 vq
   - vp_find_vqs_msix ：这是推荐的配置
-    - vp_request_msix_vectors : 注册 vp_config_changed 的中断
+    - vp_request_msix_vectors : 注册 vp_config_changed 和 vp_vring_interrupt 中断，当 config 发生变化和 vring 发生变化的时候接受通知。
     - vp_setup_vq : 给每一个 queue 注册 vring_interrupt
   - vp_find_vqs_intx
     - request_irq

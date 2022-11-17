@@ -1032,3 +1032,5 @@ bool page_mapped(struct page *page)
 ```
 
 - page_mapcount = `_mapcount` + 1 表示该 page 出现在 page table 的次数
+
+## 可以动态修改 mmap 的属性吗? 将 shared 修改为 private

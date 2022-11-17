@@ -1,5 +1,5 @@
 # QEMU 还有的挑战
-- [ ] QEMU 的 blocking layer 如此复杂，是不是 zbs 将这些内容实际上 by pass 了
+- [ ] QEMU 的 blocking layer 如此复杂
 - [ ] 为什么 QEMU 中的 block 感觉比网络复杂很多的。
 - [ ] 顶层的 job.c 的内容是什么?
 

@@ -3,6 +3,9 @@
 调查下，这些函数的 backtrace:
 - [ ] balloon_ack
 
+## 统计信息的来源
+- update_balloon_stats
+
 ## 使用方法
 - info balloon
 - balloon N
@@ -52,17 +55,107 @@ Num     Type           Disp Enb Address            What
 
 - 使用 memory hotplug 来实现，我这是万万没有想到的。
 
-## [ ] qemu 的 stat 功能分析一下
+## stat: 如何实现周期性的发送统计信息
 - https://qemu.readthedocs.io/en/latest/interop/virtio-balloon-stats.html
 
-## 为什么将 update_balloon_size_func 和 update_balloon_stats_func 设置为 workqueue 的
 
-## 具体代码上的分析
-- free_page_hint_status
+- qemu::balloon_stats_poll_cb : QEMU 定时触发，通知 guest 需要统计信息
+- kernel::stats_request : guest 接受到中断
+- kernel::stats_handle_request : 统计所有信息，并且将
+- qemu::virtio_balloon_receive_stats : 从 virtuequeue 中接受消息
+- qemu::balloon_stats_get_all : qom 的 hook，virsh 从 VirtIOBalloon::stat 中阅读信息
 
-## 内核流程
+```txt
+#0  virtio_balloon_receive_stats (vdev=0x55555790d780, vq=0x7fffe7e2a140) at ../hw/virtio/virtio-balloon.c:450
+#1  0x0000555555b3b17c in virtio_queue_notify (vdev=0x55555790d780, n=<optimized out>) at ../hw/virtio/virtio.c:2860
+#2  0x0000555555b70c20 in memory_region_write_accessor (mr=mr@entry=0x555557906250, addr=8, value=value@entry=0x7ffff4ac95d8, size=size@entry=2, shift=<optimized out>, mask=mask@entry=65535, attrs=...) at ../softmmu/memory.c:493
+#3  0x0000555555b6e406 in access_with_adjusted_size (addr=addr@entry=8, value=value@entry=0x7ffff4ac95d8, size=size@entry=2, access_size_min=<optimized out>, access_size_max=<optimized out>, access_fn=0x555555b70ba0 <memory_region_write_accessor>, mr=0x555557906250, attrs=...) at ../softmmu/memory.c:555
+#4  0x0000555555b726ca in memory_region_dispatch_write (mr=mr@entry=0x555557906250, addr=8, data=<optimized out>, op=<optimized out>, attrs=attrs@entry=...) at ../softmmu/memory.c:1522
+#5  0x0000555555b79880 in flatview_write_continue (fv=fv@entry=0x7ffddc007b10, addr=addr@entry=4263538696, attrs=..., attrs@entry=..., ptr=ptr@entry=0x7ffff42c6028, len=len@entry=2, addr1=<optimized out>, l=<optimized out>, mr=0x555557906250) at /home/martins3/core/qemu/include/qemu/host-utils.h:166
+#6  0x0000555555b79b40 in flatview_write (fv=0x7ffddc007b10, addr=addr@entry=4263538696, attrs=attrs@entry=..., buf=buf@entry=0x7ffff42c6028, len=len@entry=2) at ../softmmu/physmem.c:2867
+#7  0x0000555555b7d2a9 in address_space_write (len=2, buf=0x7ffff42c6028, attrs=..., addr=4263538696, as=0x555556590ba0 <address_space_memory>) at ../softmmu/physmem.c:2963
+#8  address_space_rw (as=0x555556590ba0 <address_space_memory>, addr=4263538696, attrs=attrs@entry=..., buf=buf@entry=0x7ffff42c6028, len=2, is_write=<optimized out>) at ../softmmu/physmem.c:2973
+#9  0x0000555555bff98e in kvm_cpu_exec (cpu=cpu@entry=0x5555568da320) at ../accel/kvm/kvm-all.c:2900
+#10 0x0000555555c00e7d in kvm_vcpu_thread_fn (arg=arg@entry=0x5555568da320) at ../accel/kvm/kvm-accel-ops.c:51
+#11 0x0000555555d6fb29 in qemu_thread_start (args=<optimized out>) at ../util/qemu-thread-posix.c:505
+#12 0x00007ffff7870ff2 in start_thread () from /nix/store/v6szn6fczjbn54h7y40aj7qjijq7j6dc-glibc-2.34-210/lib/libc.so.6
+#13 0x00007ffff78f3bfc in clone3 () from /nix/store/v6szn6fczjbn54h7y40aj7qjijq7j6dc-glibc-2.34-210/lib/libc.so.6
+```
 
-想不到吧，balloon N 居然会导致这个 backtrace
+
+kernel code:
+```c
+/*
+ * While most virtqueues communicate guest-initiated requests to the hypervisor,
+ * the stats queue operates in reverse.  The driver initializes the virtqueue
+ * with a single buffer.  From that point forward, all conversations consist of
+ * a hypervisor request (a call to this function) which directs us to refill
+ * the virtqueue with a fresh stats buffer.  Since stats collection can sleep,
+ * we delegate the job to a freezable workqueue that will do the actual work via
+ * stats_handle_request().
+ */
+static void stats_request(struct virtqueue *vq)
+{
+	struct virtio_balloon *vb = vq->vdev->priv;
+
+	spin_lock(&vb->stop_update_lock);
+	if (!vb->stop_update)
+		queue_work(system_freezable_wq, &vb->update_balloon_stats_work);
+	spin_unlock(&vb->stop_update_lock);
+}
+```
+- 每次当 host 发过来请求，将任务放到 workqueu 中。
+  - [ ] 什么统计会导致 sleep
+  - [x] 为什么不可以 sleep : 因为在中断的上下文中。
+
+```txt
+#0  stats_request (vq=0xffff888122297200) at drivers/virtio/virtio_balloon.c:365
+#1  0xffffffff81746ec5 in vring_interrupt (irq=10, _vq=<optimized out>) at drivers/virtio/virtio_ring.c:2470
+#2  vring_interrupt (irq=irq@entry=10, _vq=<optimized out>) at drivers/virtio/virtio_ring.c:2445
+#3  0xffffffff8174a82f in vp_vring_interrupt (irq=10, opaque=0xffff88810005f800) at drivers/virtio/virtio_pci_common.c:68
+#4  0xffffffff81179ef1 in __handle_irq_event_percpu (desc=desc@entry=0xffff888100124c00) at kernel/irq/handle.c:158
+#5  0xffffffff8117a09f in handle_irq_event_percpu (desc=0xffff888100124c00) at kernel/irq/handle.c:193
+#6  handle_irq_event (desc=desc@entry=0xffff888100124c00) at kernel/irq/handle.c:210
+#7  0xffffffff8117e39b in handle_fasteoi_irq (desc=0xffff888100124c00) at kernel/irq/chip.c:714
+#8  0xffffffff810bba44 in generic_handle_irq_desc (desc=0xffff888100124c00) at include/linux/irqdesc.h:158
+#9  handle_irq (regs=<optimized out>, desc=0xffff888100124c00) at arch/x86/kernel/irq.c:231
+#10 __common_interrupt (regs=<optimized out>, vector=33) at arch/x86/kernel/irq.c:250
+#11 0xffffffff81fa6553 in common_interrupt (regs=0xffffffff82a03de8, error_code=<optimized out>) at arch/x86/kernel/irq.c:240
+Backtrace stopped: Cannot access memory at address 0xffffc90000004018
+```
+
+## size
+
+### balloon N 的实现
+qemu 中，经过 QMP 到达 virtio_balloon_to_target
+- virtio_balloon_to_target
+  - dev->num_pages = (vm_ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
+  - virtio_notify_config
+
+
+- 这个到底什么时候获取?
+  - virtio_balloon_get_config
+
+```txt
+#0  virtio_balloon_get_config (vdev=0x5555578d5c00, config_data=0x5555578de1a0 "") at ../hw/virtio/virtio-balloon.c:711
+#1  0x0000555555b204f5 in virtio_config_modern_readl () at ../hw/virtio/virtio.c:2163
+#2  0x00005555559b0d15 in virtio_pci_device_read (opaque=<optimized out>, addr=<optimized out>, size=<optimized out>) at ../hw/virtio/virtio-pci.c:1443
+#3  0x0000555555b4e1df in memory_region_read_accessor (mr=mr@entry=0x5555578ce5b0, addr=0, value=value@entry=0x7ffde73fd6d0, size=size@entry=4, shift=0, mask=mask@entry=4294967295, attrs=...) at ../softmmu/memory.c:440
+#4  0x0000555555b4b426 in access_with_adjusted_size (addr=addr@entry=0, value=value@entry=0x7ffde73fd6d0, size=size@entry=4, access_size_min=<optimized out>, access_size_max=<optimized out>, access_fn=0x555555b4e1a0 <memory_region_read_accessor>, mr=0x5555578ce5b0, attrs=...) at ../softmmu/memory.c:554
+#5  0x0000555555b4f5d1 in memory_region_dispatch_read1 (attrs=..., size=4, pval=0x7ffde73fd6d0, addr=0, mr=0x5555578ce5b0) at ../softmmu/memory.c:1430
+#6  memory_region_dispatch_read (mr=<optimized out>, addr=<optimized out>, pval=pval@entry=0x7ffde73fd6d0, op=MO_32, attrs=attrs@entry=...) at ../softmmu/memory.c:1457
+#7  0x0000555555b59ae6 in flatview_read_continue (fv=fv@entry=0x7ffdd82827f0, addr=addr@entry=4263534592, attrs=attrs@entry=..., ptr=ptr@entry=0x7ffff4749028, len=len@entry=4, addr1=<optimized out>, l=<optimized out>, mr=<optimized out>) at /home/martins3/core/qemu/include/qemu/host-utils.h:166
+#8  0x0000555555b59d40 in flatview_read (fv=0x7ffdd82827f0, addr=addr@entry=4263534592, attrs=attrs@entry=..., buf=buf@entry=0x7ffff4749028, len=len@entry=4) at ../softmmu/physmem.c:2934
+#9  0x0000555555b5a08e in address_space_read_full (len=4, buf=0x7ffff4749028, attrs=..., addr=4263534592, as=0x5555565738c0 <address_space_memory>) at ../softmmu/physmem.c:2947
+#10 address_space_rw (as=0x5555565738c0 <address_space_memory>, addr=4263534592, attrs=attrs@entry=..., buf=buf@entry=0x7ffff4749028, len=4, is_write=<optimized out>) at ../softmmu/physmem.c:2975
+#11 0x0000555555bf140e in kvm_cpu_exec (cpu=cpu@entry=0x5555568de410) at ../accel/kvm/kvm-all.c:2939
+#12 0x0000555555bf28bd in kvm_vcpu_thread_fn (arg=arg@entry=0x5555568de410) at ../accel/kvm/kvm-accel-ops.c:49
+#13 0x0000555555d567e9 in qemu_thread_start (args=<optimized out>) at ../util/qemu-thread-posix.c:504
+#14 0x00007ffff76d2ff2 in start_thread () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
+#15 0x00007ffff7755bfc in clone3 () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
+```
+
+当 guest 接受到消息之后，在 `virtio_balloon_queue_free_page_work` 中发起 workqueue
 ```txt
 #0  virtio_balloon_queue_free_page_work (vb=<optimized out>) at drivers/virtio/virtio_balloon.c:425
 #1  virtballoon_changed (vdev=<optimized out>) at drivers/virtio/virtio_balloon.c:445
@@ -81,11 +174,8 @@ Num     Type           Disp Enb Address            What
 Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 ```
 
-其实是符合逻辑的，在 virtio_balloon_queue_free_page_work 是主动触发的
-- [ ] 但是，是那些 pages 是需要和 QEMU 交流一下才对。
-
+然后在 workqueue 中间:
 ```txt
-#0  leak_balloon (vb=vb@entry=0xffff8881010d8000, num=256000) at drivers/virtio/virtio_balloon.c:269
 #1  0xffffffff81726a9a in update_balloon_size_func (work=0xffff8881010d8070) at drivers/virtio/virtio_balloon.c:483
 #2  0xffffffff811225d4 in process_one_work (worker=worker@entry=0xffff888125dc0a80, work=0xffff8881010d8070) at kernel/workqueue.c:2289
 #3  0xffffffff81122b68 in worker_thread (__worker=0xffff888125dc0a80) at kernel/workqueue.c:2436
@@ -94,28 +184,24 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 #6  0x0000000000000000 in ?? ()
 ```
 
-- fill_balloon
-  - balloon_page_alloc
-  - balloon_page_push
-  - set_page_pfns : 将 pages 送出去
+- update_balloon_size_func
+  - leak_balloon
+  - fill_balloon : 增大 balloon
+    - balloon_page_alloc
+    - balloon_page_enqueue
+      - balloon_page_insert : 设置 page 的 `PAGE_MAPPING_MOVABLE`
+    - tell_host : 将页面发送给 host，然后等待
+  - update_balloon_size : 修改 config，host 侧不会接受到通知
+    - 将 balloon_dev_info::pages 链表中的页释放出去
 
+最后在 QEMU 中间:
+- virtio_balloon_handle_output
+  - balloon_inflate_page
+    - ram_block_discard_range
+  - balloon_deflate_page
+    - qemu_madvise(host_addr, rb_page_size, QEMU_MADV_WILLNEED)
 
-
-在另一个线程中，逐个调用的:
-```txt
-#0  update_balloon_size_func (work=0xffff8881010d8070) at drivers/virtio/virtio_balloon.c:469
-#1  0xffffffff811225d4 in process_one_work (worker=worker@entry=0xffff888125dc0a80, work=0xffff8881010d8070) at kernel/workqueue.c:2289
-#2  0xffffffff81122b68 in worker_thread (__worker=0xffff888125dc0a80) at kernel/workqueue.c:2436
-#3  0xffffffff81129510 in kthread (_create=0xffff888221a3b100) at kernel/kthread.c:376
-#4  0xffffffff81001a8f in ret_from_fork () at arch/x86/entry/entry_64.S:306
-#5  0x0000000000000000 in ?? ()
-```
-
-- [ ] get_free_page_and_send
-
-- qemu 如何接受的具体的 pages
-  - balloon_inflate_page -> ram_block_discard_range
-  - [ ] 使用一个 backtrace 分析一下。
+### info balloon 的实现
 
 ## 为什么 shrink 从来用不上
 - shrink 的工作是什么，当 guest 实在不行的时候，来释放，但是
@@ -194,52 +280,6 @@ struct VirtIOBalloon {
 };
 ```
 
-# qemu 的一些 backtrace
-
-### virtio_balloon_get_config
-- virtio_balloon_get_config
-
-- virtio_balloon_get_config 最开始的时候也是会调用一次，处于何种考虑
-
-balloon N 的时候，可以会触发这个:
-```txt
-#0  virtio_balloon_get_config (vdev=0x5555578d5c00, config_data=0x5555578de1a0 "") at ../hw/virtio/virtio-balloon.c:711
-#1  0x0000555555b204f5 in virtio_config_modern_readl () at ../hw/virtio/virtio.c:2163
-#2  0x00005555559b0d15 in virtio_pci_device_read (opaque=<optimized out>, addr=<optimized out>, size=<optimized out>) at ../hw/virtio/virtio-pci.c:1443
-#3  0x0000555555b4e1df in memory_region_read_accessor (mr=mr@entry=0x5555578ce5b0, addr=0, value=value@entry=0x7ffde73fd6d0, size=size@entry=4, shift=0, mask=mask@entry=4294967295, attrs=...) at ../softmmu/memory.c:440
-#4  0x0000555555b4b426 in access_with_adjusted_size (addr=addr@entry=0, value=value@entry=0x7ffde73fd6d0, size=size@entry=4, access_size_min=<optimized out>, access_size_max=<optimized out>, access_fn=0x555555b4e1a0 <memory_region_read_accessor>, mr=0x5555578ce5b0, attrs=...) at ../softmmu/memory.c:554
-#5  0x0000555555b4f5d1 in memory_region_dispatch_read1 (attrs=..., size=4, pval=0x7ffde73fd6d0, addr=0, mr=0x5555578ce5b0) at ../softmmu/memory.c:1430
-#6  memory_region_dispatch_read (mr=<optimized out>, addr=<optimized out>, pval=pval@entry=0x7ffde73fd6d0, op=MO_32, attrs=attrs@entry=...) at ../softmmu/memory.c:1457
-#7  0x0000555555b59ae6 in flatview_read_continue (fv=fv@entry=0x7ffdd82827f0, addr=addr@entry=4263534592, attrs=attrs@entry=..., ptr=ptr@entry=0x7ffff4749028, len=len@entry=4, addr1=<optimized out>, l=<optimized out>, mr=<optimized out>) at /home/martins3/core/qemu/include/qemu/host-utils.h:166
-#8  0x0000555555b59d40 in flatview_read (fv=0x7ffdd82827f0, addr=addr@entry=4263534592, attrs=attrs@entry=..., buf=buf@entry=0x7ffff4749028, len=len@entry=4) at ../softmmu/physmem.c:2934
-#9  0x0000555555b5a08e in address_space_read_full (len=4, buf=0x7ffff4749028, attrs=..., addr=4263534592, as=0x5555565738c0 <address_space_memory>) at ../softmmu/physmem.c:2947
-#10 address_space_rw (as=0x5555565738c0 <address_space_memory>, addr=4263534592, attrs=attrs@entry=..., buf=buf@entry=0x7ffff4749028, len=4, is_write=<optimized out>) at ../softmmu/physmem.c:2975
-#11 0x0000555555bf140e in kvm_cpu_exec (cpu=cpu@entry=0x5555568de410) at ../accel/kvm/kvm-all.c:2939
-#12 0x0000555555bf28bd in kvm_vcpu_thread_fn (arg=arg@entry=0x5555568de410) at ../accel/kvm/kvm-accel-ops.c:49
-#13 0x0000555555d567e9 in qemu_thread_start (args=<optimized out>) at ../util/qemu-thread-posix.c:504
-#14 0x00007ffff76d2ff2 in start_thread () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
-#15 0x00007ffff7755bfc in clone3 () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
-```
-- [ ] human control interface 为什么会触发这个操作，我不理解?
-- [ ] 应该还是存在其他的什么操作的吧？
-
-```txt
-#0  virtio_balloon_handle_output (vdev=0x5555578d5c00, vq=0x7ffff428d010) at ../hw/virtio/virtio-balloon.c:391
-#1  0x0000555555b207ec in virtio_queue_notify (vdev=0x5555578d5c00, n=<optimized out>) at ../hw/virtio/virtio.c:2385
-#2  0x0000555555b4dc70 in memory_region_write_accessor (mr=mr@entry=0x5555578ce6d0, addr=0, value=value@entry=0x7ffde7bfe618, size=size@entry=2, shift=<optimized out>, mask=mask@entry=65535, attrs=...) at ../softmmu/memory.c:492
-#3  0x0000555555b4b426 in access_with_adjusted_size (addr=addr@entry=0, value=value@entry=0x7ffde7bfe618, size=size@entry=2, access_size_min=<optimized out>, access_size_max=<optimized out>, access_fn=0x555555b4dbf0 <memory_region_write_accessor>, mr=0x5555578ce6d0, attrs=...) at ../softmmu/memory.c:554
-#4  0x0000555555b4f71a in memory_region_dispatch_write (mr=mr@entry=0x5555578ce6d0, addr=0, data=<optimized out>, op=<optimized out>, attrs=attrs@entry=...) at ../softmmu/memory.c:1521
-#5  0x0000555555b566f0 in flatview_write_continue (fv=fv@entry=0x7ffdd86c46e0, addr=addr@entry=4263538688, attrs=..., attrs@entry=..., ptr=ptr@entry=0x7ffff474c028, len=len@entry=2, addr1=<optimized out>, l=<optimized out>, mr=0x5555578ce6d0) at /home/martins3/core/qemu/include/qemu/host-utils.h:166
-#6  0x0000555555b569b0 in flatview_write (fv=0x7ffdd86c46e0, addr=addr@entry=4263538688, attrs=attrs@entry=..., buf=buf@entry=0x7ffff474c028, len=len@entry=2) at ../softmmu/physmem.c:2867
-#7  0x0000555555b5a109 in address_space_write (len=2, buf=0x7ffff474c028, attrs=..., addr=4263538688, as=0x5555565738c0 <address_space_memory>) at ../softmmu/physmem.c:2963
-#8  address_space_rw (as=0x5555565738c0 <address_space_memory>, addr=4263538688, attrs=attrs@entry=..., buf=buf@entry=0x7ffff474c028, len=2, is_write=<optimized out>) at ../softmmu/physmem.c:2973
-#9  0x0000555555bf140e in kvm_cpu_exec (cpu=cpu@entry=0x5555568a3340) at ../accel/kvm/kvm-all.c:2939
-#10 0x0000555555bf28bd in kvm_vcpu_thread_fn (arg=arg@entry=0x5555568a3340) at ../accel/kvm/kvm-accel-ops.c:49
-#11 0x0000555555d567e9 in qemu_thread_start (args=<optimized out>) at ../util/qemu-thread-posix.c:504
-#12 0x00007ffff76d2ff2 in start_thread () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
-#13 0x00007ffff7755bfc in clone3 () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
-```
-
 ## BALLOON_COMPACTION
 
 ```txt
@@ -271,7 +311,9 @@ config BALLOON_COMPACTION
 
 ## 为什么 vmware 的 balloon 写的这么长
 
-➜  linux git:(master) ✗ /home/martins3/core/linux/drivers/misc/vmw_balloon.c
+- linux git:(master) ✗ /home/martins3/core/linux/drivers/misc/vmw_balloon.c
+- 内核中页存在 HyperV 的 balloon :
+  - https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/hh831766(v=ws.11)?redirectedfrom=MSDN
 
 ## hint
 - 解决 migration 中，不知道将 balloon 设置为多大的问题:
@@ -348,6 +390,8 @@ index 8543c9a97307..7efc32945810 100644
 直接访问
 
 似乎有时候会触发连续的这个报错
+
+- 不科学，除非一直有
 
 ## [ ] 似乎有时候，设置 balloon 不会立刻得到响应
 
@@ -451,3 +495,156 @@ index b78b30e7ba..c0a3c47167 100644
                         ((ram_addr_t) dev->actual << VIRTIO_BALLOON_PFN_SHIFT));
     }
 ```
+
+## TODO
+```c
+struct VirtIOBalloon {
+    VirtIODevice parent_obj;
+    VirtQueue *ivq, *dvq, *svq, *free_page_vq, *reporting_vq;
+```
+- 这几个 vqs 都是做什么的?
+  - svq : 统计信息
+
+- balloon 并不会将 Linux kernel 彻底压缩掉，但是其停手的规则是什么?
+
+- qemu/softmmu/balloon.c 似乎没有任何作用了，似乎是因为以前 QEMU 中存在多个 balloon dirver，现在只是剩下 virtio balloon 了
+  - 是因为考虑 HyperV 吗?
+
+## 似乎两侧通信的格式是按照约定的
+
+### QEMU 的解析
+```c
+static void balloon_stats_poll_cb(void *opaque)
+{
+    VirtIOBalloon *s = opaque;
+    VirtIODevice *vdev = VIRTIO_DEVICE(s);
+
+    if (s->stats_vq_elem == NULL || !balloon_stats_supported(s)) {
+        /* re-schedule */
+        balloon_stats_change_timer(s, s->stats_poll_interval);
+        return;
+    }
+
+    virtqueue_push(s->svq, s->stats_vq_elem, 0);
+    virtio_notify(vdev, s->svq);
+    g_free(s->stats_vq_elem);
+    s->stats_vq_elem = NULL;
+}
+```
+
+- balloon_stats_poll_cb
+  - virtqueue_push
+    - virtqueue_fill
+
+- virtio_balloon_receive_stats
+  - elem = virtqueue_pop(vq, sizeof(VirtQueueElement));
+  - iov_to_buf : 从中解析出来 virtio_balloon_stat
+
+- VirtQueueElement : 是 QEMU 自己创建出来的
+
+```c
+static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
+{
+    VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
+    VirtQueueElement *elem;
+    VirtIOBalloonStat stat;
+    size_t offset = 0;
+
+    elem = virtqueue_pop(vq, sizeof(VirtQueueElement));
+    if (!elem) {
+        goto out;
+    }
+
+    if (s->stats_vq_elem != NULL) {
+        /* This should never happen if the driver follows the spec. */
+        virtqueue_push(vq, s->stats_vq_elem, 0);
+        virtio_notify(vdev, vq);
+        g_free(s->stats_vq_elem);
+    }
+
+    s->stats_vq_elem = elem;
+
+    /* Initialize the stats to get rid of any stale values.  This is only
+     * needed to handle the case where a guest supports fewer stats than it
+     * used to (ie. it has booted into an old kernel).
+     */
+    reset_stats(s);
+
+    while (iov_to_buf(elem->out_sg, elem->out_num, offset, &stat, sizeof(stat))
+           == sizeof(stat)) {
+        uint16_t tag = virtio_tswap16(vdev, stat.tag);
+        uint64_t val = virtio_tswap64(vdev, stat.val);
+
+        offset += sizeof(stat);
+        if (tag < VIRTIO_BALLOON_S_NR)
+            s->stats[tag] = val;
+    }
+    s->stats_vq_offset = offset;
+    s->stats_last_update = g_get_real_time() / G_USEC_PER_SEC;
+
+out:
+    if (balloon_stats_enabled(s)) {
+        balloon_stats_change_timer(s, s->stats_poll_interval);
+    }
+}
+```
+
+### 内核如何传输这两个数值
+
+```c
+static void stats_handle_request(struct virtio_balloon *vb)
+{
+	struct virtqueue *vq;
+	struct scatterlist sg;
+	unsigned int len, num_stats;
+
+	num_stats = update_balloon_stats(vb);
+
+	vq = vb->stats_vq;
+	if (!virtqueue_get_buf(vq, &len))
+		return;
+	sg_init_one(&sg, vb->stats, sizeof(vb->stats[0]) * num_stats);
+	virtqueue_add_outbuf(vq, &sg, 1, vb, GFP_KERNEL);
+	virtqueue_kick(vq);
+}
+```
+
+- sg_init_one : 将 struct virtio_balloon_stat stats[VIRTIO_BALLOON_S_NR]; 生成为一个 sg
+- virtqueue_add_outbuf
+
+## 具体代码上的分析
+- free_page_hint_status
+
+## 理解一下这个 feature
+- VIRTIO_BALLOON_F_FREE_PAGE_HINT
+- [ ] get_free_page_and_send
+
+- 如何理解 virtballoon_freeze 和 virtballoon_restore 的功能:
+```c
+static struct virtio_driver virtio_balloon_driver = {
+	.feature_table = features,
+	.feature_table_size = ARRAY_SIZE(features),
+	.driver.name =	KBUILD_MODNAME,
+	.driver.owner =	THIS_MODULE,
+	.id_table =	id_table,
+	.validate =	virtballoon_validate,
+	.probe =	virtballoon_probe,
+	.remove =	virtballoon_remove,
+	.config_changed = virtballoon_changed,
+#ifdef CONFIG_PM_SLEEP
+	.freeze	=	virtballoon_freeze,
+	.restore =	virtballoon_restore,
+#endif
+};
+```
+
+## [ ] 如何 Host 或者 Guest 中有的 page 大小不是 4k 如何
+
+```c
+/* Size of a PFN in the balloon interface. */
+#define VIRTIO_BALLOON_PFN_SHIFT 12
+```
+
+## 快速回答
+- 为什么将 update_balloon_size_func 和 update_balloon_stats_func 设置为 workqueue 的?
+  - 因为他们都会导致睡眠？

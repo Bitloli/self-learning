@@ -23,11 +23,17 @@
 - virtio
 
 ## 纵向扩展
+1. 内存管理
 1. io_uring
 2. iommu
 3. kvm
 4. cgroup
 5. 虚拟化
+6. kvm
+7. kdump / kexec
+8. perf ftrace
+
+很长一段时间，Linux 内核只能使用 gcc 编译。
 
 memory 中 Transparent Huge Page 和
 ## accidental complexity

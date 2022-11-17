@@ -1,7 +1,7 @@
 # X86 上阅读 Loongarch 内核
 
 ## 背景
-X86 上阅读 X86 内核的配置可以参考[我之前的文章](https://github.com/Martins3/My-Linux-config)
+X86 机器上阅读 X86 内核的配置可以参考[我之前的文章](https://github.com/Martins3/My-Linux-config)
 
 下面说明一下阅读 Loongarch 内核的一些调整。
 
@@ -12,7 +12,7 @@ X86 上阅读 X86 内核的配置可以参考[我之前的文章](https://github
 ```
 但是阅读 Loongarch 的内核时候，ccls 很快就会停止工作，最后整个项目也没有办法索引。
 
-## 解决方法 
+## 解决方法
 1. 将 ccls 单独拿出来分析
 ```sh
  ~/arch/ccls/Release/ccls --index=. -v=2 --init='{"index":{"threads":1}}'
@@ -68,3 +68,19 @@ bear make -j10
 2. 将 compile_commands.json 拷贝到 intel 机器上
 3. 替换 "cc" 为 "mips64el-linux-gnu-gcc"
 4. 替换路径
+
+<script src="https://giscus.app/client.js"
+        data-repo="martins3/martins3.github.io"
+        data-repo-id="MDEwOlJlcG9zaXRvcnkyOTc4MjA0MDg="
+        data-category="Show and tell"
+        data-category-id="MDE4OkRpc2N1c3Npb25DYXRlZ29yeTMyMDMzNjY4"
+        data-mapping="pathname"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-theme="light"
+        data-lang="zh-CN"
+        crossorigin="anonymous"
+        async>
+</script>
+
+本站所有文章转发 **CSDN** 将按侵权追究法律责任，其它情况随意。

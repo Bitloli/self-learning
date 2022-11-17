@@ -35,3 +35,6 @@ This should list /run/libvirt/nix-emulators/qemu-kvm in the <emulator> tag. If b
 ```sh
 kvm : no hardware support
 ```
+
+## 和 virsh 来操作 hmp
+- https://gist.github.com/orimanabu/815fc2453966f50f5d5281ea58b0058e

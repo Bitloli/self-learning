@@ -1,16 +1,23 @@
-## 官方文档已经非常清楚了
+## 基本知识
 
 - https://docs.kernel.org/admin-guide/mm/numa_memory_policy.html
 - https://man7.org/linux/man-pages/man2/set_mempolicy.2.html : 这个也是需要自习分析
 
-- alloc_pages_vma
+范围:
+- System Default Policy
+- Task/Process Policy
+- VMA Policy
+- [ ] Shared Policy : 完全没有看懂哇
 
--  默认算法是从 Local Node 上找，如果没有就去 remote 的 Node 上尝试
-  - get_page_from_freelist 中调用 for_next_zone_zonelist_nodemask 将所有的 Node 都遍历一次
+- Default Mode–MPOL_DEFAULT
+
+
+- [ ] mempolicy 是进程相关的，所以是 vm_area_struct 持有 vm_policy，而内核使用的内存是有自己的方法的。
+  - 大错特错
+  - [ ] 找到 vma 持有 vm_policy 的位置
 
 ## 内核分配内存真的是 interleaved 吗
 - 还是说，只是启动的时候是 interleaved
-
 
 - 如果用户进程访问文件:
   - 形成的 page cache 是 interleaved 吗? 但是如果该文件是 shared ?
@@ -18,27 +25,11 @@
 
 ## set_mempolicy() or mbind() 两个系统调用的区别是什么
 
-## memory
-```c
-/*
- * Both the MPOL_* mempolicy mode and the MPOL_F_* optional mode flags are
- * passed by the user to either set_mempolicy() or mbind() in an 'int' actual.
- * The MPOL_MODE_FLAGS macro determines the legal set of optional mode flags.
- */
+## 系统启动的时候，mempolicy 是 interleave 的，之后切换为 local allocation
 
-/* Policies */
-enum {
-	MPOL_DEFAULT,
-	MPOL_PREFERRED,
-	MPOL_BIND,
-	MPOL_INTERLEAVE,
-	MPOL_LOCAL,
-	MPOL_PREFERRED_MANY,
-	MPOL_MAX,	/* always last member of enum */
-};
-```
+- [ ] 什么时候切换的?
 
-## vma_dup_policy : 当 frok 的时候，默认集成上一个的 policy
+## vma_dup_policy : 当 frok 的时候，默认继承 parent 的 policy
 ```txt
 #0  vma_dup_policy (src=src@entry=0xffff8881212902f8, dst=dst@entry=0xffff888121290390) at mm/mempolicy.c:2387
 #1  0xffffffff812e4710 in __split_vma (mm=mm@entry=0xffff888121518000, vma=vma@entry=0xffff8881212902f8, addr=addr@entry=140295976648704, new_below=new_below@entry=0) at mm/mmap.c:2222
@@ -91,12 +82,53 @@ struct page * alloc_pages_vma(gfp_t gfp, int order, struct vm_area_struct *vma, 
 
 - vma_merge
 
-- vm_area_struct : 持有 vm_policy
 
-## 分析一个问题，各个 NUMA 不是对称的，hugepage 的分配的时候，如何处理大页
-interleave 分配的
+## THP 的分配如何被 mempolicy 影响
 
-## 用户进程分配内存的时候，如何被 mempolicy 影响的
+## hugetlb 的分配如何被 mempolicy 影响
+- [ ] 还记得其中的 hugetlb 中的 nr_mempolicy 吗?
+
+### 大页的创建
+- 各个 NUMA 不是对称的，hugepage 的分配的时候，如何处理大页
+  - interleave 分配的，直到一个 node 上无法分配
+
+### [ ] 大页的使用
+
+## 分配内存的时候，如何被 mempolicy 影响的
+
+### 用户进程
+
+```txt
+#0  get_task_policy (p=0xffff8880251c53c0) at mm/mempolicy.c:163
+#1  alloc_pages (gfp=gfp@entry=4197824, order=order@entry=1) at mm/mempolicy.c:2273
+#2  0xffffffff812f9ae8 in __get_free_pages (gfp_mask=gfp_mask@entry=4197824, order=order@entry=1) at mm/page_alloc.c:5605
+#3  0xffffffff810f566d in _pgd_alloc () at arch/x86/mm/pgtable.c:414
+#4  pgd_alloc (mm=mm@entry=0xffff888100b7bb80) at arch/x86/mm/pgtable.c:430
+#5  0xffffffff81109537 in mm_alloc_pgd (mm=0xffff888100b7bb80) at kernel/fork.c:726
+#6  mm_init (mm=mm@entry=0xffff888100b7bb80, p=p@entry=0xffff88802881a180, user_ns=<optimized out>) at kernel/fork.c:1145
+#7  0xffffffff8110a671 in dup_mm (tsk=tsk@entry=0xffff88802881a180, oldmm=0xffff888122986600) at kernel/fork.c:1523
+#8  0xffffffff8110c34c in copy_mm (tsk=0xffff88802881a180, clone_flags=18874368) at arch/x86/include/asm/current.h:15
+#9  copy_process (pid=pid@entry=0x0 <fixed_percpu_data>, trace=trace@entry=0, node=node@entry=-1, args=args@entry=0xffffc90001f2beb0) at kernel/fork.c:2253
+#10 0xffffffff8110c5b2 in kernel_clone (args=args@entry=0xffffc90001f2beb0) at kernel/fork.c:2671
+#11 0xffffffff8110c9e6 in __do_sys_clone (clone_flags=<optimized out>, newsp=<optimized out>, parent_tidptr=<optimized out>, child_tidptr=<optimized out>, tls=<optimized out>) at kernel/fork.c:2812
+#12 0xffffffff81fa4c4b in do_syscall_x64 (nr=<optimized out>, regs=0xffffc90001f2bf58) at arch/x86/entry/common.c:50
+#13 do_syscall_64 (regs=0xffffc90001f2bf58, nr=<optimized out>) at arch/x86/entry/common.c:80
+#14 0xffffffff8200009b in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120
+#15 0x0000000000000000 in ?? ()
+```
+
+### 设备分配 DMA 空间
+取决于设备所在的 NUMA node 的，可以验证一下。
+
+### slab 分配
+slab 有 cpu cache 和 numa cache 机制，验证一下。
+
+## 验证一下，是首先检查 cpuset，然后检查 memory policy 的
+
+## 这个回答很肤浅，而且并不是正确的
+https://stackoverflow.com/questions/59607742/what-is-default-memory-policy-flag-for-malloc
+
+- default_policy
 
 ```c
 static struct mempolicy default_policy = {
@@ -105,13 +137,6 @@ static struct mempolicy default_policy = {
     .flags = MPOL_F_LOCAL,
 };
 ```
-
-## 验证一下，是首先检查 cpuset，然后检查 memory policy 的
-
-## 这个回答很肤浅，而且并不是正确的
-https://stackoverflow.com/questions/59607742/what-is-default-memory-policy-flag-for-malloc
-
-- default_policy
 
 ```diff
 History:        #0
@@ -182,6 +207,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ```
 
+## MPOL_PREFERRED_MANY
 ```diff
 commit b27abaccf8e8b012f126da0c2a1ab32723ec8b9f
 Author: Dave Hansen <dave.hansen@linux.intel.com>
@@ -335,3 +361,125 @@ Date:   Thu Sep 2 15:00:06 2021 -0700
     Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
     Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ```
+
+## MPOL_F_NUMA_BALANCING 引入的 patch
+```diff
+History:        #0
+Commit:         bda420b985054a3badafef23807c4b4fa38a3dff
+Author:         Huang Ying <ying.huang@intel.com>
+Committer:      Linus Torvalds <torvalds@linux-foundation.org>
+Author Date:    Thu 25 Feb 2021 04:09:43 AM CST
+Committer Date: Thu 25 Feb 2021 05:38:34 AM CST
+
+numa balancing: migrate on fault among multiple bound nodes
+
+Now, NUMA balancing can only optimize the page placement among the NUMA
+nodes if the default memory policy is used.  Because the memory policy
+specified explicitly should take precedence.  But this seems too strict in
+some situations.  For example, on a system with 4 NUMA nodes, if the
+memory of an application is bound to the node 0 and 1, NUMA balancing can
+potentially migrate the pages between the node 0 and 1 to reduce
+cross-node accessing without breaking the explicit memory binding policy.
+
+So in this patch, we add MPOL_F_NUMA_BALANCING mode flag to
+set_mempolicy() when mode is MPOL_BIND.  With the flag specified, NUMA
+balancing will be enabled within the thread to optimize the page placement
+within the constrains of the specified memory binding policy.  With the
+newly added flag, the NUMA balancing control mechanism becomes,
+
+ - sysctl knob numa_balancing can enable/disable the NUMA balancing
+   globally.
+
+ - even if sysctl numa_balancing is enabled, the NUMA balancing will be
+   disabled for the memory areas or applications with the explicit
+   memory policy by default.
+
+ - MPOL_F_NUMA_BALANCING can be used to enable the NUMA balancing for
+   the applications when specifying the explicit memory policy
+   (MPOL_BIND).
+
+Various page placement optimization based on the NUMA balancing can be
+done with these flags.  As the first step, in this patch, if the memory of
+the application is bound to multiple nodes (MPOL_BIND), and in the hint
+page fault handler the accessing node are in the policy nodemask, the page
+will be tried to be migrated to the accessing node to reduce the
+cross-node accessing.
+
+If the newly added MPOL_F_NUMA_BALANCING flag is specified by an
+application on an old kernel version without its support, set_mempolicy()
+will return -1 and errno will be set to EINVAL.  The application can use
+this behavior to run on both old and new kernel versions.
+
+And if the MPOL_F_NUMA_BALANCING flag is specified for the mode other than
+MPOL_BIND, set_mempolicy() will return -1 and errno will be set to EINVAL
+as before.  Because we don't support optimization based on the NUMA
+balancing for these modes.
+
+In the previous version of the patch, we tried to reuse MPOL_MF_LAZY for
+mbind().  But that flag is tied to MPOL_MF_MOVE.*, so it seems not a good
+API/ABI for the purpose of the patch.
+
+And because it's not clear whether it's necessary to enable NUMA balancing
+for a specific memory area inside an application, so we only add the flag
+at the thread level (set_mempolicy()) instead of the memory area level
+(mbind()).  We can do that when it become necessary.
+
+To test the patch, we run a test case as follows on a 4-node machine with
+192 GB memory (48 GB per node).
+
+1. Change pmbench memory accessing benchmark to call set_mempolicy()
+   to bind its memory to node 1 and 3 and enable NUMA balancing.  Some
+   related code snippets are as follows,
+
+     #include <numaif.h>
+     #include <numa.h>
+
+	struct bitmask *bmp;
+	int ret;
+
+	bmp = numa_parse_nodestring("1,3");
+	ret = set_mempolicy(MPOL_BIND | MPOL_F_NUMA_BALANCING,
+			    bmp->maskp, bmp->size + 1);
+	/* If MPOL_F_NUMA_BALANCING isn't supported, fall back to MPOL_BIND */
+	if (ret < 0 && errno == EINVAL)
+		ret = set_mempolicy(MPOL_BIND, bmp->maskp, bmp->size + 1);
+	if (ret < 0) {
+		perror("Failed to call set_mempolicy");
+		exit(-1);
+	}
+
+2. Run a memory eater on node 3 to use 40 GB memory before running pmbench.
+
+3. Run pmbench with 64 processes, the working-set size of each process
+   is 640 MB, so the total working-set size is 64 * 640 MB = 40 GB.  The
+   CPU and the memory (as in step 1.) of all pmbench processes is bound
+   to node 1 and 3. So, after CPU usage is balanced, some pmbench
+   processes run on the CPUs of the node 3 will access the memory of
+   the node 1.
+
+4. After the pmbench processes run for 100 seconds, kill the memory
+   eater.  Now it's possible for some pmbench processes to migrate
+   their pages from node 1 to node 3 to reduce cross-node accessing.
+
+Test results show that, with the patch, the pages can be migrated from
+node 1 to node 3 after killing the memory eater, and the pmbench score
+can increase about 17.5%.
+
+Link: https://lkml.kernel.org/r/20210120061235.148637-2-ying.huang@intel.com
+Signed-off-by: "Huang, Ying" <ying.huang@intel.com>
+Acked-by: Mel Gorman <mgorman@suse.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Rik van Riel <riel@surriel.com>
+Cc: Johannes Weiner <hannes@cmpxchg.org>
+Cc: "Matthew Wilcox (Oracle)" <willy@infradead.org>
+Cc: Dave Hansen <dave.hansen@intel.com>
+Cc: Andi Kleen <ak@linux.intel.com>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: David Rientjes <rientjes@google.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+```
+
+## TODO
+- MPOL_F_NUMA_BALANCING : 对应的文档没有，可以深入理解之后，将这个补充一下

@@ -59,8 +59,6 @@ struct hugetlbfs_inode_info {
   - hugetlb_file_setup
   - hugetlbfs_file_mmap
 
-- [ ] 可以动态修改 mmap 的属性吗? 将 shared 修改为 private
-
 - hugetlb_reserve_pages
   - hugetlb_acct_memory ：来检查 reservation 是否能够通过限制，例如 cpuset , numa 等
 
