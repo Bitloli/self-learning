@@ -1,4 +1,5 @@
 - [ ] 参考一下狼书 P322 理解一下 vring vring_avail vring_used vring_desc 和 sg 的关系
+  - virtqueue 的定位是什么?
 - [ ] vring_interrupt 是在 softirq 的环境中吗?
 
 ## 文档
@@ -42,6 +43,8 @@ Vring
 
 - [ ] QEMU 是如何初始化 virtio 设备的
 - 热插拔
+
+- [ ] 如何协商 vq 的数量，有时候 vq 的数量取决于是否打开一些 feature 的?
 
 ## 深入理解 virtio ，以 virtio-blk 为例
 

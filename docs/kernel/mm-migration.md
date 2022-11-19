@@ -6,6 +6,14 @@
 
 - [ ] 搜索一下 migration ，还是存在很多类似的积累的
 
+- [ ] 似乎 ARM 和 大页都会影响 migration 的实现。
+
+
+- move_to_new_folio
+  - migrate_folio : 如果是 anon 映射
+  - mapping->a_ops->migrate_folio : 取决于文件系统
+  - fallback_migrate_folio : 如果文件系统没有注册
+
 ## 测试工具
 > migratepages pid from-nodes to-nodes
 >

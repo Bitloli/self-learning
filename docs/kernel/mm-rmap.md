@@ -234,13 +234,19 @@ static inline pgoff_t linear_page_index(struct vm_area_struct *vma,
 #define PAGE_MAPPING_KSM	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 #define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 ```
-使用 `page->mapping` 最后的两位区分 `page->mapping`  到底是指向了
+使用 `page->mapping` 最后的两位区分 `page->mapping`  到底是指向什么内容:
+- 只有 PAGE_MAPPING_ANON : 指向 anon_vma，用于实现 anon vma 的反向映射；
+- 只有 PAGE_MAPPING_MOVABLE : 该页被驱动使用，指向 movable_operations，目前，驱动只有 z3fold zsmalloc 和 swap ；
+- 没有 flags: 指向 address_space，描述该页和关联的文件的关系；
+- 两个都有，表示为 KSM 处理的页。
 
-`page->mapping` 的复用结果，分别找到两个
+`page->mapping` 的复用结果，内核中对应的辅助函数:
 
 ```c
 struct address_space *folio_mapping(struct folio *folio)
 struct anon_vma *folio_get_anon_vma(struct folio *folio)
+static inline const struct movable_operations *page_movable_ops(struct page *page)
+static __always_inline bool folio_test_ksm(struct folio *folio)
 ```
 
 ## 关键参考

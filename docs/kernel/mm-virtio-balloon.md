@@ -133,28 +133,6 @@ qemu 中，经过 QMP 到达 virtio_balloon_to_target
   - virtio_notify_config
 
 
-- 这个到底什么时候获取?
-  - virtio_balloon_get_config
-
-```txt
-#0  virtio_balloon_get_config (vdev=0x5555578d5c00, config_data=0x5555578de1a0 "") at ../hw/virtio/virtio-balloon.c:711
-#1  0x0000555555b204f5 in virtio_config_modern_readl () at ../hw/virtio/virtio.c:2163
-#2  0x00005555559b0d15 in virtio_pci_device_read (opaque=<optimized out>, addr=<optimized out>, size=<optimized out>) at ../hw/virtio/virtio-pci.c:1443
-#3  0x0000555555b4e1df in memory_region_read_accessor (mr=mr@entry=0x5555578ce5b0, addr=0, value=value@entry=0x7ffde73fd6d0, size=size@entry=4, shift=0, mask=mask@entry=4294967295, attrs=...) at ../softmmu/memory.c:440
-#4  0x0000555555b4b426 in access_with_adjusted_size (addr=addr@entry=0, value=value@entry=0x7ffde73fd6d0, size=size@entry=4, access_size_min=<optimized out>, access_size_max=<optimized out>, access_fn=0x555555b4e1a0 <memory_region_read_accessor>, mr=0x5555578ce5b0, attrs=...) at ../softmmu/memory.c:554
-#5  0x0000555555b4f5d1 in memory_region_dispatch_read1 (attrs=..., size=4, pval=0x7ffde73fd6d0, addr=0, mr=0x5555578ce5b0) at ../softmmu/memory.c:1430
-#6  memory_region_dispatch_read (mr=<optimized out>, addr=<optimized out>, pval=pval@entry=0x7ffde73fd6d0, op=MO_32, attrs=attrs@entry=...) at ../softmmu/memory.c:1457
-#7  0x0000555555b59ae6 in flatview_read_continue (fv=fv@entry=0x7ffdd82827f0, addr=addr@entry=4263534592, attrs=attrs@entry=..., ptr=ptr@entry=0x7ffff4749028, len=len@entry=4, addr1=<optimized out>, l=<optimized out>, mr=<optimized out>) at /home/martins3/core/qemu/include/qemu/host-utils.h:166
-#8  0x0000555555b59d40 in flatview_read (fv=0x7ffdd82827f0, addr=addr@entry=4263534592, attrs=attrs@entry=..., buf=buf@entry=0x7ffff4749028, len=len@entry=4) at ../softmmu/physmem.c:2934
-#9  0x0000555555b5a08e in address_space_read_full (len=4, buf=0x7ffff4749028, attrs=..., addr=4263534592, as=0x5555565738c0 <address_space_memory>) at ../softmmu/physmem.c:2947
-#10 address_space_rw (as=0x5555565738c0 <address_space_memory>, addr=4263534592, attrs=attrs@entry=..., buf=buf@entry=0x7ffff4749028, len=4, is_write=<optimized out>) at ../softmmu/physmem.c:2975
-#11 0x0000555555bf140e in kvm_cpu_exec (cpu=cpu@entry=0x5555568de410) at ../accel/kvm/kvm-all.c:2939
-#12 0x0000555555bf28bd in kvm_vcpu_thread_fn (arg=arg@entry=0x5555568de410) at ../accel/kvm/kvm-accel-ops.c:49
-#13 0x0000555555d567e9 in qemu_thread_start (args=<optimized out>) at ../util/qemu-thread-posix.c:504
-#14 0x00007ffff76d2ff2 in start_thread () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
-#15 0x00007ffff7755bfc in clone3 () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
-```
-
 当 guest 接受到消息之后，在 `virtio_balloon_queue_free_page_work` 中发起 workqueue
 ```txt
 #0  virtio_balloon_queue_free_page_work (vb=<optimized out>) at drivers/virtio/virtio_balloon.c:425
@@ -185,16 +163,16 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 ```
 
 - update_balloon_size_func
+  - towards_target : 这个会导致进入 QEMU::virtio_balloon_get_config
   - leak_balloon
   - fill_balloon : 增大 balloon
     - balloon_page_alloc
     - balloon_page_enqueue
       - balloon_page_insert : 设置 page 的 `PAGE_MAPPING_MOVABLE`
     - tell_host : 将页面发送给 host，然后等待
-  - update_balloon_size : 修改 config，host 侧不会接受到通知
-    - 将 balloon_dev_info::pages 链表中的页释放出去
+  - update_balloon_size : 这将会进入到 QEMU::virtio_balloon_set_config，在其中更新 actual 数值。
 
-最后在 QEMU 中间:
+如果接受 pages，那么最后在 QEMU 中间:
 - virtio_balloon_handle_output
   - balloon_inflate_page
     - ram_block_discard_range
@@ -202,22 +180,194 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
     - qemu_madvise(host_addr, rb_page_size, QEMU_MADV_WILLNEED)
 
 ### info balloon 的实现
+不会进入到 guest 中，利用上次 balloon N 更新的 actual 直接返回。
 
-## 为什么 shrink 从来用不上
-- shrink 的工作是什么，当 guest 实在不行的时候，来释放，但是
+## VIRTIO_BALLOON_F_FREE_PAGE_HINT
 
-- 实际上，guest 宁可 oom 也是不会调用这个的: virtio_balloon_shrinker_count
-```txt
-#0  do_shrink_slab (shrinkctl=shrinkctl@entry=0xffffc9000115fcc0, shrinker=shrinker@entry=0xffffffff82b4cc40 <kfree_rcu_shrinker>, priority=priority@entry=12) at mm/vmscan.c:774
-#1  0xffffffff81294954 in shrink_slab (gfp_mask=3264, nid=0, memcg=memcg@entry=0xffff888100180000, priority=12) at mm/vmscan.c:991
-#2  0xffffffff812964b3 in shrink_node_memcgs (sc=0xffffc9000115fdd8, pgdat=0xffff88813fffc000) at mm/vmscan.c:3182
-#3  shrink_node (pgdat=pgdat@entry=0xffff88813fffc000, sc=sc@entry=0xffffc9000115fdd8) at mm/vmscan.c:3304
-#4  0xffffffff81296bd7 in kswapd_shrink_node (sc=0xffffc9000115fdd8, pgdat=0xffff88813fffc000) at mm/vmscan.c:4086
-#5  balance_pgdat (pgdat=pgdat@entry=0xffff88813fffc000, order=order@entry=4, highest_zoneidx=highest_zoneidx@entry=3) at mm/vmscan.c:4277
-#6  0xffffffff8129718b in kswapd (p=0xffff88813fffc000) at mm/vmscan.c:4537
-#7  0xffffffff81129510 in kthread (_create=0xffff888200b6ed40) at kernel/kthread.c:376
-#8  0xffffffff81001a8f in ret_from_fork () at arch/x86/entry/entry_64.S:306
+注意一个问题，普通的页是挂载到 balloon_dev_info::pages 上的
+```c
+/*
+ * Balloon device information descriptor.
+ * This struct is used to allow the common balloon compaction interface
+ * procedures to find the proper balloon device holding memory pages they'll
+ * have to cope for page compaction / migration, as well as it serves the
+ * balloon driver as a page book-keeper for its registered balloon devices.
+ */
+struct balloon_dev_info {
+	unsigned long isolated_pages;	/* # of isolated pages for migration */
+	spinlock_t pages_lock;		/* Protection to pages list */
+	struct list_head pages;		/* Pages enqueued & handled to Host */
+	int (*migratepage)(struct balloon_dev_info *, struct page *newpage,
+			struct page *page, enum migrate_mode mode);
+};
 ```
+而 hint 的页是挂载到 virtio_balloon::free_page_list 这里的:
+
+因为普通的页是真的不能自己用的，而 hint 的页是不可以给其他人用的，所以可以 shrink 的，无需通知 Host 。
+
+- [ ] 迁移的时候，guest 没有使用的页不用发送的?
+  - 似乎比到 proc/pid/map 下去检查更加好的
+    - 怀疑，qemu 中是否实现过这个功能
+
+- report_free_page_func
+  - VIRTIO_BALLOON_CMD_ID_DONE: return_free_pages_to_mm
+  - virtio_balloon_report_free_page
+    - send_cmd_id_start : 没有等待过程吗?
+    - send_free_pages
+      - get_free_page_and_send :
+    - send_cmd_id_stop
+
+- [ ] 为什么分配的时候，使用那么大的 order 啊?
+  - 是不是，如果 order 很小的，就直接走常规路径了。
+
+```diff
+This is the deivce part implementation to add a new feature,
+VIRTIO_BALLOON_F_FREE_PAGE_HINT to the virtio-balloon device. The device
+receives the guest free page hints from the driver and clears the
+corresponding bits in the dirty bitmap, so that those free pages are
+not sent by the migration thread to the destination.
+
+*Tests
+1 Test Environment
+    Host: Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz
+    Migration setup: migrate_set_speed 100G, migrate_set_downtime 400ms
+
+2 Test Results (results are averaged over several repeated runs)
+    2.1 Guest setup: 8G RAM, 4 vCPU
+        2.1.1 Idle guest live migration time
+            Optimization v.s. Legacy = 620ms vs 2970ms
+            --> ~79% reduction
+        2.1.2 Guest live migration with Linux compilation workload
+          (i.e. make bzImage -j4) running
+          1) Live Migration Time:
+             Optimization v.s. Legacy = 2273ms v.s. 4502ms
+             --> ~50% reduction
+          2) Linux Compilation Time:
+             Optimization v.s. Legacy = 8min42s v.s. 8min43s
+             --> no obvious difference
+
+    2.2 Guest setup: 128G RAM, 4 vCPU
+        2.2.1 Idle guest live migration time
+            Optimization v.s. Legacy = 5294ms vs 41651ms
+            --> ~87% reduction
+        2.2.2 Guest live migration with Linux compilation workload
+          1) Live Migration Time:
+            Optimization v.s. Legacy = 8816ms v.s. 54201ms
+            --> 84% reduction
+          2) Linux Compilation Time:
+             Optimization v.s. Legacy = 8min30s v.s. 8min36s
+             --> no obvious difference
+
+ChangeLog:
+v8->v9:
+bitmap:
+    - fix bitmap_count_one to handle the nbits=0 case
+migration:
+    - replace the ram save notifier chain with a more general precopy
+      notifier chain, which is similar to the postcopy notifier chain.
+    - Avoid exposing the RAMState struct, and add a function,
+      precopy_disable_bulk_stage, to let the virtio-balloon notifier
+      callback to disable the bulk stage flag.
+virtio-balloon:
+    - Remove VIRTIO_BALLOON_F_PAGE_POISON from this series as it is not
+      a limit to the free page optimization now. Plan to add the device
+      support for VIRTIO_BALLOON_F_PAGE_POISON in another patch later.
+
+Previous changelog:
+https://lists.gnu.org/archive/html/qemu-devel/2018-06/msg01908.html
+
+Wei Wang (8):
+  bitmap: fix bitmap_count_one
+  bitmap: bitmap_count_one_with_offset
+  migration: use bitmap_mutex in migration_bitmap_clear_dirty
+  migration: API to clear bits of guest free pages from the dirty bitmap
+  migration/ram.c: add a notifier chain for precopy
+  migration/ram.c: add a function to disable the bulk stage
+  migration: move migrate_postcopy() to include/migration/misc.h
+  virtio-balloon: VIRTIO_BALLOON_F_FREE_PAGE_HINT
+
+ hw/virtio/virtio-balloon.c                      | 255 ++++++++++++++++++++++++
+ include/hw/virtio/virtio-balloon.h              |  28 ++-
+ include/migration/misc.h                        |  16 ++
+ include/qemu/bitmap.h                           |  17 ++
+ include/standard-headers/linux/virtio_balloon.h |   5 +
+ migration/migration.h                           |   2 -
+ migration/ram.c                                 |  91 +++++++++
+ vl.c                                            |   1 +
+ 8 files changed, 412 insertions(+), 3 deletions(-)
+```
+
+这个 QEMU patch:
+- http://patchwork.ozlabs.org/project/qemu-devel/cover/1542276484-25508-1-git-send-email-wei.w.wang@intel.com/
+
+- virtio_balloon_queue_free_page_work
+
+- [ ] cmd_id 是什么意思
+
+- [ ] virtio_balloon_report_free_page
+
+- 是为了考虑热迁移的吗?
+```diff
+History:        #0
+Commit:         86a559787e6f5cf662c081363f64a20cad654195
+Author:         Wei Wang <wei.w.wang@intel.com>
+Committer:      Michael S. Tsirkin <mst@redhat.com>
+Author Date:    Mon 27 Aug 2018 09:32:17 AM CST
+Committer Date: Thu 25 Oct 2018 08:57:55 AM CST
+
+virtio-balloon: VIRTIO_BALLOON_F_FREE_PAGE_HINT
+
+Negotiation of the VIRTIO_BALLOON_F_FREE_PAGE_HINT feature indicates the
+support of reporting hints of guest free pages to host via virtio-balloon.
+Currenlty, only free page blocks of MAX_ORDER - 1 are reported. They are
+obtained one by one from the mm free list via the regular allocation
+function.
+
+Host requests the guest to report free page hints by sending a new cmd id
+to the guest via the free_page_report_cmd_id configuration register. When
+the guest starts to report, it first sends a start cmd to host via the
+free page vq, which acks to host the cmd id received. When the guest
+finishes reporting free pages, a stop cmd is sent to host via the vq.
+Host may also send a stop cmd id to the guest to stop the reporting.
+
+VIRTIO_BALLOON_CMD_ID_STOP: Host sends this cmd to stop the guest
+reporting.
+VIRTIO_BALLOON_CMD_ID_DONE: Host sends this cmd to tell the guest that
+the reported pages are ready to be freed.
+
+Why does the guest free the reported pages when host tells it is ready to
+free?
+This is because freeing pages appears to be expensive for live migration.
+free_pages() dirties memory very quickly and makes the live migraion not
+converge in some cases. So it is good to delay the free_page operation
+when the migration is done, and host sends a command to guest about that.
+
+Why do we need the new VIRTIO_BALLOON_CMD_ID_DONE, instead of reusing
+VIRTIO_BALLOON_CMD_ID_STOP?
+This is because live migration is usually done in several rounds. At the
+end of each round, host needs to send a VIRTIO_BALLOON_CMD_ID_STOP cmd to
+the guest to stop (or say pause) the reporting. The guest resumes the
+reporting when it receives a new command id at the beginning of the next
+round. So we need a new cmd id to distinguish between "stop reporting" and
+"ready to free the reported pages".
+
+TODO:
+- Add a batch page allocation API to amortize the allocation overhead.
+
+Signed-off-by: Wei Wang <wei.w.wang@intel.com>
+Signed-off-by: Liang Li <liang.z.li@intel.com>
+Cc: Michael S. Tsirkin <mst@redhat.com>
+Cc: Michal Hocko <mhocko@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+```
+
+- virtio_balloon_free_page_hint_notify 中，显然 freepage hint 和 migrate_postcopy_ram 不能共存?
+- virtio_balloon_handle_free_page_vq : 对应的 vq 的 vritio handler
+  - virtio_ballloon_get_free_page_hints : 是 iothread 的 hook # TODO 为什么一定需要在 iothread 中执行
+    - get_free_page_hints
+      - qemu_guest_free_page_hint : 将 dirty bitmap 清理掉
 
 ## [ ] 这些 feature 需要逐个检查一下
 ```c
@@ -230,9 +380,45 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000004018
 #define VIRTIO_BALLOON_F_REPORTING  5 /* Page reporting virtqueue */
 ```
 
+- [ ] 如何连这个 feature 都没有，将会如何?
+
 Linux 都是支持的。
 - VIRTIO_BALLOON_F_FREE_PAGE_HINT : (kernel 86a559787e6f5cf662c081363f64a20cad654195)
 - VIRTIO_BALLOON_F_REPORTING : (kernel 2e991629bcf55a43681aec1ee096eeb03cf81709) 这个不是写的很详细，也不懂 poison 的原理
+
+将两个
+```c
+static Property virtio_balloon_properties[] = {
+    DEFINE_PROP_BIT("deflate-on-oom", VirtIOBalloon, host_features,
+                    VIRTIO_BALLOON_F_DEFLATE_ON_OOM, false),
+    DEFINE_PROP_BIT("free-page-hint", VirtIOBalloon, host_features,
+                    VIRTIO_BALLOON_F_FREE_PAGE_HINT, false),
+    DEFINE_PROP_BIT("page-poison", VirtIOBalloon, host_features,
+                    VIRTIO_BALLOON_F_PAGE_POISON, true),
+    DEFINE_PROP_BIT("free-page-reporting", VirtIOBalloon, host_features,
+                    VIRTIO_BALLOON_F_REPORTING, false),
+    /* QEMU 4.0 accidentally changed the config size even when free-page-hint
+     * is disabled, resulting in QEMU 3.1 migration incompatibility.  This
+     * property retains this quirk for QEMU 4.1 machine types.
+     */
+    DEFINE_PROP_BOOL("qemu-4-0-config-size", VirtIOBalloon,
+                     qemu_4_0_config_size, false),
+    DEFINE_PROP_LINK("iothread", VirtIOBalloon, iothread, TYPE_IOTHREAD,
+                     IOThread *),
+    DEFINE_PROP_END_OF_LIST(),
+};
+```
+
+- [ ] 可以用 qmp 来操作这些 property 吗?
+- [ ] 使用 cmdline 来操作这个接口的流程是什么?
+
+这个警告?
+```c
+qemu-system-x86_64: queue_enable is only suppported in devices of virtio 1.0 or later.
+qemu-system-x86_64: queue_enable is only suppported in devices of virtio 1.0 or later.
+```
+
+- 在老 QEMU 上，这些功能都可以支持吗?
 
 ## qemu 代码分析
 
@@ -297,8 +483,13 @@ config BALLOON_COMPACTION
       scenario aforementioned and helps improving memory defragmentation.
 ```
 
+- isolate_movable_page : 中的，只有注册的页面才可以 isolate 的；
+- move_to_new_folio : 将一个 balloon page 搬运到 newpage，需要通知 host 将 newpage 释放，将要使用 balloon page；
+- putback_movable_pages : 如果 migrate 失败，将之前 isolate 的 page 释放掉。
+
 ## HYPERV_BALLOON
 
+## 初始化
 ### kernel
 
 - virtballoon_probe
@@ -638,11 +829,84 @@ static struct virtio_driver virtio_balloon_driver = {
 };
 ```
 
+## struct balloon_dev_info 和 virtio_balloon 的关系是什么
+- 内核中同时支持 hyperv,vmware 和 virtio 接口，balloon_dev_info 是三者共通的内容。
+
 ## [ ] 如何 Host 或者 Guest 中有的 page 大小不是 4k 如何
 
 ```c
 /* Size of a PFN in the balloon interface. */
 #define VIRTIO_BALLOON_PFN_SHIFT 12
+```
+
+- [ ] 为什么 free page hint 功能需要使用 iothread，而 iothread 需要命令行的制定
+  - 也就是一个 iothread 可以被多个功能使用哇
+
+## tell_host
+从 virtballoon_migratepage 中观察到的:
+
+- [ ] 感觉不是增量的增加的?
+
+```c
+	/* The array of pfns we tell the Host about. */
+	unsigned int num_pfns;
+	__virtio32 pfns[VIRTIO_BALLOON_ARRAY_PFNS_MAX];
+```
+
+## VIRTIO_BALLOON_F_PAGE_POISON
+
+- [ ] 看懂这个函数: virtballoon_validate
+
+## VIRTIO_BALLOON_F_REPORTING
+
+- [ ] 似乎是一个很高级的功能!
+
+```txt
+History:        #0
+Commit:         b0c504f154718904ae49349147e3b7e6ae91ffdc
+Author:         Alexander Duyck <alexander.h.duyck@linux.intel.com>
+Committer:      Linus Torvalds <torvalds@linux-foundation.org>
+Author Date:    Tue 07 Apr 2020 11:05:05 AM CST
+Committer Date: Wed 08 Apr 2020 01:43:39 AM CST
+
+virtio-balloon: add support for providing free page reports to host
+
+Add support for the page reporting feature provided by virtio-balloon.
+Reporting differs from the regular balloon functionality in that is is
+much less durable than a standard memory balloon.  Instead of creating a
+list of pages that cannot be accessed the pages are only inaccessible
+while they are being indicated to the virtio interface.  Once the
+interface has acknowledged them they are placed back into their respective
+free lists and are once again accessible by the guest system.
+
+Unlike a standard balloon we don't inflate and deflate the pages.  Instead
+we perform the reporting, and once the reporting is completed it is
+assumed that the page has been dropped from the guest and will be faulted
+back in the next time the page is accessed.
+
+Signed-off-by: Alexander Duyck <alexander.h.duyck@linux.intel.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Reviewed-by: David Hildenbrand <david@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+Cc: Andrea Arcangeli <aarcange@redhat.com>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Cc: Luiz Capitulino <lcapitulino@redhat.com>
+Cc: Matthew Wilcox <willy@infradead.org>
+Cc: Mel Gorman <mgorman@techsingularity.net>
+Cc: Michal Hocko <mhocko@kernel.org>
+Cc: Nitesh Narayan Lal <nitesh@redhat.com>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Pankaj Gupta <pagupta@redhat.com>
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Cc: Rik van Riel <riel@surriel.com>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Wei Wang <wei.w.wang@intel.com>
+Cc: Yang Zhang <yang.zhang.wz@gmail.com>
+Cc: wei qi <weiqi4@huawei.com>
+Link: http://lkml.kernel.org/r/20200211224657.29318.68624.stgit@localhost.localdomain
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ```
 
 ## 快速回答

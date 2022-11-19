@@ -71,11 +71,11 @@ arg_hugetlb="default_hugepagesz=3M hugepagesz=1G hugepages=1 hugepagesz=2M hugep
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
-arg_mem_balloon="-device virtio-balloon,deflate-on-oom=true,id=balloon0"
+arg_mem_balloon="-device virtio-balloon,id=balloon0,deflate-on-oom=true,free-page-reporting=true,free-page-hint=true,iothread=io1 -object iothread,id=io1"
 
 case $hacking_memory in
 "numa")
-  # TMP_TODO 有没有什么方法来模拟超级大的内存
+  # TMP_TODO 有没有什么方法来模拟超级大的内存，例如 100T 的内存
   arg_mem_cpu="-cpu host -m 8G -smp cpus=5"
   arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=1G,id=m0 -numa node,memdev=m0,cpus=2-3,nodeid=0"
   arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=7G,id=m1 -numa node,memdev=m1,cpus=0-1,nodeid=1"
@@ -141,13 +141,12 @@ arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${workstation}/img1,format=raw,if=none,id=nvme1"
 # @todo virtio-blk-pci vs virtio-blk-device ?
-arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${workstation}/img2,format=raw,if=none,id=nvme2"
+arg_nvme2="-device virtio-blk-pci,drive=nvme2,iothread=io0 -drive file=${workstation}/img2,format=raw,if=none,id=nvme2 -object iothread,id=io0"
 arg_scsi="-device virtio-scsi-pci,id=scsi0,bus=pci.0,addr=0xa -device scsi-hd,bus=scsi0.0,channel=0,scsi-id=0,lun=0,drive=scsi-drive -drive file=${workstation}/img3,format=raw,id=scsi-drive,if=none"
 
-arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=net1"
 # @todo 尝试一下这个
 # -netdev tap,id=nd0,ifname=tap0 -device e1000,netdev=nd0
-arg_iothread="-object iothread,id=io0"
+arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=net1"
 arg_qmp="-qmp tcp:localhost:4444,server,wait=off"
 arg_monitor="-serial mon:stdio -display none"
 if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
@@ -197,14 +196,16 @@ while getopts "dskthpcmq" opt; do
   h) show_help ;;
   c)
     socat -,echo=0,icanon=0 unix-connect:$serial_socket_path
-    exit 0;;
+    exit 0
+    ;;
   m)
     socat -,echo=0,icanon=0 unix-connect:$mon_socket_path
     exit 0
     ;;
   q)
     telnet localhost 4444
-    exit 0;;
+    exit 0
+    ;;
   *) exit 0 ;;
   esac
 done
@@ -275,7 +276,7 @@ if [[ -z ${replace_kernel+x} ]]; then
 fi
 
 cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu}  \
-  ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_iothread} ${arg_network} \
+  ${arg_kernel} ${arg_seabios} ${arg_bridge} ${arg_nvme} ${arg_nvme2} ${arg_network} \
   ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
   ${arg_qmp} ${arg_vfio} ${arg_smbios} ${arg_scsi}"
 echo "$cmd"

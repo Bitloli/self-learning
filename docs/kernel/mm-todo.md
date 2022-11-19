@@ -42,7 +42,6 @@ Total                        2.32            3.78            6.10
 - fixmap 是做啥的
 
 - cgroup v2 中存在 writeback 吗?
-- 无法理解 PAGE_MAPPING_MOVABLE 以及相关的几个 flag
 
 ```c
 enum migratetype {
@@ -73,3 +72,12 @@ enum migratetype {
 - MIGRATE_RECLAIMABLE : 几乎没有什么引用的位置，而从 fgp flags 看，似乎只有 slub 才是 reclaimable 的
   - 而 page cache 是 unremovable 的
   - 但是这怎么可能?
+
+- 整理一下 GFP 之类的
+  - 因为有时候注意到，有时候让 page cache 都要清理一些，有时候不会
+  - 有时候，可以导致 cache 都要出去
+  - 例如 : `__GFP_NORETRY`
+  - 其实也就是这里的内容: linux/include/linux/gfp_types.h
+
+- memory 调试方法:
+  - https://stackoverflow.com/questions/22717661/linux-page-poisoning

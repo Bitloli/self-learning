@@ -22,6 +22,8 @@ cat /proc/pagetypeinfo
 /sys/devices/system/node/node0/compact
 ```
 
+## [ ] 还是使用 kernel 的 unittest 先感受一下吧
+
 ## 如果尝试分配大页，会因为 compaction 而 hang 住吗
 不会
 
