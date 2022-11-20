@@ -428,7 +428,7 @@ qemu-system-x86_64: queue_enable is only suppported in devices of virtio 1.0 or 
   - virtio_balloon_to_target
     - dev->num_pages = (vm_ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
     - virtio_notify_config
-- [ ]  但是存在 5 个 qeueu 啊
+- [ ] 但是存在 5 个 qeueu 啊
 
 ```c
 struct VirtIOBalloon {
@@ -859,9 +859,9 @@ static struct virtio_driver virtio_balloon_driver = {
 
 ## VIRTIO_BALLOON_F_REPORTING
 
-- [ ] 似乎是一个很高级的功能!
+- [ ] 打开之后，已经完全不受控制了
 
-```txt
+```diff
 History:        #0
 Commit:         b0c504f154718904ae49349147e3b7e6ae91ffdc
 Author:         Alexander Duyck <alexander.h.duyck@linux.intel.com>
@@ -906,6 +906,82 @@ Cc: Wei Wang <wei.w.wang@intel.com>
 Cc: Yang Zhang <yang.zhang.wz@gmail.com>
 Cc: wei qi <weiqi4@huawei.com>
 Link: http://lkml.kernel.org/r/20200211224657.29318.68624.stgit@localhost.localdomain
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+```
+
+QEMU 提交信息:
+```diff
+History:        #0
+Commit:         91b867191ddf73c64f51ca2ddb489b922ed4058e
+Author:         Alexander Duyck <alexander.h.duyck@linux.intel.com>
+Committer:      Michael S. Tsirkin <mst@redhat.com>
+Author Date:    Wed 27 May 2020 12:14:07 PM CST
+Committer Date: Wed 10 Jun 2020 02:18:04 AM CST
+
+virtio-balloon: Provide an interface for free page reporting
+
+Add support for free page reporting. The idea is to function very similar
+to how the balloon works in that we basically end up madvising the page as
+not being used. However we don't really need to bother with any deflate
+type logic since the page will be faulted back into the guest when it is
+read or written to.
+
+This provides a new way of letting the guest proactively report free
+pages to the hypervisor, so the hypervisor can reuse them. In contrast to
+inflate/deflate that is triggered via the hypervisor explicitly.
+
+Acked-by: David Hildenbrand <david@redhat.com>
+Signed-off-by: Alexander Duyck <alexander.h.duyck@linux.intel.com>
+Message-Id: <20200527041407.12700.73735.stgit@localhost.localdomain>
+```
+
+这个机制是 Guest 主动触发的？
+
+
+- [ ] 好吧，我傻了
+
+- 原来 page hinting 和 poison 是有关系的?
+```diff
+History:        #0
+Commit:         d74b78fabe043158e26196291d2e439b487395bd
+Author:         Alexander Duyck <alexander.h.duyck@linux.intel.com>
+Committer:      Linus Torvalds <torvalds@linux-foundation.org>
+Author Date:    Tue 07 Apr 2020 11:05:01 AM CST
+Committer Date: Wed 08 Apr 2020 01:43:38 AM CST
+
+virtio-balloon: pull page poisoning config out of free page hinting
+
+Currently the page poisoning setting wasn't being enabled unless free page
+hinting was enabled.  However we will need the page poisoning tracking
+logic as well for free page reporting.  As such pull it out and make it a
+separate bit of config in the probe function.
+
+In addition we need to add support for the more recent init_on_free
+feature which expects a behavior similar to page poisoning in that we
+expect the page to be pre-zeroed.
+
+Signed-off-by: Alexander Duyck <alexander.h.duyck@linux.intel.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Reviewed-by: David Hildenbrand <david@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+Cc: Andrea Arcangeli <aarcange@redhat.com>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Cc: Dave Hansen <dave.hansen@intel.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Cc: Luiz Capitulino <lcapitulino@redhat.com>
+Cc: Matthew Wilcox <willy@infradead.org>
+Cc: Mel Gorman <mgorman@techsingularity.net>
+Cc: Michal Hocko <mhocko@kernel.org>
+Cc: Nitesh Narayan Lal <nitesh@redhat.com>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Pankaj Gupta <pagupta@redhat.com>
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Cc: Rik van Riel <riel@surriel.com>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Wei Wang <wei.w.wang@intel.com>
+Cc: Yang Zhang <yang.zhang.wz@gmail.com>
+Cc: wei qi <weiqi4@huawei.com>
+Link: http://lkml.kernel.org/r/20200211224646.29318.695.stgit@localhost.localdomain
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ```
 

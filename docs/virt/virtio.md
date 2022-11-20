@@ -257,26 +257,41 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000101018
 
 - [ ] msi 相对于 int 的性能优势是什么?
 
-- virtio_balloon
-  - virtio_device
+## 设备的初始化
+- virtio_device::private 指向具体的 virtio 设备
+- virtio_blk / virtio_balloon 具体的设备只有 virtio_device 指针
 
-- virtio_blk
-  - virtio_device
+- virtio_pci_device 包含 virtio_device
 
-- virtio_pci_device
-  - virtio_device
-    - device
-
-- [ ] virtio_pci_modern_probe : 谁在调用这个?
+系统启动的过程中，一共会 probe 两次:
 
 ```txt
-#0  setup_vq (vp_dev=0xffff888024909800, info=0xffff888100e30a40, index=0, callback=0xffffffff81751760 <balloon_ack>, name=0xffffffff827ef8b2 "inflate", ctx=false, msix_vec=65535) at drivers/virtio/virtio_pci_modern.c:300
-#1  0xffffffff817505fa in vp_setup_vq (vdev=vdev@entry=0xffff888024909800, index=index@entry=0, callback=0xffffffff81751760 <balloon_ack>, name=0xffffffff827ef8b2 "inflate", ctx=<optimized out>, msix_vec=msix_vec@entry=65535) at drivers/virtio/virtio_pci_common.c:189
-#2  0xffffffff817511c7 in vp_find_vqs_intx (ctx=0x0 <fixed_percpu_data>, names=0xffffc9000005fcf8, callbacks=0xffffc9000005fcd0, vqs=0xffffc9000005fca8, nvqs=5, vdev=0xffff888024909800) at drivers/virtio/virtio_pci_common.c:381
-#3  vp_find_vqs (vdev=vdev@entry=0xffff888024909800, nvqs=5, vqs=0xffffc9000005fca8, callbacks=0xffffc9000005fcd0, names=0xffffc9000005fcf8, ctx=0x0 <fixed_percpu_data>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_common.c:416
-#4  0xffffffff817502d2 in vp_modern_find_vqs (vdev=0xffff888024909800, nvqs=<optimized out>, vqs=<optimized out>, callbacks=<optimized out>, names=<optimized out>, ctx=<optimized out>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_modern.c:355
-#5  0xffffffff81751e8d in virtio_find_vqs (desc=0x0 <fixed_percpu_data>, names=0xffffc9000005fcf8, callbacks=0xffffc9000005fcd0, vqs=0xffffc9000005fca8, nvqs=5, vdev=<optimized out>) at include/linux/virtio_config.h:227
-#6  init_vqs (vb=vb@entry=0xffff888100e6c000) at drivers/virtio/virtio_balloon.c:527
+#0  virtio_pci_modern_probe (vp_dev=vp_dev@entry=0xffff888100fc1000) at drivers/virtio/virtio_pci_modern.c:531
+#1  0xffffffff81750885 in virtio_pci_probe (pci_dev=0xffff888100e50000, id=<optimized out>) at drivers/virtio/virtio_pci_common.c:551
+#2  0xffffffff816c933d in local_pci_probe (_ddi=_ddi@entry=0xffffc9000005fd60) at drivers/pci/pci-driver.c:324
+#3  0xffffffff816caaf9 in pci_call_probe (id=<optimized out>, dev=0xffff888100e50000, drv=<optimized out>) at drivers/pci/pci-driver.c:392
+#4  __pci_device_probe (pci_dev=0xffff888100e50000, drv=<optimized out>) at drivers/pci/pci-driver.c:417
+#5  pci_device_probe (dev=0xffff888100e500c8) at drivers/pci/pci-driver.c:460
+#6  0xffffffff819842a4 in call_driver_probe (drv=0xffffffff82c0b778 <virtio_pci_driver+120>, dev=0xffff888100e500c8) at drivers/base/dd.c:560
+#7  really_probe (dev=dev@entry=0xffff888100e500c8, drv=drv@entry=0xffffffff82c0b778 <virtio_pci_driver+120>) at drivers/base/dd.c:639
+#8  0xffffffff819844cd in __driver_probe_device (drv=drv@entry=0xffffffff82c0b778 <virtio_pci_driver+120>, dev=dev@entry=0xffff888100e500c8) at drivers/base/dd.c:778
+#9  0xffffffff81984549 in driver_probe_device (drv=drv@entry=0xffffffff82c0b778 <virtio_pci_driver+120>, dev=dev@entry=0xffff888100e500c8) at drivers/base/dd.c:808
+#10 0xffffffff81984c59 in __driver_attach (data=0xffffffff82c0b778 <virtio_pci_driver+120>, dev=0xffff888100e500c8) at drivers/base/dd.c:1190
+#11 __driver_attach (dev=0xffff888100e500c8, data=0xffffffff82c0b778 <virtio_pci_driver+120>) at drivers/base/dd.c:1134
+#12 0xffffffff81982253 in bus_for_each_dev (bus=<optimized out>, start=start@entry=0x0 <fixed_percpu_data>, data=data@entry=0xffffffff82c0b778 <virtio_pci_driver+120>, fn=fn@entry=0xffffffff81984bf0 <__driver_attach>) at drivers/base/bus.c:301
+#13 0xffffffff81983dc5 in driver_attach (drv=drv@entry=0xffffffff82c0b778 <virtio_pci_driver+120>) at drivers/base/dd.c:1207
+#14 0xffffffff8198381c in bus_add_driver (drv=drv@entry=0xffffffff82c0b778 <virtio_pci_driver+120>) at drivers/base/bus.c:618
+#15 0xffffffff8198581a in driver_register (drv=0xffffffff82c0b778 <virtio_pci_driver+120>) at drivers/base/driver.c:246
+#16 0xffffffff81000e7f in do_one_initcall (fn=0xffffffff8337a02d <virtio_pci_driver_init>) at init/main.c:1303
+#17 0xffffffff8333b4c7 in do_initcall_level (command_line=0xffff888003e31780 "root", level=6) at init/main.c:1376
+#18 do_initcalls () at init/main.c:1392
+#19 do_basic_setup () at init/main.c:1411
+#20 kernel_init_freeable () at init/main.c:1631
+#21 0xffffffff81fafc01 in kernel_init (unused=<optimized out>) at init/main.c:1519
+#22 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
+```
+
+```txt
 #7  0xffffffff81752475 in virtballoon_probe (vdev=0xffff888024909800) at drivers/virtio/virtio_balloon.c:888
 #8  0xffffffff8174bd5a in virtio_dev_probe (_d=0xffff888024909810) at drivers/virtio/virtio.c:305
 #9  0xffffffff819842a4 in call_driver_probe (drv=0xffffffff82c0b880 <virtio_balloon_driver>, dev=0xffff888024909810) at drivers/base/dd.c:560
@@ -299,103 +314,8 @@ Backtrace stopped: Cannot access memory at address 0xffffc90000101018
 #26 0x0000000000000000 in ?? ()
 ```
 
-- virtio_driver::probe 的参数是 virtio_device
-- 所有的驱动都是这个样子的，当只有两个
+这个参考更加清晰: ![](https://img2020.cnblogs.com/blog/1771657/202102/1771657-20210224230417971-437424297.png)
 
-```c
-static struct virtio_driver virtio_balloon_driver = {
-	.feature_table = features,
-	.feature_table_size = ARRAY_SIZE(features),
-	.driver.name =	KBUILD_MODNAME,
-	.driver.owner =	THIS_MODULE,
-	.id_table =	id_table,
-	.validate =	virtballoon_validate,
-	.probe =	virtballoon_probe,
-	.remove =	virtballoon_remove,
-	.config_changed = virtballoon_changed,
-#ifdef CONFIG_PM_SLEEP
-	.freeze	=	virtballoon_freeze,
-	.restore =	virtballoon_restore,
-#endif
-};
-```
-
-## virtio bus
-- [ ] struct bus_type 的 match 和 probe 是什么关系?
-```c
-static inline int driver_match_device(struct device_driver *drv,
-              struct device *dev)
-{
-  return drv->bus->match ? drv->bus->match(dev, drv) : 1;
-}
-```
-
-`device_attach` 是提供给外部的一个常用的函数，会调用 `bus->probe`，在当前的上下文就是 pci_device_probe 了。
-
-- [ ] `pci_device_probe` 的内容是很简单, 根据设备找驱动的地方在哪里？
-  - 根据参数 struct device 获取 pc_driver 和 pci_device
-  - 分配 irq number
-  - 回调 `pci_driver->probe`, 使用 virtio_pci_probe 为例子
-      - 初始化 pci 设备
-      - 回调 `virtio_driver->probe`, 使用 virtnet_probe 作为例子
-
-
-#### virtio_pci_probe
-
-```plain
-#0  virtio_pci_probe (pci_dev=0xffff888100c0c800, id=0xffffffff824aa4a0 <virtio_pci_id_table>) at include/linux/slab.h:600
-#1  0xffffffff816b2a4d in local_pci_probe (_ddi=_ddi@entry=0xffffc9000003bd68) at drivers/pci/pci-driver.c:324
-#2  0xffffffff816b4229 in pci_call_probe (id=<optimized out>, dev=0xffff888100c0c800, drv=<optimized out>) at drivers/pci/pci-driver.c:392
-#3  __pci_device_probe (pci_dev=0xffff888100c0c800, drv=<optimized out>) at drivers/pci/pci-driver.c:417
-#4  pci_device_probe (dev=0xffff888100c0c8c8) at drivers/pci/pci-driver.c:460
-#5  0xffffffff8194f094 in call_driver_probe (drv=0xffffffff82c04038 <virtio_pci_driver+120>, dev=0xffff888100c0c8c8) at drivers/base/dd.c:560
-#6  really_probe (dev=dev@entry=0xffff888100c0c8c8, drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/dd.c:639
-#7  0xffffffff8194f2bd in __driver_probe_device (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>, dev=dev@entry=0xffff888100c0c8c8) at drivers/base/dd.c:778
-#8  0xffffffff8194f339 in driver_probe_device (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>, dev=dev@entry=0xffff888100c0c8c8) at drivers/base/dd.c:808
-#9  0xffffffff8194fa49 in __driver_attach (data=0xffffffff82c04038 <virtio_pci_driver+120>, dev=0xffff888100c0c8c8) at drivers/base/dd.c:1190
-#10 __driver_attach (dev=0xffff888100c0c8c8, data=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/dd.c:1134
-#11 0xffffffff8194d043 in bus_for_each_dev (bus=<optimized out>, start=start@entry=0x0 <fixed_percpu_data>, data=data@entry=0xffffffff82c04038 <virtio_pci_driver+120>, fn=fn@entry=0xffffffff8194f9e0 <__driver_attach>) at drivers/base/bus.c:301
-#12 0xffffffff8194ebb5 in driver_attach (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/dd.c:1207
-#13 0xffffffff8194e60c in bus_add_driver (drv=drv@entry=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/bus.c:618
-#14 0xffffffff819505fa in driver_register (drv=0xffffffff82c04038 <virtio_pci_driver+120>) at drivers/base/driver.c:240
-#15 0xffffffff81000e7f in do_one_initcall (fn=0xffffffff833342da <virtio_pci_driver_init>) at init/main.c:1296
-#16 0xffffffff832f54b8 in do_initcall_level (command_line=0xffff888003922b40 "root", level=6) at init/main.c:1369
-#17 do_initcalls () at init/main.c:1385
-#18 do_basic_setup () at init/main.c:1404
-#19 kernel_init_freeable () at init/main.c:1623
-#20 0xffffffff81efca11 in kernel_init (unused=<optimized out>) at init/main.c:1512
-#21 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
-#22 0x0000000000000000 in ?? ()
-```
-
-#### virtblk_probe && virtio_dev_probe
-
-```txt
-#0  virtblk_probe (vdev=0xffff8881001b5000) at drivers/block/virtio_blk.c:886
-#1  0xffffffff81721c9a in virtio_dev_probe (_d=0xffff8881001b5010) at drivers/virtio/virtio.c:305
-#2  0xffffffff8194f094 in call_driver_probe (drv=0xffffffff82c1a0e0 <virtio_blk>, dev=0xffff8881001b5010) at drivers/base/dd.c:560
-#3  really_probe (dev=dev@entry=0xffff8881001b5010, drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/dd.c:639
-#4  0xffffffff8194f2bd in __driver_probe_device (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>, dev=dev@entry=0xffff8881001b5010) at drivers/base/dd.c:778
-#5  0xffffffff8194f339 in driver_probe_device (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>, dev=dev@entry=0xffff8881001b5010) at drivers/base/dd.c:808
-#6  0xffffffff8194fa49 in __driver_attach (data=0xffffffff82c1a0e0 <virtio_blk>, dev=0xffff8881001b5010) at drivers/base/dd.c:1190
-#7  __driver_attach (dev=0xffff8881001b5010, data=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/dd.c:1134
-#8  0xffffffff8194d043 in bus_for_each_dev (bus=<optimized out>, start=start@entry=0x0 <fixed_percpu_data>, data=data@entry=0xffffffff82c1a0e0 <virtio_blk>, fn=fn@entry=0xffffffff8194f9e0 <__driver_attach>) at drivers/base/bus.c:301
-#9  0xffffffff8194ebb5 in driver_attach (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/dd.c:1207
-#10 0xffffffff8194e60c in bus_add_driver (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/bus.c:618
-#11 0xffffffff819505fa in driver_register (drv=drv@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/base/driver.c:240
-#12 0xffffffff817214d7 in register_virtio_driver (driver=driver@entry=0xffffffff82c1a0e0 <virtio_blk>) at drivers/virtio/virtio.c:357
-#13 0xffffffff8333b1f3 in virtio_blk_init () at drivers/block/virtio_blk.c:1213
-#14 0xffffffff81000e7f in do_one_initcall (fn=0xffffffff8333b1a6 <virtio_blk_init>) at init/main.c:1296
-#15 0xffffffff832f54b8 in do_initcall_level (command_line=0xffff888003922b40 "root", level=6) at init/main.c:1369
-#16 do_initcalls () at init/main.c:1385
-#17 do_basic_setup () at init/main.c:1404
-#18 kernel_init_freeable () at init/main.c:1623
-#19 0xffffffff81efca11 in kernel_init (unused=<optimized out>) at init/main.c:1512
-#20 0xffffffff81001a72 in ret_from_fork () at arch/x86/entry/entry_64.S:306
-#21 0x0000000000000000 in ?? ()
-```
-
-## virtio_pci_driver virtio_bus virtio_blk 三者是什么关系
 ```c
 static struct pci_driver virtio_pci_driver = {
   .name   = "virtio-pci",
@@ -439,62 +359,9 @@ static struct virtio_driver virtio_blk = {
 };
 ```
 
+这个架构很有趣，同时挂载在 pci 和 virtio 两个总线上。
 
-- [ ] 为什么会存在 virtio-pci 设备的存在，既然已经构建了一个 virtio_bus 的总线类型
-
-- [ ] virtio_pci_probe
-  - [ ] virtio_pci_modern_probe : 给 virtio_pci_device::vdev 注册
-
-
-```c
-
-/**
- * virtqueue - a queue to register buffers for sending or receiving.
- * @list: the chain of virtqueues for this device
- * @callback: the function to call when buffers are consumed (can be NULL).
- * @name: the name of this virtqueue (mainly for debugging)
- * @vdev: the virtio device this queue was created for.
- * @priv: a pointer for the virtqueue implementation to use.
- * @index: the zero-based ordinal number for this queue.
- * @num_free: number of elements we expect to be able to fit.
- *
- * A note on @num_free: with indirect buffers, each buffer needs one
- * element in the queue, otherwise a buffer will need one element per
- * sg element.
- */
-struct virtqueue {
-  struct list_head list;
-  void (*callback)(struct virtqueue *vq);
-  const char *name;
-  struct virtio_device *vdev;
-  unsigned int index;
-  unsigned int num_free;
-  void *priv;
-};
-
-static const struct blk_mq_ops virtio_mq_ops = {
-  .queue_rq = virtio_queue_rq,
-  .commit_rqs = virtio_commit_rqs,
-  .complete = virtblk_request_done,
-  .init_request = virtblk_init_request,
-  .map_queues = virtblk_map_queues,
-};
-```
-
-### virtio_pci_driver
-- drivers/virtio/virtio_pci_common.c
-
-主要提供 virtio_pci_config_ops ，virtio 驱动最后会调用到此处:
-
-```txt
-#0  vp_find_vqs (vdev=vdev@entry=0xffff888004150000, nvqs=5, vqs=0xffffc9000003bca8, callbacks=0xffffc9000003bcd0, names=0xffffc9000003bcf8, ctx=0x0 <fixed_percpu_data>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_common.c:405
-#1  0xffffffff81726212 in vp_modern_find_vqs (vdev=0xffff888004150000, nvqs=<optimized out>, vqs=<optimized out>, callbacks=<optimized out>, names=<optimized out>, ctx=<optimized out>, desc=0x0 <fixed_percpu_data>) at drivers/virtio/virtio_pci_modern.c:355
-#2  0xffffffff81727d9d in virtio_find_vqs (desc=0x0 <fixed_percpu_data>, names=0xffffc9000003bcf8, callbacks=0xffffc9000003bcd0, vqs=0xffffc9000003bca8, nvqs=5, vdev=<optimized out>) at include/linux/virtio_config.h:227
-#3  init_vqs (vb=vb@entry=0xffff888004152800) at drivers/virtio/virtio_balloon.c:527
-#4  0xffffffff81728385 in virtballoon_probe (vdev=0xffff888004150000) at drivers/virtio/virtio_balloon.c:888
-```
-
-### vring_size
+## vring_size
 参数 align 为 :
 ```c
 /* The alignment to use between consumer and producer parts of vring.
@@ -575,3 +442,10 @@ vring_avail::ring 描述的项目增加，如果被设备消费了，那么 last
   - virtio_balloon_get_config 是做什么的
 
 ## 如何理解 virtio_rmb
+
+## 再去整理一下这个
+https://www.cnblogs.com/LoyenWang/p/14589296.html
+
+## 为什么感觉两个 config 是不一样的
+- 一个 balloon 的 config
+- 一个是 PCI 的 config

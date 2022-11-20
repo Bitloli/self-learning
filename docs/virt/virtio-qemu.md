@@ -77,3 +77,9 @@ Coroutine at 0x7ffff7212320:
 #21 0x00007ffff76762f5 in __libc_start_main_impl () from /nix/store/scd5n7xsn0hh0lvhhnycr9gx0h8xfzsl-glibc-2.34-210/lib/libc.so.6
 #22 0x0000555555827051 in _start () at ../sysdeps/x86_64/start.S:116
 ```
+
+## VirtQueueElement 是什么
+- virtio_balloon_handle_report : 总是首先获取  while ((elem = virtqueue_pop(vq, sizeof(VirtQueueElement)))) {
+  - 将 VirtQueueElement 获取到一个 sg ，然后对于 sg 中的元素遍历
+
+- iov_to_buf : 将 sg 中的一个内容

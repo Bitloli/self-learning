@@ -79,3 +79,28 @@ QEMU 侧:
 - virtio_balloon_handle_output 和 virtio_balloon_handle_report 存在什么区别吗?
   - report : 中唯一的检测了 VirtIOBalloon::poison_val，这也是唯一的位置的吧
   - 一个使用的 in_sq ，一个是 out_sg
+
+- 这个机制似乎不错，让 guest 周期性的清理，可以将那些彻底不被使用的内存清理掉。
+
+- [ ] 是不是太频繁了? 测试的速度感觉明显快于 2s 的
+
+- page_reporting_process
+  - page_reporting_process_zone
+    - page_reporting_cycle : 对于每一个 order
+
+- 为什么需要 flags ，因为这些插上 flags 的 page 可以继续被分配
+
+```c
+static inline void del_page_from_free_list(struct page *page, struct zone *zone,
+					   unsigned int order)
+{
+	/* clear reported state and update reported page count */
+	if (page_reported(page))
+		__ClearPageReported(page);
+
+	list_del(&page->buddy_list);
+	__ClearPageBuddy(page);
+	set_page_private(page, 0);
+	zone->free_area[order].nr_free--;
+}
+```

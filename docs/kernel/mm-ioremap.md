@@ -125,8 +125,8 @@ memory is discouraged.
 
 #### 9.5.1 I/O Memory Allocation and Mapping
 All I/O memory allocations are listed in `/proc/iomem`.
-> 在64位系统上，我不知道为什么只有其中映射范围只有32b 的长度
 
+在 64 位系统上，我不知道为什么只有其中映射范围只有 32b 的长度
 
 ```txt
 #define __request_mem_region(start,n,name, excl) __request_region(&iomem_resource, (start), (n), (name), excl)
@@ -174,7 +174,7 @@ way.
 
 
 #### 9.5.3 Reusing short for I/O Memory
-> 利用之前的short 重新操作
+> 利用之前的 short 重新操作
 
 #### 9.5.4 ISA Memory Below 1 MB
 One of the most well-known I/O memory regions is the ISA range found on personal computers. This is the memory range between 640 KB (0xA0000) and 1 MB
@@ -217,7 +217,7 @@ This function starts from the reserving memory block for the kernel `_text` and 
 
 In the next step after we reserved place for the kernel text and data is reserving place for the initrd. We will not see details about initrd in this post, you just may know that it is temporary root file system
 > initrd 的作用没有看
-> @todo 为什么需要为这些东西resever memory
+> @todo 为什么需要为这些东西 resever memory
 
 Here are two similar functions `set_intr_gate_ist` and `set_system_intr_gate_ist`. Both of these two functions take three parameters:
 1. number of the interrupt;
@@ -233,7 +233,7 @@ The next step is initialization of early ioremap. In general there are two ways 
 1. I/O Ports;
 2. Device memory.
 
-> 当前还是在setup_arch 中间的:
+> 当前还是在 setup_arch 中间的:
 > @todo 现在唯一需要知道的就是此处处理的过 ioremap
 
 

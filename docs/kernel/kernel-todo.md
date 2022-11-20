@@ -245,3 +245,26 @@ CONFIG_FAIL_MAKE_REQUEST=y
 ## x86-64 的环境中，可以使用 kvm 运行 32 位内核吗
 
 ## 如果就是在 interrupt thread 中睡眠，会如何
+
+## bus 的 match
+
+- 现在才知道 virtio 设备同时挂到 PCI 和 virtio bus 上的
+
+
+- [ ] struct bus_type 的 match 和 probe 是什么关系?
+```c
+static inline int driver_match_device(struct device_driver *drv,
+              struct device *dev)
+{
+  return drv->bus->match ? drv->bus->match(dev, drv) : 1;
+}
+```
+
+`device_attach` 是提供给外部的一个常用的函数，会调用 `bus->probe`，在当前的上下文就是 pci_device_probe 了。
+
+- [ ] `pci_device_probe` 的内容是很简单, 根据设备找驱动的地方在哪里？
+  - 根据参数 struct device 获取 pc_driver 和 pci_device
+  - 分配 irq number
+  - 回调 `pci_driver->probe`, 使用 virtio_pci_probe 为例子
+      - 初始化 pci 设备
+      - 回调 `virtio_driver->probe`, 使用 virtnet_probe 作为例子
