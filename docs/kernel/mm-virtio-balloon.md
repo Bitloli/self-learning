@@ -912,3 +912,13 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 ## 快速回答
 - 为什么将 update_balloon_size_func 和 update_balloon_stats_func 设置为 workqueue 的?
   - 因为他们都会导致睡眠？
+
+## TODO
+
+为什么这里的 hook 是
+```c
+	if (virtio_has_feature(vb->vdev, VIRTIO_BALLOON_F_FREE_PAGE_HINT)) {
+		names[VIRTIO_BALLOON_VQ_FREE_PAGE] = "free_page_vq";
+		callbacks[VIRTIO_BALLOON_VQ_FREE_PAGE] = NULL;
+	}
+```

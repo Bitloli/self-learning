@@ -96,7 +96,7 @@
 | page_counter.c       | 35    | 103     | 128  | 配合 memcontrol 使用                                                                                                                                          |
 | kasan/kasan.h        | 24    | 21      | 122  |                                                                                                                                                              |
 | hwpoison-inject.c    | 25    | 17      | 98   | https://www.kernel.org/doc/html/latest/vm/hwpoison.html 辅助错误恢复                                                                                         |
-| balloon_compaction.c | 20    | 62      | 95   | 和 ballon 机制相关                                                                                                                                            |
+| balloon_compaction.c | 20    | 62      | 95   | 和 balloon 机制相关                                                                                                                                            |
 | memtest.c            | 16    | 3       | 94   | 测试物理内存是否可用                                                                                                                                         |
 | Makefile             | 10    | 7       | 90   |                                                                                                                                                              |
 | page_poison.c        | 22    | 13      | 89   | 也是为了处理物理内存错误                                                                                                                                     |
@@ -271,50 +271,9 @@ DAX 设置 : 到时候在分析吧!
 
 目前观察到的 generic_file_read_iter 和 file_operations::mmap 的内容对于 DAX 区分对待的，但是内容远远不该如此，不仅仅可以越过 page cache 机制，而且 page reclaim 全部可以跳过。
 
-## mmio
-https://gist.github.com/Measter/2108508ba25ebe3978a6c10a1e01b9ad
-
-- [] mmio 的建立和 pcie 的关系
-- [] mmio 和 kvm
-## vmstate
-// 搞清楚如何使用这个代码吧 !
-
-`vmstat.h/vmstat.c`
-```c
-static inline void count_vm_event(enum vm_event_item item)
-{
-  this_cpu_inc(vm_event_states.event[item]);
-}
-// @todo 以此为机会找到内核实现暴露接口的位置
-```
-
-```c
-    __mod_zone_page_state(page_zone(page), NR_MLOCK,
-            hpage_nr_pages(page));
-    count_vm_event(UNEVICTABLE_PGMLOCKED);
-    // 两个统计的机制，但是并不清楚各自统计的内容是什么包含什么区别
-```
-
 ## lock
 - [ ] mm_take_all_locks
 
-## ioremap
-1. maps device physical address(device memory or device registers) to kernel virtual address [^25]
-2. Like user space, the kernel accesses memory through page tables; as a result, when kernel code needs to access memory-mapped I/O devices, it must first set up an appropriate kernel page-table mapping. [^26]
-  - [ ] memremap 是 ioremap 的更好的接口.
-
-因为内核也是运行在虚拟地址空间上的，而访问设备是需要物理地址，为了将访问设备的物理地址映射到虚拟地址空间中，所以需要 ioremap，当然 pci 访问带来的各种 cache coherency 问题也是需要尽量考虑的:
-```txt
-#0  ioremap (phys_addr=1107312640, size=56) at arch/loongarch/mm/ioremap.c:95
-#1  0x90000000008555c0 in pci_iomap_range (dev=<optimized out>, bar=<optimized out>, offset=<optimized out>, maxlen=<optimized out>) at lib/pci_iomap.c:46
-#2  0x9000000000962150 in map_capability (dev=0x900000027d75b000, off=<optimized out>, minlen=56, align=4, start=0, size=56, len=0x0) at drivers/virtio/virtio_pci_modern.c:134
-#3  0x9000000000962950 in virtio_pci_modern_probe (vp_dev=0x900000027da3e800) at drivers/virtio/virtio_pci_modern.c:652
-#4  0x900000000096311c in virtio_pci_probe (pci_dev=0x900000027d75b000, id=<optimized out>) at drivers/virtio/virtio_pci_common.c:546
-#5  0x90000000008c28c0 in local_pci_probe (_ddi=0x900000027cd33c58) at drivers/pci/pci-driver.c:306
-#6  0x9000000000235030 in work_for_cpu_fn (work=0x900000027cd33c08) at kernel/workqueue.c:4908
-#7  0x9000000000238ce0 in process_one_work (worker=0x900000027c08fc00, work=0x900000027cd33c08) at kernel/workqueue.c:2152
-#8  0x9000000000239220 in process_scheduled_works (worker=<optimized out>) at kernel/workqueue.c:2211
-```
 ## mremap
 
 ## debug
@@ -521,7 +480,5 @@ maybe because of user space address randomization
 [^21]: [lwn : A reworked contiguous memory allocator](https://lwn.net/Articles/447405/)
 [^22]: [lwn : A deep dive into dma](https://lwn.net/Articles/486301/)
 [^23]: [kernel doc : z3fold](https://www.kernel.org/doc/html/latest/vm/z3fold.html)
-[^25]: [kernelnewbies : ioremap vs mmap](https://lists.kernelnewbies.org/pipermail/kernelnewbies/2016-September/016814.html)
-[^26]: [lwn: ioremap and memremap](https://lwn.net/Articles/653585/)
 [^27]: https://lwn.net/Articles/619738/
 [^29]: https://my.oschina.net/u/3857782/blog/1854548

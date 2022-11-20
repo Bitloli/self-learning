@@ -2,6 +2,11 @@
 - 简短有力的分析: https://zhuanlan.zhihu.com/p/41872203
 - https://mp.weixin.qq.com/s/s6AvLiVVkoMX4dIGpqmXYA
 
+- https://github.com/mrkline/concurrency-primer
+
+- Memory Barriers: a Hardware View for Software Hackers
+- What every systems programmer should know about concurrency
+
 ## dma
 - dma_alloc_coherent
 

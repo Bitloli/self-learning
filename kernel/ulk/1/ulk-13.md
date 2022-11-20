@@ -580,62 +580,7 @@ This is a typical case in which it is preferable to implement the driver using t
 > @todo 找到这两个函数真正的实现，有一说一，这两个例子很好。
 
 #### 4.4 Accessing the I/O Shared Memory
-Depending on the device and on the bus type, I/O shared memory in the PC’s architecture may be mapped within different physical address ranges. Typically:
-- For most devices connected to the ISA bus
-
-  The I/O shared memory is usually mapped into the 16-bit physical addresses
-  ranging from 0xa0000 to 0xfffff; this gives rise to the “hole” between 640 KB
-  and 1 MB mentioned in the section “Physical Memory Layout” in Chapter 2.
-
-- For devices connected to the PCI bus.
-
-  The I/O shared memory is mapped into 32-bit physical addresses near the 4 GB
-  boundary. This kind of device is much simpler to handle.
-
-
-How does a device driver access an I/O shared memory location? *Let’s start with the
-PC’s architecture*, which is relatively simple to handle, and then extend the discussion to other architectures.
-
-Remember that kernel programs act on linear addresses, so the I/O shared memory
-locations must be expressed as addresses greater than PAGE_OFFSET. In the following
-discussion, we assume that `PAGE_OFFSET` is equal to 0xc0000000—that is, that the kernel linear addresses are in the fourth gigabyte.
-
-1. 内核的确映射了 0xc0000000 之后的虚拟地址空间到低地址的物理空间上。
-    1.
-    2.
-
-There is a problem, however, for the second statement, because the I/O physical
-address is greater than the *last physical address of the system RAM*. Therefore, the
-`0xfc000000` linear address does not correspond to the 0xfc000000 physical address.
-> @todo 什么叫做 : last physical address of the system RAM
->
-
-In
-such cases, the kernel Page Tables must be modified to include a linear address that
-maps the I/O physical address. This can be done by invoking the ioremap( ) or
-ioremap_nocache() functions. The first function, which is similar to vmalloc( ),
-invokes get_vm_area( ) to create a new vm_struct descriptor (see the section “Descriptors of Noncontiguous Memory Areas” in Chapter 8) for a linear address interval that
-has the size of the required I/O shared memory area. The functions then update the
-corresponding Page Table entries of the canonical kernel Page Tables appropriately.
-The `ioremap_nocache()` function differs from ioremap() in that it also disables the
-*hardware cache* when referencing the remapped linear addresses properly.
-> @todo 什么叫做 hardware cache 啊 ?
-> @todo 也就是 访问相当于访问 设备是一个早就存在的操作，使用 ioremap 只是因为部分 page table entry 无法走到正确的位置而已。 如果这样说，resource 的含义到底是什么 ?
-> @todo 我感觉只要分析了 resource 以及 System Ram 是如何放到其中的就可以了 !
-
-On some architectures other than the PC, I/O shared memory cannot be accessed by
-simply dereferencing the linear address pointing to the physical memory location.
-should be used when accessing I/O shared memory:
-```c
-readb(), readw(), readl()
-/* Reads 1, 2, or 4 bytes, respectively, from an I/O shared memory location */
-writeb(), writew(), writel()
-/* Writes 1, 2, or 4 bytes, respectively, into an I/O shared memory location */
-memcpy_fromio(), memcpy_toio()
-/* Copies a block of data from an I/O shared memory location to dynamic memory and vice versa */
-memset_io()
-/* Fills an I/O shared memory area with a fixed value */
-```
+--已经被整理--
 
 #### 4.5 Direct Memory Access (DMA)
 

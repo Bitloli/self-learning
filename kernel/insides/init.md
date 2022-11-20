@@ -12,9 +12,9 @@ You will find here a couple of posts which describe the full cycle of kernel ini
 jmp    *%rax
 ```
 
-At this moment the rax register contains address of the Linux kernel entry point which was obtained as a result of the call of the `decompress_kernel` function from the `arch/x86/boot/compressed/misc.c` source code file. 
+At this moment the rax register contains address of the Linux kernel entry point which was obtained as a result of the call of the `decompress_kernel` function from the `arch/x86/boot/compressed/misc.c` source code file.
 > @todo misc.c 中的 `#include "../voffset.h"`  我不知道为什么这一个位置不报错 ?
-> @todo 而且 decompress_kernel is replaced 
+> @todo 而且 decompress_kernel is replaced
 
 
 As we already know the *entry point of the decompressed kernel image starts in the arch/x86/kernel/head_64.S assembly source code file* and at the beginning of it, we can see following definitions:
@@ -105,7 +105,7 @@ static void __head *fixup_pointer(void *ptr, unsigned long physaddr)
 > 这样看，load_delta 数值就是 `__START_KERNEL_map` 的物理地址
 > @todo `__START_KERNEL_map` 和 `_text` 是什么关系 ?  `__START_KERNEL_map` is a base virtual address of the kernel text
 
-> @todo 在head_64.S 中间，定义了 NEXT_PAGE 的 macro 
+> @todo 在head_64.S 中间，定义了 NEXT_PAGE 的 macro
 
 ```c
 early_top_pgt[511] -> level3_kernel_pgt[0]
@@ -194,94 +194,7 @@ In the next step, as we have copied `boot_params` structure, we need to move fro
 最后从 x86_64_start_reservations 跳转到 start_kernel 中间:
 
 # Kernel entry point
-> 从本section 开始分析 start_kernel 函数
-
-Before the first process will be started, the start_kernel must do many things such as: to enable lock validator, to initialize processor id, to enable early cgroups subsystem, to setup per-cpu areas, to initialize different caches in vfs, to initialize memory manager, rcu, vmalloc, scheduler, IRQs, ACPI and many many more.
-
-The next function after the `set_task_stack_end_magic` is `smp_setup_processor_id`
-
-
-> @todo cpumask 在此处被分析过!
-
-The next step is architecture-specific initialization. The Linux kernel does it with the call of the setup_arch function. 
-
-
-```c
-/*
- * Determine if we were loaded by an EFI loader.  If so, then we have also been
- * passed the efi memmap, systab, etc., so we should use these data structures
- * for initialization.  Note, the efi init code path is determined by the
- * global efi_enabled. This allows the same kernel image to be used on existing
- * systems (with a traditional BIOS) as well as on EFI systems.
- */
-/*
- * setup_arch - architecture-specific boot-time initializations
- *
- * Note: On x86_64, fixmaps are ready for use even before this is called.
- */
-
-void __init setup_arch(char **cmdline_p)
-```
-
-This function starts from the reserving memory block for the kernel `_text` and `_data` which starts from the `_text` symbol and ends before `__bss_stop`
-
-In the next step after we reserved place for the kernel text and data is reserving place for the initrd. We will not see details about initrd in this post, you just may know that it is temporary root file system 
-> initrd 的作用没有看
-> @todo 为什么需要为这些东西resever memory
-
-Here are two similar functions `set_intr_gate_ist` and `set_system_intr_gate_ist`. Both of these two functions take three parameters:
-1. number of the interrupt;
-2. base address of the interrupt/exception handler;
-3. third parameter is - Interrupt Stack Table. IST is a new mechanism in the x86_64 and part of the TSS. Every active thread in kernel mode has own kernel stack which is 16 kilobytes. While a thread in user space, this kernel stack is empty.
-
-```c
-	idt_setup_early_traps(); // 相对于原来的 idt 添加了两条新的handler  #DB and #BP 并且分析了#DB's handler
-```
-> @todo 只是添加了两条指令，为什么还需要重新 load idt
-
-The next step is initialization of early ioremap. In general there are two ways to communicate with devices:
-1. I/O Ports;
-2. Device memory.
-
-> 当前还是在setup_arch 中间的:
-> @todo 现在唯一需要知道的就是此处处理的过 ioremap
-
-
-
-```c
-	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev); // @todo 神奇的启动参数，所以谁来获取这一个数值的，grub 吗 ? 如何保证grub 和 内核使用相同的数值描述数值
-```
-
-All information about registered resources are available through:
-1. /proc/ioports - provides a list of currently registered port regions used for input or output communication with a device;
-2. /proc/iomem - provides current map of the system's memory for each physical device.
-
-```c
-	e820__memory_setup(); // 在此处完成 ioremap 初始化的工作
-```
-
-The next two steps is parsing of the setup_data with `parse_setup_data` function and copying BIOS EDD to the safe place. setup_data is a field from the kernel boot header and as we can read from the x86 boot protocol:
-
-
-> Memory descriptor initialization
-```c
-	if (!boot_params.hdr.root_flags)
-		root_mountflags &= ~MS_RDONLY;
-	init_mm.start_code = (unsigned long) _text;
-	init_mm.end_code = (unsigned long) _etext;
-	init_mm.end_data = (unsigned long) _edata;
-	init_mm.brk = _brk_end;
-
-	mpx_mm_init(&init_mm);
-
-	code_resource.start = __pa_symbol(_text);
-	code_resource.end = __pa_symbol(_etext)-1;
-	data_resource.start = __pa_symbol(_etext);
-	data_resource.end = __pa_symbol(_edata)-1;
-	bss_resource.start = __pa_symbol(__bss_start);
-	bss_resource.end = __pa_symbol(__bss_stop)-1;
-```
-> @todo track the bss_resource, 似乎和 ioremap 有关联
+--被整理了--
 
 # Architecture-specific initialization, again...
 ```c
@@ -332,7 +245,7 @@ The next function is `io_delay_init` from the arch/x86/kernel/io_delay.c.
 This function allows to override default I/O delay 0x80 port.
 We already saw I/O delay in the Last preparation before transition into protected mode, now let's look on the `io_delay_init` implementation:
 
-In the next step we need to allocate area for the Direct memory access with the `dma_contiguous_reserve` function which is defined in the drivers/base/dma-contiguous.c. 
+In the next step we need to allocate area for the Direct memory access with the `dma_contiguous_reserve` function which is defined in the drivers/base/dma-contiguous.c.
 
 The next step is the call of the function - `x86_init.paging.pagetable_init`
 

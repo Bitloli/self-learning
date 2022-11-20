@@ -17,7 +17,7 @@
 
 - [ ] 能不能让 guest 只是释放它认为可以释放的，而不是说让 host 决定那些必须释放，然后这些页被一定被清理了
   - [ ] 如果是，QEMU 需要接受一个 list 来被告知那些 4M 的 memory block 被 guest 释放了
-- [ ] QEMU 释放的方法是什么 ? 还是曾经的 ballon 中使用 memory advise 还是 unmap ?
+- [ ] QEMU 释放的方法是什么 ? 还是曾经的 balloon 中使用 memory advise 还是 unmap ?
 
 - [ ] 为什么不支持 VFIO 。
   - 是不是说，当内存被分配为 VFIO 的 dma 区域之后，无法被 unplug ，但是这种情况在 virtio-balloon 中也是如此啊。
@@ -33,7 +33,7 @@ nohup stress --vm-bytes 6000M --vm-keep -m 1 &
 ## [virtio-mem: Paravirtualized Memory by David Hildenbrand](https://www.youtube.com/watch?v=H65FDUDPu9s)
 
 ## 相对于 balloon 的优缺点
-- [ ] 将页面删除的时候，ballon 只是找到这些内存就可以了，而 hotplug 需要让 guest 的 migration 启动
+- [ ] 将页面删除的时候，balloon 只是找到这些内存就可以了，而 hotplug 需要让 guest 的 migration 启动
 - [ ] 会导致 host 碎片化吗?
   - 有什么方法防止碎片化?
 - [ ] 对于 hotplug 的内存，内核有没有一种说法，就是尽量不要去使用这些内存。
@@ -278,7 +278,7 @@ On the other hand, memory ballooning, i.e., controlling a VM’s memory footprin
 either has to tolerate that even well-behaving VMs might exceed memory limits and **reuse inflated memory**, making it impossible to detect malicious VMs,
 or has to enforce memory limits and disallow access to inflated memory, which results in problematic reboot handling.
 - 猜测是因为 guest 内核被 hacking 过之后，balloon 就会不安全，但是 virtio-mem 可以回收之后立刻将这些内存让 QEMU 直接无法访问
-- 猜测，在 ballon 的情况下，memory 被隔离之后，如果重启，这些 memory 需要被重新释放给 guest ?
+- 猜测，在 balloon 的情况下，memory 被隔离之后，如果重启，这些 memory 需要被重新释放给 guest ?
 
 - [ ] virtio-mem 收缩之后，会让 QEMU 通知 KVM 修改 memslot 吗?
 

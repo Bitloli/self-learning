@@ -3,7 +3,6 @@
 ## TODO
 1. plka 内容回顾一下
 2. https://0xax.gitbooks.io/linux-insides/content/MM/linux-mm-2.html 似乎提供了关键内容啊!
-4. https://lwn.net/Articles/653585/ 实际上，使用不是 mmap 而是 ioremap 完成的工作
 
 ## question
 1. 动态规划的还是实现定义的

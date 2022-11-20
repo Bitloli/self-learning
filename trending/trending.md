@@ -82,7 +82,7 @@ characterize and exemplify these problems in Section 3.
 - [ ] 这里介绍了两种方法来解决
 
 - 最好的是将两种方法都来搞一下。
-- 没有 ballon 的一个问题:
+- 没有 balloon 的一个问题:
   - 如果 host 将 guest 中 swap 的内存，guest 重新 swap 出去，这导致 host 需要将这个数据重新读回来。
 
 ## Binary Translation
