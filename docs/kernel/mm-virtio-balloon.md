@@ -363,7 +363,7 @@ Cc: Linus Torvalds <torvalds@linux-foundation.org>
 Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
 ```
 
-- virtio_balloon_free_page_hint_notify 中，显然 freepage hint 和 migrate_postcopy_ram 不能共存?
+- virtio_balloon_free_page_hint_notify : 中，显示 freepage hint 和 migrate_postcopy_ram 不能共存?
 - virtio_balloon_handle_free_page_vq : 对应的 vq 的 vritio handler
   - virtio_ballloon_get_free_page_hints : 是 iothread 的 hook # TODO 为什么一定需要在 iothread 中执行
     - get_free_page_hints
@@ -857,9 +857,11 @@ static struct virtio_driver virtio_balloon_driver = {
 
 - [ ] 看懂这个函数: virtballoon_validate
 
-## VIRTIO_BALLOON_F_REPORTING
+- 如果 !want_init_on_free() && !page_poisoning_enabled_static 的时候，说明，没有打开 poison 选项
 
-- [ ] 打开之后，已经完全不受控制了
+feature 似乎是双向协商的
+
+## VIRTIO_BALLOON_F_REPORTING
 
 ```diff
 History:        #0
@@ -940,7 +942,7 @@ Message-Id: <20200527041407.12700.73735.stgit@localhost.localdomain>
 
 - [ ] 好吧，我傻了
 
-- 原来 page hinting 和 poison 是有关系的?
+- 原来 page hinting 和 page reporing 和 poison 是有关系的?
 ```diff
 History:        #0
 Commit:         d74b78fabe043158e26196291d2e439b487395bd
@@ -989,12 +991,40 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
 - 为什么将 update_balloon_size_func 和 update_balloon_stats_func 设置为 workqueue 的?
   - 因为他们都会导致睡眠？
 
-## TODO
-
-为什么这里的 hook 是
+- 为什么这里的 hook 是空的？
 ```c
 	if (virtio_has_feature(vb->vdev, VIRTIO_BALLOON_F_FREE_PAGE_HINT)) {
 		names[VIRTIO_BALLOON_VQ_FREE_PAGE] = "free_page_vq";
 		callbacks[VIRTIO_BALLOON_VQ_FREE_PAGE] = NULL;
+	}
+```
+因为只需要 Guest 通知 Host，无需额外的。
+
+## 是否会导致 Guest 中出现 swap 的出现
+- 会
+- 会触发很多 : Out of puff! Can't get 1 pages
+
+## init_on_free=1 为什么会产生影响
+
+如何理解这一段代码?
+```c
+	if (virtio_has_feature(vdev, VIRTIO_BALLOON_F_PAGE_POISON)) {
+		/* Start with poison val of 0 representing general init */
+		__u32 poison_val = 0;
+
+		/*
+		 * Let the hypervisor know that we are expecting a
+		 * specific value to be written back in balloon pages.
+		 *
+		 * If the PAGE_POISON value was larger than a byte we would
+		 * need to byte swap poison_val here to guarantee it is
+		 * little-endian. However for now it is a single byte so we
+		 * can pass it as-is.
+		 */
+		if (!want_init_on_free())
+			memset(&poison_val, PAGE_POISON, sizeof(poison_val));
+
+		virtio_cwrite_le(vb->vdev, struct virtio_balloon_config,
+				 poison_val, &poison_val);
 	}
 ```

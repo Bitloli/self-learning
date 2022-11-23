@@ -71,7 +71,7 @@ arg_hugetlb="default_hugepagesz=3M hugepagesz=1G hugepages=1 hugepagesz=2M hugep
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
-arg_mem_balloon="-device virtio-balloon,id=balloon0,deflate-on-oom=true,free-page-reporting=true,free-page-hint=true,iothread=io1 -object iothread,id=io1"
+arg_mem_balloon="-device virtio-balloon,id=balloon0,deflate-on-oom=true,page-poison=true,free-page-reporting=true,free-page-hint=true,iothread=io1 -object iothread,id=io1"
 
 case $hacking_memory in
 "numa")
@@ -136,7 +136,7 @@ fi
 
 arg_cgroupv2="systemd.unified_cgroup_hierarchy=1"
 # scsi_mod.scsi_logging_level=0x3fffffff
-arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb $arg_cgroupv2 page_poison=1 init_on_free=1"
+arg_kernel_args="root=$root nokaslr console=ttyS0,9600 earlyprink=serial $arg_hugetlb $arg_cgroupv2"
 arg_kernel="--kernel ${kernel} -append \"${arg_kernel_args}\""
 
 arg_nvme="-device nvme,drive=nvme1,serial=foo,bus=mybridge,addr=0x1 -drive file=${workstation}/img1,format=raw,if=none,id=nvme1"
@@ -280,4 +280,4 @@ cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu
   ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
   ${arg_qmp} ${arg_vfio} ${arg_smbios} ${arg_scsi}"
 echo "$cmd"
-eval "$cmd"
+# eval "$cmd"

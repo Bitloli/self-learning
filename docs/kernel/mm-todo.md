@@ -81,3 +81,6 @@ enum migratetype {
 
 - memory 调试方法:
   - https://stackoverflow.com/questions/22717661/linux-page-poisoning
+
+
+- /sys/devices/system/node/node2 : 这个是如何创建出来的

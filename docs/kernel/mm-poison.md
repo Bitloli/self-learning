@@ -48,8 +48,6 @@ Backtrace stopped: Cannot access memory at address 0xffffc900001c1018
 
 ## MADV_HWPOISON
 
-## [ ] 如果 Guest 打开了 poison，但是又打开了 virtio-balloon，那么问题就来了
-
-## [ ] 打开了 balloon 之后，还是存在很多 virtio_balloon_handle_report 的调用啊
+## init_on_free 不是和 poison 是冲突的吗
 
 [^1]: https://stackoverflow.com/questions/22717661/linux-page-poisoning

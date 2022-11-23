@@ -151,6 +151,7 @@
 - [About](./abaaba/about.md)
 - [2021 秋招总结](./abaaba/job.md)
 - [有缘再见，龙芯](./abaaba/loongson.md)
+- [装机](./hw/machine.md)
 <!-- - [为什么我不读博士](./abaaba/pressure.md) -->
 
 ## For Girlfriend
