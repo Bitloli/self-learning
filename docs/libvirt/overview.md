@@ -3,11 +3,16 @@
 - https://wiki.libvirt.org/page/Main_Page
 - https://libvirt.org/drvqemu.html
 
+
+- [ ] 使用 virsh 安装系统 : https://unix.stackexchange.com/questions/309788/how-to-create-a-vm-from-scratch-with-virsh
+
 ## 环境搭建: https://wiki.libvirt.org/page/UbuntuKVMWalkthrough
+
 
 - [ ] python-virtinst : 是做什么的?
 
 ## 正式操作: https://wiki.libvirt.org/page/QEMUSwitchToLibvirt
+
 
 ## what's the domiain in the libvirt
 
@@ -357,3 +362,12 @@ virt-install  \
 
 ## 问题
 - 什么叫做 storage pool ?
+
+## 研究下，如何让 libvirt 来替代现在的操作 qemu 的管理
+- 打开 memory reporting 机制；
+- 开启多个虚拟机。
+- 使用 Rust 管理代码。
+- 理解其中的网络部署。
+- 如何让 virsh 构建一个网络，让本地构建虚拟机迁移。
+
+- 在 ubuntu 上测试吧?

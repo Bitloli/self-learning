@@ -627,3 +627,9 @@ If a swap cache entry is non-zero, it represents a page.
 1. PageSwapCache 是什么东西 ? 只有当在 page swap cache 中间的才有意义
 2. add_to_swap 被调用的条件 是什么 ? 分析 shrink_page_list
 3. swap cache 不是加快操作，而是必须存在的
+
+## 问题
+- 在多个盘上设置多个 swap 分区，会提升性能吗?
+- 在一个盘上设置多个 swap 分区，可以提升性能吗?
+- 如果 swap 盘坏了，怎么办?
+   -

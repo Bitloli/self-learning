@@ -408,3 +408,47 @@ https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/ke
 
 ## 基本的使用
 - bt -FF : 为什么 stack 上和 kobject 有关
+
+## ubuntu 上的基本使用方法
+- apt install crash
+
+- apt-get install linux-image-$(uname -r)-dbgsym
+
+- 安装的位置在 /usr/lib/debug/boot 中:
+
+crash /usr/lib/debug/boot/vmlinux-5.4.0-28-generic 的时候，可以直接在 kernel 中调试:
+
+编辑一下:
+vim /boot/grub/grub.cfg
+
+## 补充的操作
+- virsh dump --memory-only --live <vm uuid>  g.dump
+
+然后 crash vmlinux g.dump
+
+```sh
+rpm2cpio xxx.rpm | cpio -idm
+find . -name "vmlinux"
+echo  crash  g.dump  `!!` >> crash.sh
+chmod a+x crash.sh
+```
+
+- foreach bt : 所有进程的 backtrace
+- bt -a : 所有的 CPU 的 backtrace
+- bt -FF  264 : CPU
+  - [ ] -FF 的数据，好吧，需要重新理解 kmalloc 和 stack 的关系
+- search sd_fops : 搜索 sd_fops，我靠，根本不能理解为什么这个东西的实现原理啊
+- dev : 展示所有的 device
+- kmem
+  - `-s` : 展示 k
+
+- bt -FF -c 12
+
+## 如何 ubuntu crash 之后
+- 获取 debuginfo
+- https://askubuntu.com/questions/197016/how-to-install-a-package-that-contains-ubuntu-kernel-debug-symbols
+- https://superuser.com/questions/62575/where-is-vmlinux-on-my-ubuntu-installation
+
+echo "deb http://ddebs.ubuntu.com $(lsb_release -cs)-updates main restricted universe multiverse
+deb http://ddebs.ubuntu.com $(lsb_release -cs)-proposed main restricted universe multiverse" | \
+sudo tee -a /etc/apt/sources.list.d/ddebs.list

@@ -37,7 +37,7 @@
 - [QEMU 中的 map 和 set](./qemu/map.md)
 - [QEMU softmmu 访存函数集整理](./qemu/softmmu-functions.md)
 - [QEMU 中的 seabios : 地址空间](./qemu/bios-memory.md)
-- [QEMU 和 seabios 的数据传输协议: `fw_cfg`](./qemu/fw_cfg.md)
+- [QEMU 和 seabios 的数据传输协议:`fw_cfg`](./qemu/fw_cfg.md)
 - [QEMU 如何加载 Linux kernel image](./qemu/load-kernel-image.md)
 - [QEMU 的参数解析](./qemu/options.md)
 - [QEMU 中的线程和事件循环](./qemu/threads.md)
@@ -106,8 +106,13 @@
 - 🚧 [Debugger 的理念，原理和使用](./linux/gdb.md)
 
 ## Linux Kernel
-- [内核学习的一点经验之谈](./kernel/learn-linux-kernel.md)
-- [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md)
+- 内核学习
+  - [内核学习的一点经验之谈](./kernel/learn-linux-kernel.md)
+  <!-- - 使用 QEMU 来学习内核 -->
+  <!-- - 使用 ebpf 来学习内核 -->
+  <!-- - 使用 ebpf 来学习内核 -->
+  <!-- - 使用 crash 来学习内核 -->
+  <!-- - [使用 QEMU, FlameGraph 和 bpftrace 阅读内核](./kernel/tips-reading-kernel.md) -->
 - [tty 到底是什么](./kernel/tty.md)
 - [mknod](./kernel/mknod.md)
 - 内存管理

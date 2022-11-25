@@ -15,6 +15,8 @@
 - https://zorrozou.github.io/docs/tcp/handshake/tcp_three_way_handshake.html : 关于 TCP 的文章可以分析一下。
 
 ## todo
+- https://plantegg.github.io/2020/05/24/%E7%A8%8B%E5%BA%8F%E5%91%98%E5%A6%82%E4%BD%95%E5%AD%A6%E4%B9%A0%E5%92%8C%E6%9E%84%E5%BB%BA%E7%BD%91%E7%BB%9C%E7%9F%A5%E8%AF%86%E4%BD%93%E7%B3%BB/
+  - 程序员如何构建网络知识体系
 - https://cs144.github.io/ : tcp 实验
 - [ ] openwrt 到底是什么?
   - 教别人编译的 : https://github.com/coolsnowwolf/lede

@@ -140,7 +140,7 @@ static const struct eth_dev_ops ops = {
 
 实际上，还发现了 virtio ，猜测这个时候，dpdk 是在虚拟机中，和 vDPA 联合使用，在虚拟机中通过 VFIO 直接访问 virtio 硬件。
 
-### 真正的纯粹的 virito 驱动: `net/virtio/virtio_ethdev.c`
+### 真正的纯粹的 virito 驱动`net/virtio/virtio_ethdev.c`
 - `set_rxtx_funcs` 设置 virtio 的接受函数
 
 ### drivers/vhost

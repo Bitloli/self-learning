@@ -38,3 +38,5 @@ objdump -dS --adjust-vma=0xffffffff85037434 vmlinux
 
 ## memtest
 - https://github.com/memtest86plus/memtest86plus
+
+- journalctl -t kernel 展示所有的的内核日志。

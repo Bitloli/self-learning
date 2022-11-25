@@ -280,4 +280,4 @@ cmd="${debug_qemu} ${qemu} ${arg_trace} ${debug_kernel} ${arg_img} ${arg_mem_cpu
   ${arg_machine} ${arg_monitor} ${arg_initrd} ${arg_mem_balloon} ${arg_hacking} \
   ${arg_qmp} ${arg_vfio} ${arg_smbios} ${arg_scsi}"
 echo "$cmd"
-# eval "$cmd"
+eval "$cmd"

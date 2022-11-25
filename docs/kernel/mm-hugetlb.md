@@ -1144,3 +1144,10 @@ static inline bool is_file_hugepages(struct file *file)
 - ksys_mmap_pgoff
   - hstate_sizelog
     - for_each_hstate : 从小到大匹配，找到第一个就是返回的
+
+## 动态申请
+```c
+// 继续分析其调用者
+unsigned long reclaim_clean_pages_from_list(struct zone *zone,
+                        struct list_head *page_list)
+```

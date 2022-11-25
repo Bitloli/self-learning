@@ -11,122 +11,69 @@
 #4  folio_batch_release (fbatch=0xffffc9000005fb88) at include/linux/pagevec.h:135
 ```
 
-## core sruct
-```c
-// pg_data_t 中间的实现每个 node 独立分配的
-static inline struct lruvec *mem_cgroup_page_lruvec(struct page *page,
-                            struct pglist_data *pgdat)
-{
-    return &pgdat->lruvec;
-}
-```
+- [ ] 现在 lruvec 到底是什么作用，怎么感觉是一个 memcg 持有一个?
 
-```c
-struct pagevec {
-    unsigned char nr;
-    bool percpu_pvec_drained;
-    struct page *pages[PAGEVEC_SIZE];
-};
-```
-
-一个标准的例子 :
-```c
-/*
- * deactivate_page - deactivate a page
- * @page: page to deactivate
- *
- * deactivate_page() moves @page to the inactive list if @page was on the active
- * list and was not an unevictable page.  This is done to accelerate the reclaim
- * of @page.
- */
-void deactivate_page(struct page *page)
-{
-    if (PageLRU(page) && PageActive(page) && !PageUnevictable(page)) {
-        struct pagevec *pvec = &get_cpu_var(lru_deactivate_pvecs);
-
-        get_page(page);
-        if (!pagevec_add(pvec, page) || PageCompound(page)) // 首先试着添加到 percpu 上
-            pagevec_lru_move_fn(pvec, lru_deactivate_fn, NULL); // 如果满了，就利用 pagevec_lru_move_fn + 特定的移动函数，将 pagevec 清空
-        put_cpu_var(lru_deactivate_pvecs);
-    }
-}
-```
-
-
-# 调用环节 : 莫名奇妙的
+## 调用环节 : 莫名奇妙的
 > vmscan.c 整个维持 swap 页面的替换回去，但是 page cache 的刷新回去的操作谁来控制 ?
 > page cache 和 swap cache 是不是采用相同的模型进行的 ? 如果说，其中，将 anon memory 当做 swap 形成的 file based 那么岂不是很好。
 
-```c
-// 继续分析其调用者
-unsigned long reclaim_clean_pages_from_list(struct zone *zone,
-                        struct list_head *page_list)
-
-static unsigned long shrink_page_list(struct list_head *page_list, // vmscan.c
-                      struct pglist_data *pgdat,
-                      struct scan_control *sc,
-                      enum ttu_flags ttu_flags,
-                      struct reclaim_stat *stat,
-                      bool force_reclaim)
-
-  // 唯一调用
-  -> int add_to_swap(struct page *page) // swap_state.c
+```txt
+#0  add_to_swap (folio=folio@entry=0xffffea0002ef9e00) at mm/swap_state.c:182
+#1  0xffffffff812ade01 in shrink_folio_list (folio_list=folio_list@entry=0xffffc900012bbc30, pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc900012bbdd8, stat=stat@entry=0xffffc900012bbcb8, ignore_references=ignore_references@entry=false) at mm/vmscan.c:1834
+#2  0xffffffff812af5d8 in shrink_inactive_list (lru=LRU_INACTIVE_ANON, sc=0xffffc900012bbdd8, lruvec=0xffff888164d5c000, nr_to_scan=<optimized out>) at mm/vmscan.c:2489
+#3  shrink_list (sc=0xffffc900012bbdd8, lruvec=0xffff888164d5c000, nr_to_scan=<optimized out>, lru=LRU_INACTIVE_ANON) at mm/vmscan.c:2716
+#4  shrink_lruvec (lruvec=lruvec@entry=0xffff888164d5c000, sc=sc@entry=0xffffc900012bbdd8) at mm/vmscan.c:5885
+#5  0xffffffff812afe3f in shrink_node_memcgs (sc=0xffffc900012bbdd8, pgdat=0xffff88823fff9000) at mm/vmscan.c:6074
+#6  shrink_node (pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc900012bbdd8) at mm/vmscan.c:6105
+#7  0xffffffff812b0577 in kswapd_shrink_node (sc=0xffffc900012bbdd8, pgdat=0xffff88823fff9000) at mm/vmscan.c:6894
+#8  balance_pgdat (pgdat=pgdat@entry=0xffff88823fff9000, order=order@entry=9, highest_zoneidx=highest_zoneidx@entry=3) at mm/vmscan.c:7084
+#9  0xffffffff812b0b2b in kswapd (p=0xffff88823fff9000) at mm/vmscan.c:7344
+#10 0xffffffff81133853 in kthread (_create=0xffff888004058240) at kernel/kthread.c:376
 ```
 
+## folio_add_lru
 
-## lru_cache_add
-> @todo 本函数的实现的分析
+- folio_add_lru : 将 page 添加到 folio_batch 中
+- lru_add_drain_cpu : 将 folio_batch 中的 page 移动到 lru 中
 
-lru_cache_add 调用者, 一共三个位置，三个不同的文件
-```c
-// 分析 lru_cache_add 的作用 : 根据page 的 flags 将page 放到 lru list 中间。
-
-// vmscan.c
-/**
- * putback_lru_page - put previously isolated page onto appropriate LRU list
- * @page: page to be put back to appropriate lru list
- *
- * Add previously isolated @page to appropriate LRU list.
- * Page may still be unevictable for other reasons.
- *
- * lru_lock must not be held, interrupts must be enabled.
- */
-void putback_lru_page(struct page *page)
-{
-    lru_cache_add(page);
-    put_page(page);     /* drop ref from isolate */
-}
-
-// filemap.c
-// TODO 这是我一直想要的page swap 的回收吗 ?
-int add_to_page_cache_lru(struct page *page, struct address_space *mapping,
-                pgoff_t offset, gfp_t gfp_mask)
-
-// swap.c 中间，应该用于进一步封装 lru_cache_add 的，TODO 了解其调用者
-/**
- * lru_cache_add_active_or_unevictable
- * @page:  the page to be added to LRU
- * @vma:   vma in which page is mapped for determining reclaimability
- *
- * Place @page on the active or unevictable LRU list, depending on its
- * evictability.  Note that if the page is not evictable, it goes
- * directly back onto it's zone's unevictable list, it does NOT use a
- * per cpu pagevec.
- */
-void lru_cache_add_active_or_unevictable(struct page *page,
-                     struct vm_area_struct *vma)
+```txt
+#0  lru_add_drain_cpu (cpu=1) at mm/swap.c:665
+#1  0xffffffff812a7f4b in lru_add_drain () at mm/swap.c:773
+#2  0xffffffff812af51d in shrink_inactive_list (lru=LRU_INACTIVE_ANON, sc=0xffffc90000127ba8, lruvec=0xffff888164d5c000, nr_to_scan=32) at mm/vmscan.c:2470
+#3  shrink_list (sc=0xffffc90000127ba8, lruvec=0xffff888164d5c000, nr_to_scan=32, lru=LRU_INACTIVE_ANON) at mm/vmscan.c:2716
+#4  shrink_lruvec (lruvec=lruvec@entry=0xffff888164d5c000, sc=sc@entry=0xffffc90000127ba8) at mm/vmscan.c:5885
+#5  0xffffffff812afe3f in shrink_node_memcgs (sc=0xffffc90000127ba8, pgdat=0xffff88823fff9000) at mm/vmscan.c:6074
+#6  shrink_node (pgdat=pgdat@entry=0xffff88823fff9000, sc=sc@entry=0xffffc90000127ba8) at mm/vmscan.c:6105
+#7  0xffffffff812b1030 in shrink_zones (sc=0xffffc90000127ba8, zonelist=<optimized out>) at mm/vmscan.c:6343
+#8  do_try_to_free_pages (zonelist=zonelist@entry=0xffff88823fffab00, sc=sc@entry=0xffffc90000127ba8) at mm/vmscan.c:6405
+#9  0xffffffff812b1aaa in try_to_free_pages (zonelist=0xffff88823fffab00, order=order@entry=0, gfp_mask=gfp_mask@entry=1314250, nodemask=<optimized out>) at mm/vmscan.c:6640
+#10 0xffffffff812ffb89 in __perform_reclaim (ac=0xffffc90000127d28, order=0, gfp_mask=1314250) at mm/page_alloc.c:4755
+#11 __alloc_pages_direct_reclaim (did_some_progress=<synthetic pointer>, ac=0xffffc90000127d28, alloc_flags=2240, order=0, gfp_mask=1314250) at mm/page_alloc.c:4777
+#12 __alloc_pages_slowpath (gfp_mask=<optimized out>, gfp_mask@entry=1314250, order=order@entry=0, ac=ac@entry=0xffffc90000127d28) at mm/page_alloc.c:5183
+#13 0xffffffff81300718 in __alloc_pages (gfp=gfp@entry=1314250, order=order@entry=0, preferred_nid=<optimized out>, nodemask=0x0 <fixed_percpu_data>) at mm/page_alloc.c:5568
+#14 0xffffffff81301022 in __folio_alloc (gfp=gfp@entry=1052106, order=order@entry=0, preferred_nid=<optimized out>, nodemask=<optimized out>) at mm/page_alloc.c:5587
 ```
 
-
-
-```c
-// TODO 这是和 lru_cache_add 的反向的内容吗 ?
-void lru_add_drain(void)
-{
-    lru_add_drain_cpu(get_cpu());
-    put_cpu();
-}
+一个经典的调用:
+```txt
+#0  filemap_add_folio (mapping=mapping@entry=0xffff8880369cb9c0, folio=folio@entry=0xffffea0008731dc0, index=index@entry=0, gfp=gfp@entry=1125578) at mm/filemap.c:929
+#1  0xffffffff812a47af in page_cache_ra_unbounded (ractl=ractl@entry=0xffffc9000189fd18, nr_to_read=71, lookahead_size=<optimized out>) at mm/readahead.c:251
+#2  0xffffffff812a4e27 in do_page_cache_ra (lookahead_size=<optimized out>, nr_to_read=<optimized out>, ractl=0xffffc9000189fd18) at mm/readahead.c:300
+#3  0xffffffff8129a2ba in do_sync_mmap_readahead (vmf=0xffffc9000189fdf8) at mm/filemap.c:3043
+#4  filemap_fault (vmf=0xffffc9000189fdf8) at mm/filemap.c:3135
+#5  0xffffffff812d39ef in __do_fault (vmf=vmf@entry=0xffffc9000189fdf8) at mm/memory.c:4203
+#6  0xffffffff812d7ef1 in do_read_fault (vmf=0xffffc9000189fdf8) at mm/memory.c:4554
+#7  do_fault (vmf=vmf@entry=0xffffc9000189fdf8) at mm/memory.c:4683
+#8  0xffffffff812dcad4 in handle_pte_fault (vmf=0xffffc9000189fdf8) at mm/memory.c:4955
+#9  __handle_mm_fault (vma=vma@entry=0xffff8880626a5260, address=address@entry=94203785161552, flags=flags@entry=596) at mm/memory.c:5097
+#10 0xffffffff812dd7b0 in handle_mm_fault (vma=0xffff8880626a5260, address=address@entry=94203785161552, flags=flags@entry=596, regs=regs@entry=0xffffc9000189ff58) at mm/memory.c:5218
+#11 0xffffffff810f3ca3 in do_user_addr_fault (regs=regs@entry=0xffffc9000189ff58, error_code=error_code@entry=4, address=address@entry=94203785161552) at arch/x86/mm/fault.c:1428
+#12 0xffffffff81faf042 in handle_page_fault (address=94203785161552, error_code=4, regs=0xffffc9000189ff58) at arch/x86/mm/fault.c:1519
+#13 exc_page_fault (regs=0xffffc9000189ff58, error_code=4) at arch/x86/mm/fault.c:1575
+#14 0xffffffff82000b62 in asm_exc_page_fault () at ./arch/x86/include/asm/idtentry.h:570
+#15 0x000055ad88e4d310 in ?? ()
 ```
+
 
 
 ## wired

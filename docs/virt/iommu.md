@@ -48,7 +48,7 @@ io device 经过各级 pci hub 到达 root complex,  进入 iommu 翻译，然�
 > ‒ No CPU transfer
 > ‒ More efficient
 
->  If access occurs, OS gets notified and can shut the device & driver down and notifies the user or administrator
+> If access occurs, OS gets notified and can shut the device & driver down and notifies the user or administrator
 
 > Some I/O devices can issue DMA requests to system memory
 > directly, without OS or Firmware intervention

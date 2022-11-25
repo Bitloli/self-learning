@@ -1482,6 +1482,7 @@ static int bdev_try_to_free_page(struct super_block *sb, struct page *page, // �
 	return try_to_free_buffers(page);
 }
 ```
+- fscahce : https://www.kernel.org/doc/Documentation/filesystems/caching/fscache.txt
 
 ##  filemap_write_and_wait_range : todo swapon 调用的，值得分析
 

@@ -257,6 +257,10 @@ awk 还存在
 - 最左边的就是当前的目录
 - pushd x 会进入到 x 中
 
+在 zsh 中，是自动打开 `setopt autopushd`
+https://serverfault.com/questions/35312/unable-to-understand-the-benefit-of-zshs-autopushd 的，
+这导致 cd 的行为和 pushd 相同。
+
 ### 提升 bash 安全的操作
 - [ ] http://mywiki.wooledge.org/BashPitfalls
 

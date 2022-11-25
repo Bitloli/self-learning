@@ -8,6 +8,9 @@ https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
 https://github.com/LearnOpenGL-CN/LearnOpenGL-CN : OpenGL 教程
 
+- https://book.douban.com/subject/30426701/ DirectX 12 3D 游戏开发实战
+
+
 
 - 基于颜色的绘制
 - 基于光照的绘制
@@ -16,7 +19,7 @@ https://github.com/LearnOpenGL-CN/LearnOpenGL-CN : OpenGL 教程
 
 齐次坐标
 
-Mesh Tessellation 
+Mesh Tessellation
 
 https://github.com/ssloy/tinyrenderer : 号称只有 500 行，但是实际上还是首先处理 games101 吧
 https://github.com/Dalamar42/rayt : Monte Carlo ray tracer developed using Rust
@@ -32,7 +35,7 @@ https://github.com/ssloy/tinyraycaster : 又是这个人，一周之类做个游
 https://github.com/ssloy/tinyraytracer : 其实这个人搞了一堆这种有意思的项目
 
 
-https://gabrielgambetta.com/computer-graphics-from-scratch/ : 
+https://gabrielgambetta.com/computer-graphics-from-scratch/ :
 
 # 上课内容
 
