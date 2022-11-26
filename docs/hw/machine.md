@@ -6,8 +6,9 @@
 
 最近决定组装一个机器在公司，原因有三:
 - 闲钱: 与其省吃俭用买房被政府收割，还不如对自己好点；
-- 习惯: 我之前一直是使用 Linux 和 Windows 的，但是公司给我发了一个 M2 Mac，非常不习惯；
-- 工作: 使用 Mac 之后，需要连远程服务工作，感觉不是很得劲儿。
+- 习惯: 我之前一直是使用 Linux 和 Windows 的，但是公司给我发了一个 M2 Mac，非常不习惯；例如 control option command 键。
+- 工作: 使用 Mac 之后，需要连远程服务工作，感觉不是很得劲儿。一是，存在延迟。二是，我现在在任何时候都必须打开两个 tmux，一个在本地的 Mac 的，
+一个在远程的虚拟机中的。内核的代码在 Mac 上无法编译，所以必须使用远程。但是在远程上，输入法在 vim 中**很难**[^1]无法自动切换了。
 
 当然这里有一个非常重要的前提，是我的公司允许使用自己的电脑。
 
@@ -43,6 +44,8 @@ Nixos ，如何实现各个平台数据同步，在机器里面如何管理虚�
 ## 参考
 - https://cerr.cc/post/zkv%E7%9A%84%E6%94%92%E6%9C%BA%E7%AE%80%E5%8F%B2/
 - https://nanoreview.net/en/cpu-list/cinebench-scores
+
+[^1]: https://github.com/ZSaberLv0/ZFVimIM
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

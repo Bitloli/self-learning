@@ -335,3 +335,6 @@ For faulting in pages and writing them to backing storage, two structs called `s
 > inode_operations doesn't contains shmem_truncate()
 
 #### 12.7  Setting up Shared Regions
+
+## 验证一下这个项目
+https://unix.stackexchange.com/questions/348464/if-i-mmap-a-file-from-tmpfs-will-it-double-the-memory-usage

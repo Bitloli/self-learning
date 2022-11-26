@@ -172,6 +172,7 @@
 - [xieby1](https://xieby1.github.io/)
 
 
+<!-- @todo 将 blog 再完善一下，然后投稿到 https://github.com/timqian/chinese-independent-blogs -->
 
 <script src="https://giscus.app/client.js"
         data-repo="martins3/martins3.github.io"

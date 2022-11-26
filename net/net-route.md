@@ -185,6 +185,7 @@ sudo dhclient en0
 ```
 
 ## [ ] tls
+- https://tls13.xargs.org/
 
 ## LVS
 - liexusong 和 sdn book 都分析过
@@ -540,6 +541,11 @@ ens4: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 - https://www.multipath-tcp.org/
 
+## 数据中心的网络
+- [Moving past TCP in the data center, part 1](https://mp.weixin.qq.com/s/yz47AT-ySvzZYCgd-AsQww)
+
+- kernel network 的会议:
+  - https://www.youtube.com/watch?v=DAN-7sWFxLw&list=PLrninrcyMo3L-hsJv23hFyDGRaeBY1EJO&index=2
 
 
 [^2]: 用芯探核:基于龙芯的 Linux 内核探索解析

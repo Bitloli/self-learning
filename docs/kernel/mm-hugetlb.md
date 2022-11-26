@@ -1151,3 +1151,6 @@ static inline bool is_file_hugepages(struct file *file)
 unsigned long reclaim_clean_pages_from_list(struct zone *zone,
                         struct list_head *page_list)
 ```
+
+## 测试一下性能
+- https://easyperf.net/blog/2022/09/01/Utilizing-Huge-Pages-For-Code

@@ -28,3 +28,6 @@
 - wb_update_bandwidth_workfn
 
 如果想要进一步分析，看看 page-writeback 机制吧
+
+## 回答这个问题
+https://stackoverflow.com/questions/72428893/how-is-the-bdi-identifier-generated-on-linux

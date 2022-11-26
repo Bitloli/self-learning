@@ -32,4 +32,8 @@ strace 执行的时候，可以修改执行的 trace 以及 修改指令执行�
 
 -I interruptible 用于屏蔽信号
 
+strace -p <PID> attach 到一个进程上[^2]
+
 [^1]: [strace little book](https://github.com/NanXiao/strace-little-book)
+
+[^2]: https://stackoverflow.com/questions/7482076/how-does-strace-connect-to-an-already-running-process

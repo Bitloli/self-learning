@@ -5,6 +5,7 @@
 
 
 - [ ] 使用 virsh 安装系统 : https://unix.stackexchange.com/questions/309788/how-to-create-a-vm-from-scratch-with-virsh
+- virsh console 中退出: https://superuser.com/questions/637669/how-to-exit-a-virsh-console-connection
 
 ## 环境搭建: https://wiki.libvirt.org/page/UbuntuKVMWalkthrough
 

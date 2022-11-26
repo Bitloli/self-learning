@@ -114,3 +114,6 @@ cgexec -g cpuset:g bash
 ```
 
 此时 echo 100000 > /proc/sys/vm/nr_hugepages，发现最多只能占据 huge page 的大页:
+
+## v2 有吗? v1 中如何实现的
+https://stackoverflow.com/questions/55507022/how-to-make-cpuset-cpu-exclusive-function-of-cpuset-work-correctly

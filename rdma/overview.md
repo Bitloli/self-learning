@@ -61,3 +61,5 @@
 
 - https://github.com/linux-rdma/rdma-core
   - https://www.youtube.com/watch?v=QAIAoNheX-8 : RDMA 的想法应该很简单吧!
+
+- https://winddoing.github.io/post/f4fa9e36.html

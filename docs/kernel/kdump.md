@@ -421,6 +421,9 @@ crash /usr/lib/debug/boot/vmlinux-5.4.0-28-generic 的时候，可以直接在 k
 编辑一下:
 vim /boot/grub/grub.cfg
 
+
+将 [/boot/vmlinuz 转换为 vmlinux](https://superuser.com/questions/298826/how-do-i-uncompress-vmlinuz-to-vmlinux) 是不行的，里面没有调试信息
+
 ## 补充的操作
 - virsh dump --memory-only --live <vm uuid>  g.dump
 

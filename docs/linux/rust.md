@@ -47,3 +47,4 @@
 ## TODO
 - pin : https://course.rs/advance/circle-self-ref/self-referential.html
 - https://github.com/skyzh/type-exercise-in-rust
+- https://stackoverflow.com/questions/37149831/what-is-the-difference-between-these-3-ways-of-declaring-a-string-in-rust

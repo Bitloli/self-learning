@@ -378,6 +378,10 @@ zsh 和 bash 之前语法上基本是兼容的，但是由于[oh my zsh](https:/
 history | awk '{CMD[$2]++;count++;}END { for (a in CMD)print CMD[a] " " CMD[a]/count*100 "% " a;}' | grep -v "./" | column -c3 -s " " -t | sort -nr | nl |  head -n10
 ```
 
+- 到底什么时候添加双引号
+  - https://unix.stackexchange.com/questions/421740/should-i-double-quote-these-parameter-expansions
+  - https://www.shellcheck.net/wiki/SC2086
+
 ## reference
 [^1]: https://github.com/agarrharr/awesome-cli-apps
 [^2]: https://github.com/alebcay/awesome-shell

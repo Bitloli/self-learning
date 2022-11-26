@@ -165,5 +165,12 @@ https://trstringer.com/simple-vs-oneshot-systemd-service/
 - sys: /etc/systemd/system
 - user: /etc/systemd/user or $HOME/.config/systemd/user
 
+## journalctl
+- https://www.loggly.com/ultimate-guide/using-journalctl/
+- https://unix.stackexchange.com/questions/139513/how-to-clear-journalctl
+
+## 常见疑问
+- https://unix.stackexchange.com/questions/506347/why-do-most-systemd-examples-contain-wantedby-multi-user-target
+
 [^1]: https://unix.stackexchange.com/questions/471824/what-is-the-correct-substitute-for-rc-local-in-systemd-instead-of-re-creating-rc
 [^2]: https://support.huaweicloud.com/intl/en-us/trouble-ecs/ecs_trouble_0349.html

@@ -632,4 +632,3 @@ If a swap cache entry is non-zero, it represents a page.
 - 在多个盘上设置多个 swap 分区，会提升性能吗?
 - 在一个盘上设置多个 swap 分区，可以提升性能吗?
 - 如果 swap 盘坏了，怎么办?
-   -
