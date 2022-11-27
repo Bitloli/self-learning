@@ -84,3 +84,8 @@ enum migratetype {
 
 
 - /sys/devices/system/node/node2 : 这个是如何创建出来的
+
+- [ ] page_evictable() and PageMovable()
+  - [ ] I think, if a page can be evicted to swap, so it can movable too.
+
+- put_page : 理解一下 reference counting 机制

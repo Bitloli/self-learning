@@ -268,3 +268,5 @@ static inline int driver_match_device(struct device_driver *drv,
   - 回调 `pci_driver->probe`, 使用 virtio_pci_probe 为例子
       - 初始化 pci 设备
       - 回调 `virtio_driver->probe`, 使用 virtnet_probe 作为例子
+
+- [ ] 什么 file operation 的 direct IO 是什么情况 ?

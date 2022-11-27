@@ -1,5 +1,6 @@
 
 - [ ] https://github.com/hamadmarri/cacule-cpu-scheduler : 新的一个 scheduler patch
+- https://mp.weixin.qq.com/s/eFvu-tZNpIXaadYHDdkFSQ
 
 ## 主要参考资料
 - loyenwang
