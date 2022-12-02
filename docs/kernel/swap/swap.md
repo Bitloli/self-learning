@@ -40,7 +40,7 @@
 - folio_add_lru : 将 page 添加到 folio_batch 中
 - folio_activate : 将 page 从 inactive 移动到 active 中
 - deactivate_page
-- mark_page_lazyfree : 缓存匿名页，清除掉PG_activate, PG_referenced, PG_swapbacked标志后，将这些页加入到LRU_INACTIVE_FILE链表中
+- mark_page_lazyfree : 缓存匿名页，清除掉 PG_activate, PG_referenced, PG_swapbacked 标志后，将这些页加入到 LRU_INACTIVE_FILE 链表中
 - lru_add_drain_cpu : 将 folio_batch 中的 page 移动到 lru 中
 
 folio_batch_move_lru : 用于遍历 folio_batch
