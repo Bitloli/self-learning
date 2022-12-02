@@ -107,7 +107,7 @@ address-space: memory                     │   │    │
 
 下面是 kvm 处理 io 端口的操作的一个调用流程图，只要给出 AddressSpace 以及 地址，最后就可以找到最后的 handler 为 `kbd_read_data`
 
-```c
+```txt
 /*
 #2  kbd_read_data (opaque=0x555556844d98, addr=<optimized out>, size=<optimized out>) at ../hw/input/pckbd.c:387
 #3  0x0000555555cd2092 in memory_region_read_accessor (mr=mr@entry=0x555556844df0, addr=0, value=value@entry=0x7fffd9ff9130, size=size@entry=1, shift=0, mask=mask@entry=255, attrs=...) at ../softmmu/memory.c:440
@@ -134,12 +134,11 @@ address-space: memory                     │   │    │
 - 将 FlatRange 变为树的查询，将查询从 O(n) 的查询修改为 O(log(N))
 
 ## 为什么 QEMU 将 memory region 设计的如此复杂
-- TODO 详细的解释一下
-
 * PCI 机制中 memory region 变得可以随意移动
 * PCI bridge window
 * IOMMU
-* PAM / SMM
+* 奇怪的硬件机制: PAM / SMM
+* 热迁移: qemu_ram_resize
 
 ## AddressSpace
 AddressSpace 用于描述整个地址空间的映射关系, 不同的地址空间的映射关系不同。guest 写相同的地址，在 io 的空间和 memory 空间的效果不同的。

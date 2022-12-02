@@ -18,8 +18,8 @@ strace -p $(pidof dead_loop) # 利用 pidof 或者 pgrep
 ```
 
 To trace child processes, -f option need to be specified [^1]
-`-b` syscall option can be used to instruct strace to detach process when specified syscall is executed. However, currently only execve is supported.
-`-D` option is used to detach strace and tracee processes. 使用此参数，tracee 不会作为 strace 的 children
+- `-b` syscall option can be used to instruct strace to detach process when specified syscall is executed. However, currently only execve is supported.
+- `-D` option is used to detach strace and tracee processes. 使用此参数，tracee 不会作为 strace 的 children
 ```plain
 strace -c ls # stat
 strace -w -c ls # wall time

@@ -1154,3 +1154,14 @@ unsigned long reclaim_clean_pages_from_list(struct zone *zone,
 
 ## 测试一下性能
 - https://easyperf.net/blog/2022/09/01/Utilizing-Huge-Pages-For-Code
+
+## 测试一下，这集中方法是不是可以帮助分配更加多的大页
+- 减少失败的方法:
+  - migration ?
+  - drop cache ? 可以每一个 node 上操作吗?
+  - 手动触发 compaction 直接
+
+## 看错了，构建大页的过程中，会导致 cache 的出现的
+但是也不是将所有的内存都赶到 swap 中，现在不知道是什么原因
+
+## 大页的 migration 如何

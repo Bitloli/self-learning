@@ -158,9 +158,9 @@ sudo nmcli connection add con-name enp0s7 type ethernet
 
 然后就可以使用 ssh 登录:
 ```sh
+ssh-copy-id -p 5556 root@localhost
 ssh root@localhost -p5556
 ```
-
 
 ### Guest 科学上网
 有时候 Guest 中需要安装某些东西，没有代理几乎没有成功的可能性。在 Host 打开 Qv2ray 或者 Clash，设置为可以代理整个局域网，
@@ -173,6 +173,10 @@ export http_proxy=http://ip_addr:8889 && export https_proxy=http://ip_addr:8889
 ```sh
 export http_proxy=http://10.0.2.2:8889 && export https_proxy=http://10.0.2.2:8889
 ```
+
+### 使用 vhost-net
+
+### 使用 vhost-user
 
 ## 共享
 
@@ -187,7 +191,7 @@ arg_share_dir="-virtfs local,path=${share_dir},mount_tag=host0,security_model=ma
 mount -t 9p -o trans=virtio,version=9p2000.L host0 /mnt/9p
 ```
 
-### ssh
+### sshfs
 在 host 通过 `ip addr` 获取 ip 地址，之后和普通的 ssh 使用起来没有差异。
 
 在 guest 中可以直接 ssh host
@@ -205,6 +209,9 @@ git clone martins3@10.0.2.2:path_to_repo
 mkdir mnt
 sshfs martins3@10.0.2.2:path_to_repo  ~/mnt
 ```
+
+### virtio-fs
+现在的推荐的方法，但是我还没搞清楚其中的原理和使用方法。
 
 ## [PCI bridge](https://github.com/Martins3/Martins3.github.io/blob/master/docs/qemu/sh/bridge.sh)
 

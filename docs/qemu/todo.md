@@ -412,3 +412,7 @@ struct smbios_30_entry_point {
 
 ## dmidecode(8)
 dmidecode is a tool for dumping a computer's DMI (some say SMBIOS ) table contents in a human-readable format. This table contains a description of the system's hardware components, as well as other useful pieces of information such as serial numbers and BIOS revision.
+
+这个工具的 backtrace 是什么样子的，从 Host QEMU 到 guest 的输出。
+
+## 为什么在 QEMU 中执行 stress-ng --vm-bytes 1000M --vm-keep -m 1 ，但是再 host 中的 htop 中可以观测到两个 CPU 非常繁忙

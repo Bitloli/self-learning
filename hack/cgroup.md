@@ -1028,7 +1028,6 @@ for i in "${inodes[@]}"; do
 	echo "${i}"
 	find /sys/fs/cgroup -inum "$i"
 done
-
 ```
 
 ```txt

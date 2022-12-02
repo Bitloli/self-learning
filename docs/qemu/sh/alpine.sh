@@ -19,16 +19,6 @@ configuration=${abs_loc}/config.json
 kernel_dir=$(jq -r ".kernel_dir" <"$configuration")
 qemu_dir=$(jq -r ".qemu_dir" <"$configuration")
 workstation="$(jq -r ".workstation" <"$configuration")"
-if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
-  kernel_dir=/home/maritns3/core/ubuntu-linux
-  qemu_dir=/home/maritns3/core/kvmqemu
-  workstation=/home/maritns3/core/hacking-vfio
-fi
-
-if [[ $(uname -r) != "5.15.0-48-generic" ]]; then
-  # bios 镜像的地址，可以不配置
-  seabios=/home/martins3/core/seabios/out/bios.bin
-fi
 # ------------------------------------------------------------------------------
 qemu=${qemu_dir}/build/x86_64-softmmu/qemu-system-x86_64
 
@@ -40,10 +30,7 @@ distribution=ubuntu-server-22.04
 distribution=centos7
 distribution=CentOS-Stream-8-x86_64         # good
 distribution=openEuler-22.03-LTS-x86_64-dvd # good
-
-if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
-  distribution="alpine-standard-3.16.2-x86_64"
-fi
+distribution=openEuler-22.09-x86_64-dvd
 
 iso=${workstation}/${distribution}.iso
 disk_img=${workstation}/${distribution}.qcow2
@@ -54,11 +41,7 @@ LAUNCH_GDB=false
 
 arg_hacking=""
 arg_img="-drive aio=io_uring,file=${disk_img},format=qcow2,if=virtio"
-root=/dev/vdb3
-
-if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
-  root=/dev/vdb3
-fi
+root=/dev/vdb2
 
 if [[ $use_nvme_as_root = true ]]; then
   arg_img="-device nvme,drive=nvme3,serial=foo -drive file=${disk_img},format=qcow2,if=none,id=nvme3"
@@ -67,7 +50,8 @@ fi
 
 # 在 guset 中使用 sudo dmidecode -t bios 查看
 arg_smbios='-smbios type=0,vendor="martins3",version=12,date="2022-2-2", -smbios type=1,manufacturer="Martins3 Inc",product="Hacking Alpine",version=12,serial="1234-4567-abc"'
-arg_hugetlb="default_hugepagesz=3M hugepagesz=1G hugepages=1 hugepagesz=2M hugepages=512"
+arg_hugetlb="default_hugepagesz=2M hugepagesz=1G hugepages=1 hugepagesz=2M hugepages=512"
+arg_hugetlb="default_hugepagesz=1G"
 # 可选参数
 arg_mem_cpu="-m 12G -cpu host -smp 2 -numa node"
 arg_machine="-machine pc,accel=kvm,kernel-irqchip=on"
@@ -77,8 +61,8 @@ case $hacking_memory in
 "numa")
   # TMP_TODO 有没有什么方法来模拟超级大的内存，例如 100T 的内存
   arg_mem_cpu="-cpu host -m 8G -smp cpus=5"
-  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=1G,id=m0 -numa node,memdev=m0,cpus=2-3,nodeid=0"
-  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=7G,id=m1 -numa node,memdev=m1,cpus=0-1,nodeid=1"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=2148M,id=m0 -numa node,memdev=m0,cpus=0-1,nodeid=0"
+  arg_mem_cpu="$arg_mem_cpu -object memory-backend-ram,size=6044M,id=m1 -numa node,memdev=m1,cpus=2-3,nodeid=1"
   arg_mem_cpu="$arg_mem_cpu -numa node,cpus=4,nodeid=2" # 只有 CPU ，但是没有内存
   ;;
 
@@ -149,9 +133,6 @@ arg_scsi="-device virtio-scsi-pci,id=scsi0,bus=pci.0,addr=0xa -device scsi-hd,bu
 arg_network="-netdev user,id=net1,hostfwd=tcp::5556-:22 -device e1000e,netdev=net1"
 arg_qmp="-qmp tcp:localhost:4444,server,wait=off"
 arg_monitor="-serial mon:stdio -display none"
-if [[ $(uname -r) == "5.15.0-48-generic" ]]; then
-  arg_monitor="-serial mon:stdio"
-fi
 arg_initrd="-initrd /home/martins3/initramfs-6.0.0-rc2-00159-g4c612826bec1-dirty.img"
 arg_initrd=""
 arg_trace="--trace 'memory_region_ops_\*'"
@@ -242,7 +223,7 @@ if [ ! -f "${disk_img}" ]; then
   qemu-img create -f qcow2 "${disk_img}" 100G
   # 很多发行版的安装必须使用图形界面，如果在远程，那么需要 vnc
   arg_monitor="-vnc :0,password=on -monitor stdio"
-  # arg_monitor=""
+  arg_monitor=""
   qemu-system-x86_64 \
     -boot d \
     -cdrom "$iso" \

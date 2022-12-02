@@ -281,3 +281,152 @@ The next two steps is parsing of the setup_data with `parse_setup_data` function
 [^25]: [kernelnewbies : ioremap vs mmap](https://lists.kernelnewbies.org/pipermail/kernelnewbies/2016-September/016814.html)
 
 ## cat /proc/iomap 的实现
+
+## 这里有好多内容是看不懂的
+
+```txt
+sudo cat /proc/iomem
+[sudo] password for martins3:
+00000000-00000fff : Reserved
+00001000-0009dfff : System RAM
+0009e000-0009efff : Reserved
+0009f000-0009ffff : System RAM
+000a0000-000fffff : Reserved
+  000a0000-000bffff : PCI Bus 0000:00
+  00000000-00000000 : PCI Bus 0000:00
+  00000000-00000000 : PCI Bus 0000:00
+  00000000-00000000 : PCI Bus 0000:00
+  000e0000-000effff : PCI Bus 0000:00
+  000f0000-000fffff : System ROM
+00100000-5ed4b017 : System RAM
+  4e000000-55ffffff : Crash kernel
+5ed4b018-5ed5a057 : System RAM
+5ed5a058-63e5dfff : System RAM
+63e5e000-63e5efff : Reserved
+63e5f000-63e9bfff : System RAM
+63e9c000-63e9cfff : Reserved
+63e9d000-6b60bfff : System RAM
+6b60c000-6b9d8fff : Reserved
+6b9d9000-6dc60fff : System RAM
+6dc61000-6dc61fff : Reserved
+6dc62000-70560fff : System RAM
+70561000-74260fff : Reserved
+74261000-744b0fff : ACPI Tables
+744b1000-7471efff : ACPI Non-volatile Storage
+7471f000-75ffefff : Reserved
+75fff000-75ffffff : System RAM
+76000000-79ffffff : Reserved
+7a400000-7a7fffff : Reserved
+7b000000-807fffff : Reserved
+  7c800000-807fffff : Graphics Stolen Memory
+80800000-bfffffff : PCI Bus 0000:00
+  80800000-80800fff : 0000:00:1f.5
+    80800000-80800fff : 0000:00:1f.5 0000:00:1f.5
+  82000000-83ffffff : 0000:00:0e.0
+    82000000-83ffffff : VMD MEMBAR1
+  84000000-849fffff : PCI Bus 0000:03
+  84a00000-84bfffff : PCI Bus 0000:04
+    84a00000-84afffff : 0000:04:00.0
+      84a00000-84afffff : igc
+    84b00000-84b03fff : 0000:04:00.0
+      84b00000-84b03fff : igc
+  84c00000-84cfffff : PCI Bus 0000:02
+    84c00000-84c03fff : 0000:02:00.0
+      84c00000-84c03fff : nvme
+    84c04000-84c0ffff : 0000:02:00.0
+  84d00000-84dfffff : PCI Bus 0000:01
+    84d00000-84d1ffff : 0000:01:00.0
+    84d20000-84d2ffff : 0000:01:00.0
+      84d20000-84d2ffff : nvme
+    84d30000-84d33fff : 0000:01:00.0
+      84d30000-84d33fff : nvme
+    84d34000-84db3fff : 0000:01:00.0
+  84e00000-84e01fff : 0000:00:17.0
+    84e00000-84e01fff : ahci
+  84e02000-84e027ff : 0000:00:17.0
+    84e02000-84e027ff : ahci
+  84e03000-84e030ff : 0000:00:17.0
+    84e03000-84e030ff : ahci
+c0000000-cfffffff : PCI MMCONFIG 0000 [bus 00-ff]
+  c0000000-cfffffff : Reserved
+e0690000-e069ffff : INTC1056:00
+  e0690000-e069ffff : INTC1056:00 INTC1056:00
+e06a0000-e06affff : INTC1056:00
+  e06a0000-e06affff : INTC1056:00 INTC1056:00
+e06b0000-e06bffff : INTC1056:00
+  e06b0000-e06bffff : INTC1056:00 INTC1056:00
+e06d0000-e06dffff : INTC1056:00
+  e06d0000-e06dffff : INTC1056:00 INTC1056:00
+e06e0000-e06effff : INTC1056:00
+  e06e0000-e06effff : INTC1056:00 INTC1056:00
+fe000000-fe010fff : Reserved
+fec00000-fec00fff : Reserved
+  fec00000-fec003ff : IOAPIC 0
+fed00000-fed00fff : Reserved
+  fed00000-fed003ff : HPET 0
+    fed00000-fed003ff : PNP0103:00
+fed20000-fed7ffff : Reserved
+  fed40000-fed44fff : MSFT0101:00
+    fed40000-fed44fff : MSFT0101:00
+fed90000-fed90fff : dmar0
+fed91000-fed91fff : dmar1
+feda0000-feda0fff : pnp 00:04
+feda1000-feda1fff : pnp 00:04
+fedc0000-fedc7fff : pnp 00:04
+fee00000-fee00fff : Local APIC
+  fee00000-fee00fff : Reserved
+ff000000-ffffffff : Reserved
+100000000-107f7fffff : System RAM
+  d3f000000-d3fc01a87 : Kernel code
+  d3fe00000-d40587fff : Kernel rodata
+  d40600000-d4083607f : Kernel data
+  d40da4000-d40ffffff : Kernel bss
+107f800000-107fffffff : RAM buffer
+4000000000-7fffffffff : PCI Bus 0000:00
+  4000000000-400fffffff : 0000:00:02.0
+  4010000000-4016ffffff : 0000:00:02.0
+  4017000000-40171fffff : PCI Bus 0000:03
+  4017200000-4017200fff : 0000:00:15.0
+    4017200000-40172001ff : lpss_dev
+      4017200000-40172001ff : i2c_designware.0 lpss_dev
+    4017200200-40172002ff : lpss_priv
+    4017200800-4017200fff : idma64.0
+      4017200800-4017200fff : idma64.0 idma64.0
+  4017201000-4017201fff : 0000:00:15.1
+    4017201000-40172011ff : lpss_dev
+      4017201000-40172011ff : i2c_designware.1 lpss_dev
+    4017201200-40172012ff : lpss_priv
+    4017201800-4017201fff : idma64.1
+      4017201800-4017201fff : idma64.1 idma64.1
+  4017202000-4017202fff : 0000:00:15.2
+    4017202000-40172021ff : lpss_dev
+      4017202000-40172021ff : i2c_designware.2 lpss_dev
+    4017202200-40172022ff : lpss_priv
+    4017202800-4017202fff : idma64.2
+      4017202800-4017202fff : idma64.2 idma64.2
+  4020000000-40ffffffff : 0000:00:02.0
+  6000000000-6001ffffff : 0000:00:0e.0
+  6002000000-6002ffffff : 0000:00:02.0
+  6003000000-60030fffff : 0000:00:1f.3
+  6003100000-60031fffff : 0000:00:0e.0
+    6003102000-60031fffff : VMD MEMBAR2
+  6003200000-600320ffff : 0000:00:14.0
+    6003200000-600320ffff : xhci-hcd
+  6003210000-6003217fff : 0000:00:0a.0
+    6003214000-6003214d9f : telem0
+    6003214da0-6003214edf : telem1
+    60032164d8-60032164e7 : intel_vsec.telemetry.0
+    60032164e8-60032164f7 : intel_vsec.telemetry.0
+    60032164f8-6003216507 : intel_vsec.telemetry.0
+    6003216508-6003216517 : intel_vsec.telemetry.0
+  6003218000-600321bfff : 0000:00:1f.3
+    6003218000-600321bfff : ICH HD audio
+  600321c000-600321ffff : 0000:00:14.3
+    600321c000-600321ffff : iwlwifi
+  6003220000-6003223fff : 0000:00:14.2
+  6003224000-60032240ff : 0000:00:1f.4
+  6003225000-6003225fff : 0000:00:16.0
+    6003225000-6003225fff : mei_me
+  6003229000-6003229fff : 0000:00:14.2
+mem-oc/wss on  master [+?] via C v11.3.0-gcc via 🐍 v3.9.15 took 2s
+```
